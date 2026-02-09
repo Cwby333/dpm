@@ -10,16 +10,16 @@ import (
 
 type WithFunc func(PgConfig)
 
-type Postgres struct {	
+type Postgres struct {
 	pool *pgxpool.Pool
 }
 
 type PgConfig struct {
-	user string
-	host string
-	port int32
+	user     string
+	host     string
+	port     int32
 	password string
-	dbName string
+	dbName   string
 	minConns int
 	maxConns int
 }
@@ -35,13 +35,13 @@ func WithMaxConns(pgcfg *PgConfig, maxConns int) WithFunc {
 	}
 }
 
-func NewPgCfg(user string, host string, port int32, password string, dbName string) PgConfig {	
+func NewPgCfg(user string, host string, port int32, password string, dbName string) PgConfig {
 	pgcfg := PgConfig{
-		user: user,
-		host: host,
-		port: port,
+		user:     user,
+		host:     host,
+		port:     port,
 		password: password,
-		dbName: dbName,
+		dbName:   dbName,
 	}
 
 	if pgcfg.minConns == 0 {
@@ -54,7 +54,7 @@ func NewPgCfg(user string, host string, port int32, password string, dbName stri
 	return pgcfg
 }
 
-func New(ctx context.Context, cfg PgConfig,  funcs[] WithFunc) (Postgres, error) {
+func New(ctx context.Context, cfg PgConfig, funcs []WithFunc) (Postgres, error) {
 	const op = "./internal/adapters/postgres/init.go"
 
 	for i := range funcs {

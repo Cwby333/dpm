@@ -10,7 +10,6 @@ import (
 func main() {
 	cfg := config.MuslLoad()
 
-
 	var pgCfg postgres.PgConfig
 	pgCfg = postgres.NewPgCfg(cfg.User, cfg.Host, int32(cfg.Port), cfg.Password, cfg.DBname)
 

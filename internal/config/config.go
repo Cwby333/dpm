@@ -12,7 +12,7 @@ type Config struct {
 }
 
 type Postgres struct {
-	User string `yaml:"user"`
+	User     string `yaml:"user"`
 	Host     string `yaml:"host"`
 	Port     int    `yaml:"port"`
 	Password string `yaml:"password"`
