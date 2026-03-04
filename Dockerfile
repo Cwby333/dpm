@@ -35,5 +35,5 @@ COPY --from=builder /app/main .
 # Делаем исполняемым
 RUN chmod +x ./main
 
-EXPOSE 9001
+EXPOSE 3003
 ENTRYPOINT ["./main"]

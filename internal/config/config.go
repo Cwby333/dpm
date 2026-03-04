@@ -9,6 +9,7 @@ import (
 
 type Config struct {
 	Postgres `yaml:"postgres"`
+	JWT `yaml:"jwt"`
 }
 
 type Postgres struct {
@@ -17,6 +18,10 @@ type Postgres struct {
 	Port     int    `yaml:"port"`
 	Password string `yaml:"password"`
 	DBname   string `yaml:"dbname"`
+}
+
+type JWT struct {
+	Key string `yaml:"secret-key"`
 }
 
 func MuslLoad() Config {

@@ -1,0 +1,318 @@
+openapi: 3.0.1
+info:
+  title: 'Music microservice'
+  description: 'Music microservice HTTP API for Mute project'
+  contact:
+    name: 'Mute project'
+    email: 'muteproject@gmail.com'
+  version: 1.0.0
+# servers:
+#   - url: "https://music-microservice.mute-project/api/v1"
+#     description: "Base url"
+paths:
+  /register:
+    summary: "Register in webapp"
+    post:
+      description: "User post his username, email, password and app register him in system"
+      operationId: "register"
+      requestBody:
+        $ref: "#/components/requestBodies/Register"
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        500:
+          description: 'Server error'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /login:
+    summary: 'Login in webapp'
+    post:
+      description: 'User post his username and password and get token for authentication'
+      operationId: 'login'
+      requestBody:
+        $ref: '#/components/requestBodies/Login'
+      responses:
+        200:
+          description: 'Success'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        500:
+          description: 'Server error'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /ping:
+    summary: 'Check health service'
+    get:
+      responses:
+        200:
+          description: 'Success'
+          content:
+            application/json:
+              schema:
+                type: string
+        500:
+          description: 'Server error'
+          content:
+            application/json:
+              schema:
+                type: string
+
+  # /song:
+  #   summary: "Actions with song: upload, update"
+  #   post:
+  #     summary: "Upload song"
+  #     description: "User must provide title of song, author's name, in form data file with song, covers of song and author"
+  #     operationId: "uploadSong"
+  #     requestBody:
+  #       $ref: "#/components/requestBodies/UploadSong"
+  #     responses:
+  #       # 200:
+  #         # $ref: "#/components/responses/UploadSongResponse200"
+  #       500:
+  #         description: "Server error, retry after some time"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: string
+  #       400:
+  #         description: "Bad request"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: string
+
+  # /song/{songID}:
+  #   patch:
+  #     summary: "Update song"
+  #     description: "Set to song new title, author_name, upload new song, upload new song_cover/author_cover, must provide at least one object in form"
+  #     operationId: "updateSong"
+  #     requestBody:
+  #       $ref: "#/components/requestBodies/UpdateSong"
+  #     parameters:
+  #       - name: "songID"
+  #         in: path
+  #         required: true
+  #         schema:
+  #           type: string
+  #     responses:
+  #       200:
+  #         description: "Success update song"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: string
+  #       500:
+  #         description: "Internal server error"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: string
+  #       400:
+  #         description: "Bad request"
+  #         content:
+  #           application/json:
+  #             schema:
+  #               type: string
+
+  # /song/{songId}:
+  #   summary: "Actions with song: get, delete"
+  #   get:
+  #     summary: "Get info about song"
+  #     description: "Client must provide song id in path param"
+  #     operationId: "getInfoSong"
+  #     parameters:
+  #       - $ref: "#/components/parameters/SongId"
+  #     security:
+  #       - JWTBearerAuth: []
+  #     responses:
+  #       200:
+  #           $ref: "#/components/responses/GetSongResponse"
+  #       401:
+  #         description: "Not authorized"
+  #       500:
+  #         description: "Server error, retry after some time"
+  #       503:
+  #         description: "Server error, retry after some time"
+  #       400:
+  #         description: "Bad request"
+  #       409:
+  #         description: "Reject by rate limiter, retry after minute"
+  #   delete:
+  #     summary: "Delete song"
+  #     description: "Client must provide id in path parameter"
+  #     operationId: "deleteSong"
+  #     parameters:
+  #       - $ref: "#/components/parameters/SongId"
+  #     responses:
+  #       200:
+  #         description: "Success deleted"
+  #       401:
+  #         description: "Not authorized"
+  #       500:
+  #         description: "Server error, retry after some time"
+  #       503:
+  #         description: "Server error, retry after some time"
+  #       400:
+  #         description: "Bad request"
+  #       409:
+  #         description: "Reject by rate limiter, retry after minute"
+
+  # /song/play/{songId}:
+  #   summary: "Begin streaming song from server to client"
+  #   get:
+  #     summary: "Start streaming"
+  #     description: "Must provide song id in path"
+  #     operationId: "playSong"
+  #     parameters:
+  #       - $ref: "#/components/parameters/SongId"
+  #     responses:
+  #       200:
+  #         description: "Success start streaming"
+  #         headers:
+  #           Content-Type:
+  #             schema:
+  #               type: string
+  #           Transfer-Encoding:
+  #             schema:
+  #               type: string
+  #               example: chunked
+  #         content:
+  #           video/mp4:
+  #             schema:
+  #               type: string
+  #               format: binary
+  #       500:
+  #         description: "Server error, retry after some time"
+  #       400:
+  #         description: "Bad request"
+
+components:
+  requestBodies:
+    Register:
+      description: 'Req body for /register'
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - username
+                password
+                email
+            properties:
+              username:
+                type: string
+              password:
+                type: string
+              email:
+                type: string
+    Login:
+      description: 'Req body for /login'
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - username
+                password
+            properties:
+              username:
+                type: string
+              password:
+                type: string
+#     UploadSong:
+#       description: "Object that client must provide in upload song operation"
+#       content:
+#         multipart/form-data:
+#           schema:
+#             type: object
+#             description: "Object that must provide in upload song operation"
+#             required:
+#               - title
+#                 author_name
+#                 song
+#                 song_cover
+#                 author_cover
+#             properties:
+#               title:
+#                 type: string
+#               author_name:
+#                 type: string
+#               song:
+#                 type: string
+#                 format: binary
+#                 description: "File with song, content-type: audio/mp3"
+#               song_cover:
+#                 type: string
+#                 format: binary
+#                 description: "File with cover of song, image/jpg"
+#               author_cover:
+#                 type: string
+#                 format: binary
+#                 description: "File with cover of author, image/jpg"
+
+#     UpdateSong:
+#       content:
+#         multipart/form-data:
+#           schema:
+#             type: object
+#             description: "Object that client must provide in update song operation"
+#             properties:
+#               title:
+#                 type: string
+#               author_name:
+#                 type: string
+#               song:
+#                 type: string
+#                 format: binary
+#                 description: "File with song, content-type: audio/mp3"
+#               song_cover:
+#                 type: string
+#                 format: binary
+#                 description: "File with cover of song, image/jpg"
+#               author_image:
+#                 type: string
+#                 format: binary
+#                 description: "File with cover of author, image/jpg"
+#             minProperties: 1
+
+#   responses:
+#     GetSongResponse:
+#       description: "Object that will returned by /song GET operation"
+#       content:
+#         application/json:
+#           schema:
+#             type: object
+#             properties:
+#               id:
+#                 type: string
+#               title:
+#                 type: string
+#               author_name:
+#                 type: string
+#               song_cover_url:
+#                 type: string
+#               author_cover_url:
+#                 type: string

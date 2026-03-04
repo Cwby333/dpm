@@ -3,6 +3,8 @@ services:
     image: dpm_app:1.0
     container_name: dpm-app
     entrypoint: "./main"
+    ports:
+      - 3003:3003
     depends_on:
       postgres:
         condition: service_healthy
