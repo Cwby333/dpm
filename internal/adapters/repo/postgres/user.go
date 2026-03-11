@@ -9,7 +9,7 @@ import (
 	// "log/slog"
 )
 
-func (pg *Postgres) CreateUser(ctx context.Context, user models.User) (error) {
+func (pg *Postgres) CreateUser(ctx context.Context, user models.User) error {
 	const op = "./internal/adapters/repo/postgres/user.go.CreateUser()"
 
 	q := "INSERT INTO users(username, hash_psw, email) VALUES ($1, $2, $3) RETURNING id"

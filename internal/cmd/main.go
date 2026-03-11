@@ -9,8 +9,24 @@ import (
 	"dpm/internal/services"
 	"fmt"
 	"log/slog"
-	// "time"
+	"math/rand"
+	"time"
 )
+
+func script(ms *services.MusicService) {
+	rand.NewSource(time.Now().Unix())
+	for range 5 {
+		err := ms.CreateMusic(context.Background(), models.Music{
+			Name:        "SomeMusic",
+			UploaderID:  "75e14016-ba7f-45bd-835b-b13dcac46de7",
+			Likes:       rand.Intn(101) + 1,
+			DurationSec: rand.Intn(101) + 60,
+		})
+		if err != nil {
+			slog.Error(err.Error())
+		}
+	}
+}
 
 func main() {
 	cfg := config.MuslLoad()
@@ -30,13 +46,13 @@ func main() {
 
 	u := models.User{
 		Username: "user",
-		HashPsw: "12345678",
-		Email: "email@gmail.com",
+		HashPsw:  "12345678",
+		Email:    "email@gmail.com",
 	}
 
 	uService := services.NewUser(&pg, cfg.JWT.Key)
 
-	err =  uService.RegisterUser(context.Background(), u)
+	err = uService.RegisterUser(context.Background(), u)
 
 	// err = uService.RegisterUser(context.Background(), u)
 	// if err != nil {
@@ -49,20 +65,24 @@ func main() {
 	// }
 	// slog.Info(token)
 
-	handler := http.NewHandler(uService)
+	mService := services.NewMusicService(&pg)
+
+	handler := http.NewHandler(uService, mService)
 
 	server := http.NewServer(handler)
 
 	slog.Info(server.Addr)
 
-	go func ()  {
+	go func() {
 		if err := server.ListenAndServe(); err != nil {
 			errChan <- err
 		}
 	}()
 
+	script(mService)
+
 	slog.Info("server start")
 
-	err = <- errChan
+	err = <-errChan
 	slog.Error(err.Error())
 }

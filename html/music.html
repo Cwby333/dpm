@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mute - Каталог музыки</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* Навигация */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #555;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+        }
+
+        .nav-links a:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .nav-links .active {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-outline {
+            border: 2px solid #667eea;
+            color: #667eea;
+            background: transparent;
+        }
+
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Основной контент */
+        .main-content {
+            max-width: 1200px;
+            margin: 80px auto 0;
+            padding: 2rem;
+        }
+
+        /* Заголовок страницы */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            color: white;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .search-box {
+            display: flex;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-box input {
+            padding: 0.75rem 1rem;
+            border: none;
+            width: 250px;
+            font-size: 1rem;
+        }
+
+        .search-box input:focus {
+            outline: none;
+        }
+
+        .search-box button {
+            padding: 0.75rem 1.5rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .search-box button:hover {
+            background: #5a67d8;
+        }
+
+        .refresh-btn {
+            padding: 0.75rem 1.5rem;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .refresh-btn:hover {
+            background: #f0f0f0;
+            transform: rotate(180deg);
+        }
+
+        /* Индикатор загрузки */
+        .loading-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Сетка музыки */
+        .music-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .music-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .music-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .music-cover {
+            height: 180px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 4rem;
+            position: relative;
+        }
+
+        .music-cover .play-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            cursor: pointer;
+        }
+
+        .music-card:hover .play-overlay {
+            opacity: 1;
+        }
+
+        .play-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #667eea;
+            transition: transform 0.3s ease;
+        }
+
+        .play-button:hover {
+            transform: scale(1.1);
+        }
+
+        .music-info {
+            padding: 1.5rem;
+        }
+
+        .music-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .music-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .uploader-id {
+            background: #f0f0f0;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .music-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .likes {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #e53e3e;
+        }
+
+        .duration {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .music-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .music-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-play {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-play:hover {
+            background: #5a67d8;
+        }
+
+        .btn-like {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-like:hover {
+            background: #fed7d7;
+            color: #e53e3e;
+        }
+
+        .btn-like.active {
+            background: #e53e3e;
+            color: white;
+        }
+
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.3s ease;
+        }
+
+        .modal-close:hover {
+            color: #f56565;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .music-detail-cover {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .music-detail-info {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .detail-value {
+            color: #333;
+        }
+
+        .detail-value.likes {
+            color: #e53e3e;
+            font-weight: 600;
+        }
+
+        /* Аудиоплеер */
+        .audio-player {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .audio-player audio {
+            width: 100%;
+        }
+
+        /* Статус бар */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #48bb78;
+        }
+
+        .status-dot.error {
+            background: #f56565;
+        }
+
+        /* Пагинация */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .page-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .page-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .page-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Сообщения об ошибках */
+        .error-container {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-container h3 {
+            color: #c53030;
+            margin-bottom: 0.5rem;
+        }
+
+        .error-container p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .retry-btn {
+            padding: 0.75rem 2rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .retry-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        /* Пустое состояние */
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-state-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Футер */
+        .footer {
+            background: #1a1a2e;
+            color: white;
+            padding: 3rem 2rem 1rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+        }
+
+        .footer-section h4 {
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-section a {
+            color: #999;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section a:hover {
+            color: #667eea;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 2rem auto 0;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .auth-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box input {
+                width: 100%;
+            }
+
+            .header-actions {
+                flex-direction: column;
+            }
+
+            .music-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">🎵</span>
+                <span class="logo-text">Mute</span>
+            </div>
+            <div class="nav-links">
+                <a href="/">Главная</a>
+                <a href="#" class="active">Музыка</a>
+                <a href="#">Продукты</a>
+                <a href="#">О нас</a>
+                <div class="auth-buttons">
+                    <a href="/login" class="btn btn-outline">Войти</a>
+                    <a href="/register" class="btn btn-primary">Регистрация</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <div class="main-content">
+        <!-- Заголовок страницы -->
+        <div class="page-header">
+            <h1>Каталог музыки</h1>
+            <div class="header-actions">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Поиск музыки...">
+                    <button id="searchBtn">🔍</button>
+                </div>
+                <button class="refresh-btn" id="refreshBtn" title="Обновить">🔄</button>
+            </div>
+        </div>
+
+        <!-- Статус бар -->
+        <div class="status-bar" id="statusBar">
+            <div class="status-info">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Загрузка...</span>
+            </div>
+            <span id="musicCount">0 треков</span>
+        </div>
+
+        <!-- Индикатор загрузки -->
+        <div class="loading-container" id="loadingContainer">
+            <div class="loading-spinner"></div>
+            <p>Загрузка музыки...</p>
+        </div>
+
+        <!-- Контейнер для музыки -->
+        <div id="musicContainer"></div>
+
+        <!-- Пагинация -->
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <!-- Модальное окно деталей трека -->
+    <div class="modal" id="musicModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Детали трека</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Содержимое будет заполнено динамически -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Аудиоплеер (скрытый) -->
+    <audio id="audioPlayer" style="display: none;"></audio>
+
+    <!-- Футер -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Mute</h4>
+                <p>Бесплатная музыка для всех</p>
+            </div>
+            <div class="footer-section">
+                <h4>Навигация</h4>
+                <ul>
+                    <li><a href="/">Главная</a></li>
+                    <li><a href="#">Музыка</a></li>
+                    <li><a href="#">Продукты</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Пользователям</h4>
+                <ul>
+                    <li><a href="/register">Регистрация</a></li>
+                    <li><a href="/login">Вход</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Mute. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Состояние приложения
+        let allMusic = [];
+        let filteredMusic = [];
+        let currentPage = 1;
+        let musicPerPage = 12;
+        let isLoading = false;
+        let apiUrl = 'http://localhost:3003/music'; // Предполагаемый порт для music микросервиса
+        let currentlyPlaying = null;
+
+        // DOM элементы
+        const loadingContainer = document.getElementById('loadingContainer');
+        const musicContainer = document.getElementById('musicContainer');
+        const paginationContainer = document.getElementById('pagination');
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const musicCount = document.getElementById('musicCount');
+        const modal = document.getElementById('musicModal');
+        const modalBody = document.getElementById('modalBody');
+        const audioPlayer = document.getElementById('audioPlayer');
+
+        // Загрузка музыки при загрузке страницы
+        document.addEventListener('DOMContentLoaded', fetchMusic);
+
+        // Обновление по кнопке
+        refreshBtn.addEventListener('click', fetchMusic);
+
+        // Поиск при вводе
+        searchInput.addEventListener('input', () => {
+            filterMusic();
+        });
+
+        // Поиск по кнопке
+        searchBtn.addEventListener('click', () => {
+            filterMusic();
+        });
+
+        // Поиск по Enter
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                filterMusic();
+            }
+        });
+
+        // Функция загрузки музыки
+        async function fetchMusic() {
+            if (isLoading) return;
+            
+            showLoading();
+            updateStatus('loading', 'Загрузка музыки...');
+            
+            try {
+                console.log('Запрос к API:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors'
+                });
+
+                console.log('Статус ответа:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ошибка! Статус: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Получены данные:', data);
+                
+                // Обработка формата вашего сервера (аналогично продуктам)
+                if (data && data.GetMusicJSONResponse && Array.isArray(data.GetMusicJSONResponse)) {
+                    console.log('Найдена музыка в поле GetMusicJSONResponse');
+                    allMusic = data.GetMusicJSONResponse;
+                }
+                // Поддержка других возможных форматов
+                else if (Array.isArray(data)) {
+                    allMusic = data;
+                } else if (data.music && Array.isArray(data.music)) {
+                    allMusic = data.music;
+                } else if (data.data && Array.isArray(data.data)) {
+                    allMusic = data.data;
+                } else if (data.items && Array.isArray(data.items)) {
+                    allMusic = data.items;
+                } else {
+                    // Пробуем найти любое поле с массивом
+                    let found = false;
+                    for (let key in data) {
+                        if (Array.isArray(data[key])) {
+                            console.log(`Найден массив в поле "${key}"`);
+                            allMusic = data[key];
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        console.warn('Неожиданный формат данных:', data);
+                        allMusic = [];
+                    }
+                }
+                
+                console.log(`Загружено треков: ${allMusic.length}`);
+                
+                if (allMusic.length > 0) {
+                    console.log('Пример первого трека:', allMusic[0]);
+                }
+                
+                filterMusic();
+                
+                updateStatus('success', 'Музыка загружена');
+                musicCount.textContent = `${allMusic.length} треков`;
+                
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+                updateStatus('error', 'Ошибка загрузки');
+                showError(error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Фильтрация музыки
+        function filterMusic() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            filteredMusic = allMusic.filter(music => {
+                if (!music) return false;
+                
+                const matchesSearch = searchTerm === '' || 
+                    (music.name && music.name.toLowerCase().includes(searchTerm));
+                
+                return matchesSearch;
+            });
+            
+            currentPage = 1;
+            renderMusic();
+            renderPagination();
+            
+            if (filteredMusic.length !== allMusic.length) {
+                musicCount.textContent = `${filteredMusic.length} из ${allMusic.length} треков`;
+            } else {
+                musicCount.textContent = `${allMusic.length} треков`;
+            }
+        }
+
+        // Рендер музыки
+        function renderMusic() {
+            const start = (currentPage - 1) * musicPerPage;
+            const end = start + musicPerPage;
+            const musicToShow = filteredMusic.slice(start, end);
+            
+            if (filteredMusic.length === 0) {
+                musicContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎵</div>
+                        <h3>Треки не найдены</h3>
+                        <p>Попробуйте изменить параметры поиска</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            musicContainer.innerHTML = `
+                <div class="music-grid">
+                    ${musicToShow.map(music => createMusicCard(music)).join('')}
+                </div>
+            `;
+        }
+
+        // Создание карточки трека
+        function createMusicCard(music) {
+            const isPlaying = currentlyPlaying === music.id;
+            const duration = formatDuration(music.duration_seconds);
+            
+            return `
+                <div class="music-card">
+                    <div class="music-cover">
+                        <span>🎵</span>
+                        <div class="play-overlay" onclick="playMusic('${music.id}')">
+                            <div class="play-button">${isPlaying ? '⏸️' : '▶️'}</div>
+                        </div>
+                    </div>
+                    <div class="music-info">
+                        <h3 class="music-name">${music.name || 'Без названия'}</h3>
+                        <div class="music-meta">
+                            <span class="uploader-id">ID: ${music.uploader_id ? music.uploader_id.substring(0, 8) + '...' : 'Неизвестно'}</span>
+                        </div>
+                        <div class="music-stats">
+                            <span class="likes">❤️ ${music.likes || 0}</span>
+                            <span class="duration">⏱️ ${duration}</span>
+                        </div>
+                        <div class="music-actions">
+                            <button class="music-btn btn-play" onclick="playMusic('${music.id}')">
+                                ${isPlaying ? 'Пауза' : 'Слушать'}
+                            </button>
+                            <button class="music-btn btn-like" onclick="likeMusic('${music.id}')">
+                                ❤️
+                            </button>
+                            <button class="music-btn btn-view" onclick="viewMusic('${music.id}')">
+                                Детали
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Форматирование длительности
+        function formatDuration(seconds) {
+            if (!seconds) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Рендер пагинации
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredMusic.length / musicPerPage);
+            
+            if (totalPages <= 1) {
+                paginationContainer.innerHTML = '';
+                return;
+            }
+            
+            let paginationHTML = '';
+            
+            paginationHTML += `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>←</button>`;
+            
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    paginationHTML += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    paginationHTML += `<span class="page-btn" style="cursor: default;">...</span>`;
+                }
+            }
+            
+            paginationHTML += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>→</button>`;
+            
+            paginationContainer.innerHTML = paginationHTML;
+        }
+
+        // Смена страницы
+        function changePage(page) {
+            currentPage = page;
+            renderMusic();
+            renderPagination();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Воспроизведение музыки (демо)
+        function playMusic(musicId) {
+            const music = allMusic.find(m => m.id === musicId);
+            if (!music) return;
+            
+            if (currentlyPlaying === musicId) {
+                // Останавливаем
+                audioPlayer.pause();
+                currentlyPlaying = null;
+            } else {
+                // В реальном приложении здесь будет запрос к /music/play/{musicId}
+                // Для демо просто показываем уведомление
+                alert(`Воспроизведение: ${music.name}\n(Демо-режим, в реальном приложении здесь будет стриминг аудио)`);
+                
+                // Имитация плеера
+                currentlyPlaying = musicId;
+            }
+            
+            // Обновляем интерфейс
+            renderMusic();
+        }
+
+        // Лайк музыки (демо)
+        function likeMusic(musicId) {
+            const music = allMusic.find(m => m.id === musicId);
+            if (!music) return;
+            
+            // В реальном приложении здесь будет POST запрос для лайка
+            music.likes = (music.likes || 0) + 1;
+            
+            // Обновляем отображение
+            renderMusic();
+            
+            alert(`Вы поставили лайк треку "${music.name}"`);
+        }
+
+        // Просмотр деталей трека
+        async function viewMusic(musicId) {
+            showLoading();
+            
+            try {
+                // Пробуем получить с детального эндпоинта
+                const response = await fetch(`${apiUrl}/${musicId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                let music;
+                if (response.ok) {
+                    const data = await response.json();
+                    // Обрабатываем формат ответа
+                    if (data && data.GetMusicJSONResponse) {
+                        music = data.GetMusicJSONResponse;
+                    } else {
+                        music = data;
+                    }
+                } else {
+                    // Если детальный эндпоинт не работает, ищем в загруженных данных
+                    music = allMusic.find(m => m.id === musicId);
+                }
+                
+                if (!music) {
+                    throw new Error('Трек не найден');
+                }
+                
+                showMusicModal(music);
+                
+            } catch (error) {
+                alert('Ошибка загрузки деталей трека: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Показать модальное окно с деталями трека
+        function showMusicModal(music) {
+            const duration = formatDuration(music.duration_seconds);
+            
+            modalBody.innerHTML = `
+                <div class="music-detail-cover">
+                    <span>🎵</span>
+                </div>
+                <div class="music-detail-info">
+                    <div class="detail-row">
+                        <span class="detail-label">ID:</span>
+                        <span class="detail-value">${music.id || 'Не указан'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Название:</span>
+                        <span class="detail-value">${music.name || 'Не указано'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">ID загрузившего:</span>
+                        <span class="detail-value uploader-id">${music.uploader_id || 'Не указан'}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Лайки:</span>
+                        <span class="detail-value likes">❤️ ${music.likes || 0}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Длительность:</span>
+                        <span class="detail-value">${duration}</span>
+                    </div>
+                </div>
+                <div class="audio-player">
+                    <audio controls>
+                        <source src="#" type="audio/mpeg">
+                        Ваш браузер не поддерживает аудио элемент.
+                    </audio>
+                    <p style="text-align: center; margin-top: 0.5rem; color: #666; font-size: 0.85rem;">
+                        * В реальном приложении здесь будет стриминг аудио
+                    </p>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        // Закрыть модальное окно
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+
+        // Показать загрузку
+        function showLoading() {
+            isLoading = true;
+            loadingContainer.style.display = 'flex';
+        }
+
+        // Скрыть загрузку
+        function hideLoading() {
+            isLoading = false;
+            loadingContainer.style.display = 'none';
+        }
+
+        // Обновление статуса
+        function updateStatus(type, message) {
+            statusText.textContent = message;
+            statusDot.className = 'status-dot';
+            if (type === 'success') {
+                statusDot.style.background = '#48bb78';
+            } else if (type === 'error') {
+                statusDot.style.background = '#f56565';
+            } else {
+                statusDot.style.background = '#fbbf24';
+            }
+        }
+
+        // Показать ошибку
+        function showError(message) {
+            musicContainer.innerHTML = `
+                <div class="error-container">
+                    <div class="error-icon">⚠️</div>
+                    <h3>Ошибка загрузки данных</h3>
+                    <p>${message}</p>
+                    <p>Проверьте:</p>
+                    <ul style="list-style: none; margin-bottom: 1.5rem;">
+                        <li>✓ Запущен ли сервер на порту 3004</li>
+                        <li>✓ Доступен ли эндпоинт ${apiUrl}</li>
+                        <li>✓ Настроены ли CORS заголовки</li>
+                    </ul>
+                    <button class="retry-btn" onclick="fetchMusic()">Повторить попытку</button>
+                </div>
+            `;
+        }
+
+        // Закрытие модального окна по клику вне его
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

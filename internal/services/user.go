@@ -12,18 +12,18 @@ import (
 )
 
 type Pg interface {
-	CreateUser(ctx context.Context, user models.User) (error)
+	CreateUser(ctx context.Context, user models.User) error
 	ReadPsw(ctx context.Context, user models.User) (string, error)
 }
 
-type UserService struct {	
-	Pg Pg
+type UserService struct {
+	Pg  Pg
 	Key string
 }
 
 func NewUser(pg Pg, k string) *UserService {
 	return &UserService{
-		Pg: pg,
+		Pg:  pg,
 		Key: k,
 	}
 }

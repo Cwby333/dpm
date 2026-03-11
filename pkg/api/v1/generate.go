@@ -18,8 +18,30 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/oapi-codegen/runtime"
 	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
 )
+
+// Music defines model for Music.
+type Music struct {
+	DurationSeconds int    `json:"duration_seconds"`
+	Id              string `json:"id"`
+	Likes           int    `json:"likes"`
+	Name            string `json:"name"`
+	UploaderId      string `json:"uploader_id"`
+}
+
+// GetMusic defines model for GetMusic.
+type GetMusic = []Music
+
+// GetMusicResponse defines model for GetMusicResponse.
+type GetMusicResponse struct {
+	DurationSeconds *int    `json:"duration_seconds,omitempty"`
+	Id              *string `json:"id,omitempty"`
+	Likes           *int    `json:"likes,omitempty"`
+	Name            *string `json:"name,omitempty"`
+	UploaderId      *string `json:"uploader_id,omitempty"`
+}
 
 // Login defines model for Login.
 type Login struct {
@@ -58,6 +80,12 @@ type ServerInterface interface {
 
 	// (POST /login)
 	Login(w http.ResponseWriter, r *http.Request)
+	// Get all music
+	// (GET /music)
+	GetAllMusic(w http.ResponseWriter, r *http.Request)
+
+	// (GET /music/{musicID})
+	GetMusic(w http.ResponseWriter, r *http.Request, musicID string)
 
 	// (GET /ping)
 	GetPing(w http.ResponseWriter, r *http.Request)
@@ -80,6 +108,45 @@ func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Login(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAllMusic operation middleware
+func (siw *ServerInterfaceWrapper) GetAllMusic(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAllMusic(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMusic operation middleware
+func (siw *ServerInterfaceWrapper) GetMusic(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "musicID" -------------
+	var musicID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "musicID", r.PathValue("musicID"), &musicID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "musicID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMusic(w, r, musicID)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -238,10 +305,22 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc("POST "+options.BaseURL+"/login", wrapper.Login)
+	m.HandleFunc("GET "+options.BaseURL+"/music", wrapper.GetAllMusic)
+	m.HandleFunc("GET "+options.BaseURL+"/music/{musicID}", wrapper.GetMusic)
 	m.HandleFunc("GET "+options.BaseURL+"/ping", wrapper.GetPing)
 	m.HandleFunc("POST "+options.BaseURL+"/register", wrapper.Register)
 
 	return m
+}
+
+type GetMusicJSONResponse []Music
+
+type GetMusicResponseJSONResponse struct {
+	DurationSeconds *int    `json:"duration_seconds,omitempty"`
+	Id              *string `json:"id,omitempty"`
+	Likes           *int    `json:"likes,omitempty"`
+	Name            *string `json:"name,omitempty"`
+	UploaderId      *string `json:"uploader_id,omitempty"`
 }
 
 type LoginRequestObject struct {
@@ -268,6 +347,59 @@ type Login500JSONResponse struct {
 }
 
 func (response Login500JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAllMusicRequestObject struct {
+}
+
+type GetAllMusicResponseObject interface {
+	VisitGetAllMusicResponse(w http.ResponseWriter) error
+}
+
+type GetAllMusic200JSONResponse struct{ GetMusicJSONResponse }
+
+func (response GetAllMusic200JSONResponse) VisitGetAllMusicResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAllMusic500JSONResponse string
+
+func (response GetAllMusic500JSONResponse) VisitGetAllMusicResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMusicRequestObject struct {
+	MusicID string `json:"musicID"`
+}
+
+type GetMusicResponseObject interface {
+	VisitGetMusicResponse(w http.ResponseWriter) error
+}
+
+type GetMusic200JSONResponse struct{ GetMusicResponseJSONResponse }
+
+func (response GetMusic200JSONResponse) VisitGetMusicResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMusic500JSONResponse struct {
+	Message *string `json:"message,omitempty"`
+}
+
+func (response GetMusic500JSONResponse) VisitGetMusicResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 
@@ -334,6 +466,12 @@ type StrictServerInterface interface {
 
 	// (POST /login)
 	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
+	// Get all music
+	// (GET /music)
+	GetAllMusic(ctx context.Context, request GetAllMusicRequestObject) (GetAllMusicResponseObject, error)
+
+	// (GET /music/{musicID})
+	GetMusic(ctx context.Context, request GetMusicRequestObject) (GetMusicResponseObject, error)
 
 	// (GET /ping)
 	GetPing(ctx context.Context, request GetPingRequestObject) (GetPingResponseObject, error)
@@ -402,6 +540,56 @@ func (sh *strictHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetAllMusic operation middleware
+func (sh *strictHandler) GetAllMusic(w http.ResponseWriter, r *http.Request) {
+	var request GetAllMusicRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAllMusic(ctx, request.(GetAllMusicRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAllMusic")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAllMusicResponseObject); ok {
+		if err := validResponse.VisitGetAllMusicResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMusic operation middleware
+func (sh *strictHandler) GetMusic(w http.ResponseWriter, r *http.Request, musicID string) {
+	var request GetMusicRequestObject
+
+	request.MusicID = musicID
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMusic(ctx, request.(GetMusicRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMusic")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMusicResponseObject); ok {
+		if err := validResponse.VisitGetMusicResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetPing operation middleware
 func (sh *strictHandler) GetPing(w http.ResponseWriter, r *http.Request) {
 	var request GetPingRequestObject
@@ -460,15 +648,20 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xUTW/TQBD9K6uBoxWnIC4+8XGASq1UlXJCHDbrib1t9qMz41RR5P+OdmOnCQ1UISAu",
-	"3Maendn33szbNZjgYvDohaFaA+F9hyzvQ20x/7gIjfUpMMELekmhjnFhjRYbfHnLIafZtOh0iiKFiCRD",
-	"fdTMD4HqFMsqIlTAQtY30BfQMZLXDg8k+yJjsYQ1VF+3J9W237diLAmzWzQCfaqpkQ3ZmKBBBdd4r2ah",
-	"Xql5IFUuMpW+gGtsLAvSCbTQabs4yOlvEVabK4+nTSPbfNL6eRh5ayM7XMB1gpFC6vq2Sf8mJjgoYAMY",
-	"LjtBNeThyZ2XHVujnDUUGGlpDapPNzdX6t3VeYaxV12AWFngwTIoYInEm65nk+lkmi4LEb2OFip4PZlO",
-	"ziDpLG0exTDXNKLAmdA+si+MpFJKtZbVVlft60dt00eDoiTcoc94dSctehn2ATICyvF5DdVgi2LHL6t0",
-	"80vCOVTwonx0VblnqfJiXEJCjsHzZp1eTacnLKNDZt38ZKme3ZbPnTHInDC9+ZcwkJZIConCsKrcOadp",
-	"NaqtrFcPONMxJqhlTJ2rNTSYge6P5yPKVcqfKPOPNP6kds/3/oUgH1o0d6pFvZBWjcZJqtDO03aMHYrN",
-	"81LsW0LHqMaOqrUujYBXLOieGGL7pv6GJ7a1/21x1BaMuu06o++/BwAA//99yovd0wcAAA==",
+	"H4sIAAAAAAAC/+xWS2/jNhD+KwTbo2B5W/SiU92mcA3sokGanhaLBU1NJG7ER4ajBIah/16QeliKlaS2",
+	"UTSHnsJ4Hvzmm5mP2nNptbMGDHme7TnCQw2efrG5gvjDR1soEw7SGgJD4Sicq5QUpKxJv3kbzV6WoEU4",
+	"ObQOkLp4J7x/spiHM+0c8Ix7QmUK3iS89oBGaJgxNknEohBynn0ePNmQ70vSh9jtN5DEmxCTg5eoXIDG",
+	"M34DD2xr8x27s8jSKpbSJPwGCuUJ8IKyQAtVzdb0bxXM2itPLxv7atsrvLPGt0WsgT7VXsmTeFAEOkZ/",
+	"j3DHM/5depigtHXzaZu2GbAKRLGbg7oGYqKqmO4Dekw3HdALepTXGB2/epDW5H5EujIERaAk4Wq+U5W6",
+	"hxciXmhgwmtXWZEDfp3N2fyDzv0RLYxKQexJVRXbAkOgGg3kbLtjqUOb15LSfXfYXDVs/dstC3XHYuM9",
+	"XRsCiKHB752b8fCrnHeppoH91ckx/vm9UObO9hMkJI02l+uawKENvj8X4beFtLq/NuOfagLW2flRnyKr",
+	"TCuJ1gM+Kgns99vba7a63sSlm0QnnBRVMBvGE/4I6NusHxbLxTJcZh0Y4RTP+I+L5eIDD6pCZaS8U7HQ",
+	"UOtjQVNkf3lAFkysVJ4NKiJMflCS8E8BxMjeg4l4RU0lGOo2i0cELcGbnGfdI5CMXofdSwoweUDSj73k",
+	"TnTnh+XygrXW4L0o4MwN+7OWErwPmH76L2EAPgIyQLTY2n2ttcBdzzZThj3BVjgXoKa6X+MCItJpf9ZA",
+	"q6pqV32e6/lWdX7p8BCcwcrz4t8qdVzpkfofTCsZFJDKg63lIN3HP5urZsTG8ZsSnYJibq6OpnmoNqwV",
+	"Cg0E6Hn2+XmeNkdMEDYu7uBBIDoYfKxchDUkr3Dz5ZLmDC/iOx7dlQxObeOsgVHzXMj/yvxeB/uFOvH2",
+	"KJ6//KeO+YSWX0uQ96wEUVHJeuUPrODoS/QUPU/ar8FkqunCOdZnZKXSQUP8zhPoox0YPoHPEPUh9n9d",
+	"P2kKet7G0t40fwcAAP//zmDX+YINAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

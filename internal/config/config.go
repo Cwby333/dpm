@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	Postgres `yaml:"postgres"`
-	JWT `yaml:"jwt"`
+	JWT      `yaml:"jwt"`
 }
 
 type Postgres struct {
