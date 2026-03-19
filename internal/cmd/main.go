@@ -50,7 +50,7 @@ func main() {
 		Email:    "email@gmail.com",
 	}
 
-	uService := services.NewUser(&pg, cfg.JWT.Key)
+	uService := services.NewUser(pg, cfg.JWT.Key)
 
 	err = uService.RegisterUser(context.Background(), u)
 
@@ -65,9 +65,11 @@ func main() {
 	// }
 	// slog.Info(token)
 
-	mService := services.NewMusicService(&pg)
+	mService := services.NewMusicService(pg)
 
-	handler := http.NewHandler(uService, mService)
+	lhService := services.NewListeningHistoryService(pg)
+
+	handler := http.NewHandler(uService, mService, lhService)
 
 	server := http.NewServer(handler)
 

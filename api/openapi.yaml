@@ -10,6 +10,97 @@ info:
 #   - url: "https://music-microservice.mute-project/api/v1"
 #     description: "Base url"
 paths:
+  /listening-history/{userID}:
+    description: "Actions with user's listening history"
+    get:
+      description: "Get listening history"
+      operationId: "getLH"
+      parameters:
+        - name: userID
+          in: path
+          required: true
+          allowEmptyValue: false
+          deprecated: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: "Success"
+          $ref: "#/components/responses/GetListeningHistory"
+        500:
+          description: "Server error"
+          content:
+            application/json:
+              schema:
+                type: string
+    delete:
+      description: "Delete listening from listening history"
+      operationId: "deleteListeningFromLH"
+      parameters:
+        - name: userID
+          in: path
+          required: true
+          allowEmptyValue: false
+          deprecated: false
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - music_id
+              properties:
+                music_id:
+                  type: string
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: string
+        500:
+          description: "Server error"
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      description: "Add music in listening history"
+      operationId: "addListeningToLH"
+      parameters:
+        - name: userID
+          in: path
+          required: true
+          allowEmptyValue: false
+          deprecated: false
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - musicID
+              properties:
+                musicID:
+                  type: string
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: string
+        500:
+          description: "Server error"
+          content:
+            application/json:
+              schema:
+                type: string
   /music:
     summary: "Act with music"
     get:
@@ -52,7 +143,6 @@ paths:
                 properties:
                   message:
                     type: string
-
   /register:
     summary: "Register in webapp"
     post:
@@ -79,7 +169,6 @@ paths:
                 properties:
                   message:
                     type: string
-
   /login:
     summary: 'Login in webapp'
     post:
@@ -90,6 +179,11 @@ paths:
       responses:
         200:
           description: 'Success'
+          headers:
+            Access-Token:
+              $ref: "#/components/headers/AccessToken"
+            Refresh-Token:
+              $ref: "#/components/headers/RefreshToken"
           content:
             application/json:
               schema:
@@ -254,6 +348,14 @@ paths:
 
 components:
   responses:
+    GetListeningHistory:
+      description: "Get listening history"
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/ListeningHistoryResponse"
     GetMusic:
       description: "Get all music"
       content:
@@ -279,6 +381,10 @@ components:
                 type: integer
               duration_seconds:
                 type: integer
+              music_cover:
+                type: string
+              song_url:
+                type: string
   requestBodies:
     Register:
       description: 'Req body for /register'
@@ -385,8 +491,42 @@ components:
 #                 type: string
 #               author_cover_url:
 #                 type: string
+  headers:
+    AccessToken:
+      content:
+        application/json:
+          schema:
+            type: string
+    RefreshToken:
+      content:
+        application/json:
+          schema:
+            type: string
 
   schemas:
+    ListeningHistoryResponse:
+      type: object
+      properties:
+        music_id:
+          type: string
+        music_name:
+          type: string
+        music_cover:
+          type: string
+        music_likes:
+          type: integer
+        music_duration:
+          type: integer
+        song_url:
+          type: string
+        uploader_id:
+          type: string
+        uploader_username:
+          type: string
+        listening_date:
+          type: string
+          format: date-time
+
     Music:
       type: object
       properties:
@@ -400,9 +540,15 @@ components:
           type: integer
         duration_seconds:
           type: integer
+        music_cover:
+          type: string
+        song_url:
+          type: string
       required:
         - id
         - name
         - uploader_id
         - likes
         - duration_seconds
+        - cover
+        - song_url

@@ -9,27 +9,48 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"dpm/internal/models"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/oapi-codegen/runtime"
 	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
 )
 
+// ListeningHistoryResponse defines model for ListeningHistoryResponse.
+type ListeningHistoryResponse struct {
+	ListeningDate    *time.Time `json:"listening_date,omitempty"`
+	MusicCover       *string    `json:"music_cover,omitempty"`
+	MusicDuration    *int       `json:"music_duration,omitempty"`
+	MusicId          *string    `json:"music_id,omitempty"`
+	MusicLikes       *int       `json:"music_likes,omitempty"`
+	MusicName        *string    `json:"music_name,omitempty"`
+	SongUrl          *string    `json:"song_url,omitempty"`
+	UploaderId       *string    `json:"uploader_id,omitempty"`
+	UploaderUsername *string    `json:"uploader_username,omitempty"`
+}
+
 // Music defines model for Music.
 type Music struct {
-	DurationSeconds int    `json:"duration_seconds"`
-	Id              string `json:"id"`
-	Likes           int    `json:"likes"`
-	Name            string `json:"name"`
-	UploaderId      string `json:"uploader_id"`
+	DurationSeconds int     `json:"duration_seconds"`
+	Id              string  `json:"id"`
+	Likes           int     `json:"likes"`
+	MusicCover      *string `json:"music_cover,omitempty"`
+	Name            string  `json:"name"`
+	SongUrl         string  `json:"song_url"`
+	UploaderId      string  `json:"uploader_id"`
 }
+
+// GetListeningHistory defines model for GetListeningHistory.
+type GetListeningHistory = []ListeningHistoryResponse
 
 // GetMusic defines model for GetMusic.
 type GetMusic = []Music
@@ -39,7 +60,9 @@ type GetMusicResponse struct {
 	DurationSeconds *int    `json:"duration_seconds,omitempty"`
 	Id              *string `json:"id,omitempty"`
 	Likes           *int    `json:"likes,omitempty"`
+	MusicCover      *string `json:"music_cover,omitempty"`
 	Name            *string `json:"name,omitempty"`
+	SongUrl         *string `json:"song_url,omitempty"`
 	UploaderId      *string `json:"uploader_id,omitempty"`
 }
 
@@ -56,6 +79,16 @@ type Register struct {
 	Username *string `json:"username,omitempty"`
 }
 
+// DeleteListeningFromLHJSONBody defines parameters for DeleteListeningFromLH.
+type DeleteListeningFromLHJSONBody struct {
+	MusicId string `json:"music_id"`
+}
+
+// AddListeningToLHJSONBody defines parameters for AddListeningToLH.
+type AddListeningToLHJSONBody struct {
+	MusicID string `json:"musicID"`
+}
+
 // LoginJSONBody defines parameters for Login.
 type LoginJSONBody struct {
 	Password *string `json:"password,omitempty"`
@@ -69,6 +102,12 @@ type RegisterJSONBody struct {
 	Username *string `json:"username,omitempty"`
 }
 
+// DeleteListeningFromLHJSONRequestBody defines body for DeleteListeningFromLH for application/json ContentType.
+type DeleteListeningFromLHJSONRequestBody DeleteListeningFromLHJSONBody
+
+// AddListeningToLHJSONRequestBody defines body for AddListeningToLH for application/json ContentType.
+type AddListeningToLHJSONRequestBody AddListeningToLHJSONBody
+
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody LoginJSONBody
 
@@ -77,6 +116,15 @@ type RegisterJSONRequestBody RegisterJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+
+	// (DELETE /listening-history/{userID})
+	DeleteListeningFromLH(w http.ResponseWriter, r *http.Request, userID string)
+
+	// (GET /listening-history/{userID})
+	GetLH(w http.ResponseWriter, r *http.Request, userID string)
+
+	// (POST /listening-history/{userID})
+	AddListeningToLH(w http.ResponseWriter, r *http.Request, userID string)
 
 	// (POST /login)
 	Login(w http.ResponseWriter, r *http.Request)
@@ -102,6 +150,81 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// DeleteListeningFromLH operation middleware
+func (siw *ServerInterfaceWrapper) DeleteListeningFromLH(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "userID" -------------
+	var userID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userID", r.PathValue("userID"), &userID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteListeningFromLH(w, r, userID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetLH operation middleware
+func (siw *ServerInterfaceWrapper) GetLH(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "userID" -------------
+	var userID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userID", r.PathValue("userID"), &userID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetLH(w, r, userID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddListeningToLH operation middleware
+func (siw *ServerInterfaceWrapper) AddListeningToLH(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "userID" -------------
+	var userID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userID", r.PathValue("userID"), &userID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddListeningToLH(w, r, userID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // Login operation middleware
 func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
@@ -304,6 +427,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc("DELETE "+options.BaseURL+"/listening-history/{userID}", wrapper.DeleteListeningFromLH)
+	m.HandleFunc("GET "+options.BaseURL+"/listening-history/{userID}", wrapper.GetLH)
+	m.HandleFunc("POST "+options.BaseURL+"/listening-history/{userID}", wrapper.AddListeningToLH)
 	m.HandleFunc("POST "+options.BaseURL+"/login", wrapper.Login)
 	m.HandleFunc("GET "+options.BaseURL+"/music", wrapper.GetAllMusic)
 	m.HandleFunc("GET "+options.BaseURL+"/music/{musicID}", wrapper.GetMusic)
@@ -313,14 +439,100 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	return m
 }
 
+type GetListeningHistoryJSONResponse []ListeningHistoryResponse
+
 type GetMusicJSONResponse []Music
 
 type GetMusicResponseJSONResponse struct {
 	DurationSeconds *int    `json:"duration_seconds,omitempty"`
 	Id              *string `json:"id,omitempty"`
 	Likes           *int    `json:"likes,omitempty"`
+	MusicCover      *string `json:"music_cover,omitempty"`
 	Name            *string `json:"name,omitempty"`
+	SongUrl         *string `json:"song_url,omitempty"`
 	UploaderId      *string `json:"uploader_id,omitempty"`
+}
+
+type DeleteListeningFromLHRequestObject struct {
+	UserID string `json:"userID"`
+	Body   *DeleteListeningFromLHJSONRequestBody
+}
+
+type DeleteListeningFromLHResponseObject interface {
+	VisitDeleteListeningFromLHResponse(w http.ResponseWriter) error
+}
+
+type DeleteListeningFromLH200JSONResponse string
+
+func (response DeleteListeningFromLH200JSONResponse) VisitDeleteListeningFromLHResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteListeningFromLH500JSONResponse string
+
+func (response DeleteListeningFromLH500JSONResponse) VisitDeleteListeningFromLHResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetLHRequestObject struct {
+	UserID string `json:"userID"`
+}
+
+type GetLHResponseObject interface {
+	VisitGetLHResponse(w http.ResponseWriter) error
+}
+
+type GetLH200JSONResponse struct {
+	GetListeningHistoryJSONResponse
+}
+
+func (response GetLH200JSONResponse) VisitGetLHResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetLH500JSONResponse string
+
+func (response GetLH500JSONResponse) VisitGetLHResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AddListeningToLHRequestObject struct {
+	UserID string `json:"userID"`
+	Body   *AddListeningToLHJSONRequestBody
+}
+
+type AddListeningToLHResponseObject interface {
+	VisitAddListeningToLHResponse(w http.ResponseWriter) error
+}
+
+type AddListeningToLH200JSONResponse string
+
+func (response AddListeningToLH200JSONResponse) VisitAddListeningToLHResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AddListeningToLH500JSONResponse string
+
+func (response AddListeningToLH500JSONResponse) VisitAddListeningToLHResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
 }
 
 type LoginRequestObject struct {
@@ -331,17 +543,49 @@ type LoginResponseObject interface {
 	VisitLoginResponse(w http.ResponseWriter) error
 }
 
+type Login200ResponseHeaders struct {
+	AccessToken  interface{}
+	RefreshToken interface{}
+}
+
 type Login200JSONResponse struct {
-	Message *string `json:"message,omitempty"`
+	Body struct {
+		Message *string `json:"message,omitempty"`
+	}
+	Headers Login200ResponseHeaders
 }
 
 func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	access, ok := response.Headers.AccessToken.(models.JWTAccess)
+	if !ok {
+		slog.Error("not access")
+	}
+	refresh, ok := response.Headers.RefreshToken.(models.JWTRefresh)
+	if !ok {
+		slog.Error("not refresh")
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name: "Access-Token",
+		Value: access.Sign,
+		Expires: time.Now().Add(time.Hour * 12),
+		Secure: true,
+		HttpOnly: true,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name: "Refresh-Token",
+		Value: refresh.Sign,
+		Expires: time.Now().Add(time.Hour * 48),
+		Secure: true,
+		HttpOnly: true,
+		Path: "/refresh",
+	})
+
 	w.WriteHeader(200)
 
-	return json.NewEncoder(w).Encode(response)
+	return nil
 }
-
 type Login500JSONResponse struct {
 	Message *string `json:"message,omitempty"`
 }
@@ -464,6 +708,15 @@ func (response Register500JSONResponse) VisitRegisterResponse(w http.ResponseWri
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
+	// (DELETE /listening-history/{userID})
+	DeleteListeningFromLH(ctx context.Context, request DeleteListeningFromLHRequestObject) (DeleteListeningFromLHResponseObject, error)
+
+	// (GET /listening-history/{userID})
+	GetLH(ctx context.Context, request GetLHRequestObject) (GetLHResponseObject, error)
+
+	// (POST /listening-history/{userID})
+	AddListeningToLH(ctx context.Context, request AddListeningToLHRequestObject) (AddListeningToLHResponseObject, error)
+
 	// (POST /login)
 	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
 	// Get all music
@@ -507,6 +760,98 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// DeleteListeningFromLH operation middleware
+func (sh *strictHandler) DeleteListeningFromLH(w http.ResponseWriter, r *http.Request, userID string) {
+	var request DeleteListeningFromLHRequestObject
+
+	request.UserID = userID
+
+	var body DeleteListeningFromLHJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteListeningFromLH(ctx, request.(DeleteListeningFromLHRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteListeningFromLH")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteListeningFromLHResponseObject); ok {
+		if err := validResponse.VisitDeleteListeningFromLHResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetLH operation middleware
+func (sh *strictHandler) GetLH(w http.ResponseWriter, r *http.Request, userID string) {
+	var request GetLHRequestObject
+
+	request.UserID = userID
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetLH(ctx, request.(GetLHRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetLH")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLHResponseObject); ok {
+		if err := validResponse.VisitGetLHResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddListeningToLH operation middleware
+func (sh *strictHandler) AddListeningToLH(w http.ResponseWriter, r *http.Request, userID string) {
+	var request AddListeningToLHRequestObject
+
+	request.UserID = userID
+
+	var body AddListeningToLHJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddListeningToLH(ctx, request.(AddListeningToLHRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddListeningToLH")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddListeningToLHResponseObject); ok {
+		if err := validResponse.VisitAddListeningToLHResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // Login operation middleware
@@ -648,20 +993,25 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xWS2/jNhD+KwTbo2B5W/SiU92mcA3sokGanhaLBU1NJG7ER4ajBIah/16QeliKlaS2",
-	"UTSHnsJ4Hvzmm5mP2nNptbMGDHme7TnCQw2efrG5gvjDR1soEw7SGgJD4Sicq5QUpKxJv3kbzV6WoEU4",
-	"ObQOkLp4J7x/spiHM+0c8Ix7QmUK3iS89oBGaJgxNknEohBynn0ePNmQ70vSh9jtN5DEmxCTg5eoXIDG",
-	"M34DD2xr8x27s8jSKpbSJPwGCuUJ8IKyQAtVzdb0bxXM2itPLxv7atsrvLPGt0WsgT7VXsmTeFAEOkZ/",
-	"j3DHM/5depigtHXzaZu2GbAKRLGbg7oGYqKqmO4Dekw3HdALepTXGB2/epDW5H5EujIERaAk4Wq+U5W6",
-	"hxciXmhgwmtXWZEDfp3N2fyDzv0RLYxKQexJVRXbAkOgGg3kbLtjqUOb15LSfXfYXDVs/dstC3XHYuM9",
-	"XRsCiKHB752b8fCrnHeppoH91ckx/vm9UObO9hMkJI02l+uawKENvj8X4beFtLq/NuOfagLW2flRnyKr",
-	"TCuJ1gM+Kgns99vba7a63sSlm0QnnBRVMBvGE/4I6NusHxbLxTJcZh0Y4RTP+I+L5eIDD6pCZaS8U7HQ",
-	"UOtjQVNkf3lAFkysVJ4NKiJMflCS8E8BxMjeg4l4RU0lGOo2i0cELcGbnGfdI5CMXofdSwoweUDSj73k",
-	"TnTnh+XygrXW4L0o4MwN+7OWErwPmH76L2EAPgIyQLTY2n2ttcBdzzZThj3BVjgXoKa6X+MCItJpf9ZA",
-	"q6pqV32e6/lWdX7p8BCcwcrz4t8qdVzpkfofTCsZFJDKg63lIN3HP5urZsTG8ZsSnYJibq6OpnmoNqwV",
-	"Cg0E6Hn2+XmeNkdMEDYu7uBBIDoYfKxchDUkr3Dz5ZLmDC/iOx7dlQxObeOsgVHzXMj/yvxeB/uFOvH2",
-	"KJ6//KeO+YSWX0uQ96wEUVHJeuUPrODoS/QUPU/ar8FkqunCOdZnZKXSQUP8zhPoox0YPoHPEPUh9n9d",
-	"P2kKet7G0t40fwcAAP//zmDX+YINAAA=",
+	"H4sIAAAAAAAC/9xYzW7jNhB+FYIt0ItieVvsxae6dZsYyKJB6p4WC4OWxhI3EsklRwkMQ+9ekJRk2WK8",
+	"zm/T3GQPOZyfj9/McEsTWSopQKChky3NgaWg3ec0ScCYhbwBYX8mUiAItJ9MqYInDLkU8VcjndgkOZTM",
+	"fuFGAZ1Qg5qLjNZ1XUf0GtYaTP4cyuqIavhWgcHfZMrBmXopM/4wvUpLBRqb/YoZcyd1GjgxopUBLVgJ",
+	"IXO8LVxDSiefu5Wk0/clarfI1VdIkDr7UzCJ5sqaRif0Gr6RlUw3ZC01iQvnigtZxg2CfoJbUDJeBH16",
+	"KYeJP/LhbuvWW3+EUVIY78Q54KUVCS6yC25Q6s2DQsIRSqfoRw1rOqE/xDvEx36ZiQ9PuG4ssOFoPGFa",
+	"s03IkXNAUrT7Sd6YWEdW8KkyPHl+c73aE21jRUHKdkNrU+fg49GVVtotXBpIpEhNDy5cIGQ2mRHlYYwV",
+	"/Abu2eFsXSby1mN/sPUeaEbUSJEtKx1GfKUKaaltGTSoPgGwfzkJwZwhueNFQVZANGClBaRktSGx0jKt",
+	"Eoy3zcd8VpPzPxbEBs1Fyp3T5NDR1n2oG8S6w9cyZejka6lLhnRC7R9nyEug0dDr78XSy9tMHsvHPXn0",
+	"wu9m8yVy1pMfZ6yDzEa0u5XvGtB9ouYpbc7Z39jaHQ2dj6i3uGdGmNa5WMuWRliCvcJDywpBaWnX/prZ",
+	"/0aJLFtLJvRThUAaOR3cN5clUvJESwP6lidALhaLKzK9mruasbc7osixgOA2GtFb0MZr/TAaj8b2MKlA",
+	"MMXphP4yGo8+UFsUMXcpjLvrdtbQeby1EJvPaocTKMBfwn2DZ+7/Xi1Ya1kGSoM720d7nnb7OjL4U8vy",
+	"8sLZo1kJ6Nqxz1tqOxxn4y6A3ijazzXqCqIjDdSXfvu0eQL9H6GFA/B1K0P4OSz3P4/HT2sQD2H0d+X6",
+	"WJvyj8+uG/QtaAJaSx2STxP7Ycgdx5zYZP1kgnjIAIdwCvcVh+Cx7dHLgmWYnFBr0q2LQw3b6wRfSROI",
+	"4zRNff9DuDghoNM07cxfyP/LRZzPTryH89n7v4Z1RJs5ygYrCIp/DGhiRRYHpJtjmEh3s4z9kQEStFOr",
+	"KzmswhwENqYOoOPH0EFew9elN8LGl+3Q96QcHMACjGEZPLLZbdMVDV8EzropPuRYszzuvx7sHgBO27v3",
+	"WuCM+/hfhmLAM6YqS2bHUJ9xyyt3sGJKWU/jsu0uG1Yf8PW0KHwH+kh27aa/l75IfU8Hk+RONE3QV7hO",
+	"5mMQbxvGqXvRGNY4z82rDXEEOohWG6oDEt7X43U4BQF2bonvNUrf/nT9hqHrexOfOCmglzxl9R/B75WV",
+	"v6+2bReW33NIbkgOrMCctAOEjYruvcc9pKZE/k0s2q8rTCnSaiQ5Ly2HmI1BKAd3oHsIfERh6fa+xdry",
+	"hi9HG7c+tdf1vwEAAP//L9MaUS0XAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

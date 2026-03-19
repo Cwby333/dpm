@@ -48,23 +48,23 @@ func (us *UserService) RegisterUser(ctx context.Context, u models.User) error {
 	return nil
 }
 
-func (us *UserService) Login(ctx context.Context, u models.User) (string, error) {
+func (us *UserService) Login(ctx context.Context, u models.User) (models.JWTAccess, models.JWTRefresh, error) {
 	const op = "./internal/services/user.go.Login()"
 
 	hashPsw, err := us.Pg.ReadPsw(ctx, u)
 	if err != nil {
-		return "", fmt.Errorf("%s: %w", op, err)
+		return models.JWTAccess{}, models.JWTRefresh{}, fmt.Errorf("%s: %w", op, err)
 	}
 
 	slog.Info(u.HashPsw, hashPsw)
 	err = bcrypt.CompareHashAndPassword([]byte(hashPsw), []byte(u.HashPsw))
 	if err != nil {
-		return "", fmt.Errorf("%s CompareHash: %w", op, err)
+		return models.JWTAccess{}, models.JWTRefresh{}, fmt.Errorf("%s CompareHash: %w", op, err)
 	}
 
 	access, refresh, err := us.createTokens(ctx, u)
 	slog.Info(fmt.Sprint("access token " + access.Sign))
 	slog.Info(fmt.Sprint("access refresh " + refresh.Sign))
 
-	return access.Sign, nil
+	return access, refresh, nil
 }

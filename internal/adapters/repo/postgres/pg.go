@@ -54,7 +54,7 @@ func NewPgCfg(user string, host string, port int32, password string, dbName stri
 	return pgcfg
 }
 
-func New(ctx context.Context, cfg PgConfig, funcs []WithFunc) (Postgres, error) {
+func New(ctx context.Context, cfg PgConfig, funcs []WithFunc) (*Postgres, error) {
 	const op = "./internal/adapters/postgres/init.go"
 
 	for i := range funcs {
@@ -74,22 +74,22 @@ func New(ctx context.Context, cfg PgConfig, funcs []WithFunc) (Postgres, error) 
 
 	poolCfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return Postgres{}, fmt.Errorf("%s: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	pgxpool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
-		return Postgres{}, fmt.Errorf("%s: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	err = pgxpool.Ping(ctx)
 	if err != nil {
-		return Postgres{}, fmt.Errorf("%s: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	slog.Info("success connect postgres")
 
-	return Postgres{
+	return &Postgres{
 		pool: pgxpool,
 	}, nil
 }

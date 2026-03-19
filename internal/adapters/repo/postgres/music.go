@@ -5,6 +5,7 @@ import (
 	"dpm/internal/models"
 	"errors"
 	"fmt"
+
 	// "log/slog"
 
 	"github.com/jackc/pgx/v5"
@@ -16,15 +17,28 @@ type Music struct {
 	UploaderID      string `db:"uploader_id"`
 	Likes           int    `db:"likes"`
 	DurationSeconds int    `db:"duration_seconds"`
+	Cover *string `db:"music_cover"`
+	SongURL *string `db:"song_url"`
 }
 
 func MusicPgToMusic(pdb Music) models.Music {
+	if pdb.Cover == nil {
+		s := ""
+		pdb.Cover = &s
+	}
+	if pdb.SongURL == nil {
+		s := ""
+		pdb.SongURL = &s
+	}
+
 	p := models.Music{
 		ID:          pdb.ID,
 		Name:        pdb.Name,
 		Likes:       pdb.Likes,
 		DurationSec: pdb.DurationSeconds,
 		UploaderID:  pdb.UploaderID,
+		CoverURL: *pdb.Cover,
+		SongURL: *pdb.SongURL,
 	}
 
 	return p
@@ -33,8 +47,8 @@ func MusicPgToMusic(pdb Music) models.Music {
 func (p *Postgres) CreateMusic(ctx context.Context, product models.Music) error {
 	const op = "./internal/adapters/repo/postgres/music.go.CreateMusic()"
 
-	q := "INSERT INTO music(name, uploader_id, likes, duration_seconds) VALUES ($1, $2, $3, $4)"
-	rows, err := p.pool.Query(ctx, q, product.Name, product.UploaderID, product.Likes, product.DurationSec)
+	q := "INSERT INTO music(name, uploader_id, likes, duration_seconds, music_cover, song_url) VALUES ($1, $2, $3, $4, $5, $6)"
+	rows, err := p.pool.Query(ctx, q, product.Name, product.UploaderID, product.Likes, product.DurationSec, product.CoverURL, product.SongURL)
 	if err != nil {
 		return fmt.Errorf("%s INSERT INTO music(): %w", op, err)
 	}
@@ -46,7 +60,7 @@ func (p *Postgres) CreateMusic(ctx context.Context, product models.Music) error 
 func (p *Postgres) GetMusic(ctx context.Context, id string) (models.Music, error) {
 	const op = "./internal/adapters/repo/postgres/music.go.GetMusic()"
 
-	q := "SELECT id, uploader_id, name, likes, duration_seconds FROM music WHERE id = $1"
+	q := "SELECT id, uploader_id, name, likes, duration_seconds, music_cover, song_url FROM music WHERE id = $1"
 	rows, err := p.pool.Query(ctx, q, id)
 	if err != nil {
 		return models.Music{}, fmt.Errorf("%s SELECT ... FROM products(): %w", op, err)
@@ -67,7 +81,7 @@ func (p *Postgres) GetMusic(ctx context.Context, id string) (models.Music, error
 func (p *Postgres) GetAllMusic(ctx context.Context) ([]models.Music, error) {
 	const op = "./internal/adapters/repo/postgres/music.go.GetAllMusic()"
 
-	q := "SELECT id, name, uploader_id, likes, duration_seconds FROM music"
+	q := "SELECT id, name, uploader_id, likes, duration_seconds, music_cover, song_url FROM music"
 	rows, err := p.pool.Query(ctx, q)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
