@@ -216,6 +216,7 @@ func (h Handler) AddListeningToLH(ctx context.Context, request api.AddListeningT
 		UserID: request.UserID,
 		MusicID: request.Body.MusicID,
 	}
+	slog.Info(fmt.Sprintf("%+v", lhi))
 	err := h.lhService.CreateListeningHistoryItem(ctx, lhi)
 	if err != nil {
 		return api.AddListeningToLH500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
@@ -280,6 +281,7 @@ func (h Handler) AddFavor(ctx context.Context, request api.AddFavorRequestObject
 		UserID: request.UserID,
 		MusicID: request.Body.MusicID,
 	}
+	slog.Info(fmt.Sprintf("%+v", f))
 	err := h.fService.CreateFavor(ctx, f)
 	if err != nil {
 		return api.AddFavor500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
@@ -294,8 +296,10 @@ func (h Handler) GetFavor(ctx context.Context, request api.GetFavorRequestObject
 	f := models.ListeningHistory{
 		UserID: request.UserID,
 	}
+	slog.Info(fmt.Sprintf("%+v", f))
 	favor, err := h.fService.ReadFavor(ctx, f)
 	if err != nil {
+		slog.Info(err.Error())
 		return api.GetFavor500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
 	}
 

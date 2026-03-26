@@ -5,7 +5,6 @@ import (
 	"dpm/internal/models"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -19,10 +18,9 @@ type FavorResponseDB struct {
 	UserUsername string `db:"username"`
 	MusicLikes int `db:"likes"`
 	MusicDurationSeconds int `db:"dur_sec"`
-	ListeningDate time.Time `db:"lis_date"`
 }
 
-func FavorDBToModel(lhdb ListeningHistoryResponseDB) models.ListeningHistoryResponse {
+func FavorDBToModel(lhdb FavorResponseDB) models.ListeningHistoryResponse {
 	if lhdb.MusicCover == nil {
 		s := ""
 		lhdb.MusicCover = &s
@@ -41,12 +39,11 @@ func FavorDBToModel(lhdb ListeningHistoryResponseDB) models.ListeningHistoryResp
 		UserUsername: lhdb.UserUsername,
 		MusicLikes: lhdb.MusicLikes,
 		MusicDurationSeconds: lhdb.MusicDurationSeconds,
-		ListeningDate: lhdb.ListeningDate,
 	}
 }
 
 func (p *Postgres) CreateFavor(ctx context.Context, listeningHistoryItem models.ListeningHistory) error {
-	const op = "./internal/adapters/repo/postgres/listeningHistory.go.CreateListeningHistoryItem()"
+	const op = "./internal/adapters/repo/postgres/favor.go.CreateFavor()"
 
 	q := "INSERT INTO favor(user_id, music_id) VALUES ($1, $2)"
 	tag, err := p.pool.Exec(ctx, q, listeningHistoryItem.UserID, listeningHistoryItem.MusicID)
@@ -62,7 +59,7 @@ func (p *Postgres) CreateFavor(ctx context.Context, listeningHistoryItem models.
 }
 
 func (p *Postgres) DeleteFavor(ctx context.Context, lhi models.ListeningHistory) error {
-	const op = "./internal/adapters/repo/postgres/listeningHistory.go.DeleteListeningHistoryItem()"
+	const op = "./internal/adapters/repo/postgres/favor.go.DeleteFavor()"
 
 	q := "DELETE FROM favor WHERE user_id = $1 AND music_id = $2"
 	tag, err := p.pool.Exec(ctx, q, lhi.UserID, lhi.MusicID)
@@ -78,7 +75,7 @@ func (p *Postgres) DeleteFavor(ctx context.Context, lhi models.ListeningHistory)
 }
 
 func (p *Postgres) ReadFavor(ctx context.Context, lhi models.ListeningHistory) ([]models.ListeningHistoryResponse, error) {
-	const op = "./internal/adapters/repo/postgres/listeningHistory.go.ReadListeningHistory()"
+	const op = "./internal/adapters/repo/postgres/favor.go.ReadFavor()"
 
 	q := "SELECT m.id AS music_id, m.name AS music_name, m.music_cover AS music_cover, m.song_url AS song_url, m.uploader_id AS uploader_id, u.username AS username, m.likes AS likes, m.duration_seconds AS dur_sec FROM music m JOIN favor lh ON m.id = lh.music_id JOIN users u ON u.id = lh.user_id WHERE lh.user_id = $1"
 	rows, err := p.pool.Query(ctx, q, lhi.UserID)
@@ -86,7 +83,7 @@ func (p *Postgres) ReadFavor(ctx context.Context, lhi models.ListeningHistory) (
 		return nil, fmt.Errorf("%s: Query: %w", op, err)
 	}
 
-	slice, err := pgx.CollectRows(rows, pgx.RowToStructByName[ListeningHistoryResponseDB])
+	slice, err := pgx.CollectRows(rows, pgx.RowToStructByName[FavorResponseDB])
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -94,7 +91,7 @@ func (p *Postgres) ReadFavor(ctx context.Context, lhi models.ListeningHistory) (
 	lhr := make([]models.ListeningHistoryResponse, 0, len(slice))
 
 	for i := range slice {
-		lhr = append(lhr, ListeningHistoryDBToModel(slice[i]))
+		lhr = append(lhr, FavorDBToModel(slice[i]))
 	}
 
 	return lhr, nil
