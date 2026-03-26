@@ -69,7 +69,9 @@ func main() {
 
 	lhService := services.NewListeningHistoryService(pg)
 
-	handler := http.NewHandler(uService, mService, lhService)
+	fService := services.NewFavorService(pg)
+
+	handler := http.NewHandler(uService, mService, lhService, fService)
 
 	server := http.NewServer(handler)
 

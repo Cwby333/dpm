@@ -10,6 +10,98 @@ info:
 #   - url: "https://music-microservice.mute-project/api/v1"
 #     description: "Base url"
 paths:
+  /favor/{userID}:
+    description: "Actions with user's favor"
+    get:
+      description: "Get user's favor"
+      operationId: "getFavor"
+      parameters:
+        - name: userID
+          in: path
+          required: true
+          allowEmptyValue: false
+          deprecated: false
+          schema:
+            type: string
+      responses:
+        200:
+          description: "Success"
+          $ref: "#/components/responses/GetMusic"
+        500:
+          description: "Server error"
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      description: "Add music to user's favor"
+      operationId: "addFavor"
+      parameters:
+        - name: userID
+          in: path
+          required: true
+          allowEmptyValue: false
+          deprecated: false
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - musicID
+              properties:
+                musicID:
+                  type: string
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: string
+        500:
+          description: "Server error"
+          content:
+            application/json:
+              schema:
+                type: string
+    delete:
+      description: "Delete music to user's favor"
+      operationId: "deleteFavor"
+      parameters:
+        - name: userID
+          in: path
+          required: true
+          allowEmptyValue: false
+          deprecated: false
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - musicID
+              properties:
+                musicID:
+                  type: string
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: string
+        500:
+          description: "Server error"
+          content:
+            application/json:
+              schema:
+                type: string
+
   /listening-history/{userID}:
     description: "Actions with user's listening history"
     get:

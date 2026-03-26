@@ -15,14 +15,16 @@ type Handler struct {
 	uServices *services.UserService
 	mService  *services.MusicService
 	lhService *services.ListeningHistoryService
+	fService *services.FavorService
 }
 
-func NewHandler(uService *services.UserService, mService *services.MusicService, lhService *services.ListeningHistoryService) Handler {
+func NewHandler(uService *services.UserService, mService *services.MusicService, lhService *services.ListeningHistoryService, fService *services.FavorService) Handler {
 	return Handler{
 		Mux:       http.NewServeMux(),
 		uServices: uService,
 		mService:  mService,
 		lhService: lhService,
+		fService: fService,
 	}
 }
 
@@ -50,6 +52,27 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	h.Mux.Handle("POST /listening-history/{userID}", corsMiddleware(wrapAddLToLH(strict)))
 	h.Mux.Handle("DELETE /listening-history/{userID}", corsMiddleware(wrapDeleteLFromLH(strict)))
 	h.Mux.Handle("GET /listening-history/{userID}", corsMiddleware(wrapGetLH(strict)))
+	h.Mux.Handle("POST /favor/{userID}", corsMiddleware(wrapCreateFavor(strict)))
+	h.Mux.Handle("GET /favor/{userID}", corsMiddleware(wrapGetFavor(strict)))
+	h.Mux.Handle("DELETE /favor/{userID}", corsMiddleware(wrapDeleteFavor(strict)))
+}
+
+func wrapDeleteFavor(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		strict.DeleteFavor(w, r, r.PathValue("userID"))
+	}
+}
+
+func wrapGetFavor(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		strict.GetFavor(w, r, r.PathValue("userID"))	
+	}
+}
+
+func wrapCreateFavor(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		strict.AddFavor(w, r, r.PathValue("userID"))
+	}
 }
 
 func wrapGetLH(strict api.ServerInterface) http.HandlerFunc {
@@ -248,4 +271,63 @@ func (h Handler) DeleteListeningFromLH(ctx context.Context, request api.DeleteLi
 	}
 
 	return api.DeleteListeningFromLH200JSONResponse("Success"), nil
+}
+
+func (h Handler) AddFavor(ctx context.Context, request api.AddFavorRequestObject) (api.AddFavorResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.AddFavor()"
+
+	f := models.ListeningHistory{
+		UserID: request.UserID,
+		MusicID: request.Body.MusicID,
+	}
+	err := h.fService.CreateFavor(ctx, f)
+	if err != nil {
+		return api.AddFavor500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	}
+
+	return api.AddFavor200JSONResponse("Success"), nil
+}
+
+func (h Handler) GetFavor(ctx context.Context, request api.GetFavorRequestObject) (api.GetFavorResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetFavor()"
+
+	f := models.ListeningHistory{
+		UserID: request.UserID,
+	}
+	favor, err := h.fService.ReadFavor(ctx, f)
+	if err != nil {
+		return api.GetFavor500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	}
+
+	fAPI := make([]api.Music, 0, len(favor))
+	
+	for i := range favor {
+		fAPI = append(fAPI, api.Music{
+			Id: favor[i].MusicID,
+			Name: favor[i].MusicName,
+			MusicCover: &favor[i].MusicCover,
+			SongUrl: favor[i].MusicSongURL,
+			UploaderId: favor[i].MusicUploaderID,
+			Likes: favor[i].MusicLikes,
+		})
+	}
+
+	return api.GetFavor200JSONResponse{
+		GetMusicJSONResponse: fAPI,
+	}, nil
+}
+
+func (h Handler) DeleteFavor(ctx context.Context, request api.DeleteFavorRequestObject) (api.DeleteFavorResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.DeleteFavor()"
+
+	lhi := models.ListeningHistory{
+		UserID: request.UserID,
+		MusicID: request.Body.MusicID,
+	}
+	err := h.fService.DeleteFavor(ctx, lhi)
+	if err != nil {
+		return api.DeleteFavor500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	}
+
+	return api.DeleteFavor200JSONResponse("Success"), nil
 }

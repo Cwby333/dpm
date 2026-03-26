@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mute - История прослушиваний</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #555;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+        }
+
+        .nav-links a:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .nav-links .active {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-outline {
+            border: 2px solid #667eea;
+            color: #667eea;
+            background: transparent;
+        }
+
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c53030;
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 80px auto 0;
+            padding: 2rem;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            color: white;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .user-id-section {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-id-section label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .user-id-section input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e1e1e1;
+            border-radius: 6px;
+            font-size: 1rem;
+            min-width: 250px;
+        }
+
+        .user-id-section input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .refresh-btn {
+            padding: 0.75rem 1.5rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #5a67d8;
+            transform: scale(1.02);
+        }
+
+        .loading-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .history-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .history-header {
+            display: grid;
+            grid-template-columns: 2.5fr 1.2fr 1fr 1fr 0.8fr 0.5fr;
+            background: #f8f9fa;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .history-item {
+            display: grid;
+            grid-template-columns: 2.5fr 1.2fr 1fr 1fr 0.8fr 0.5fr;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            transition: background 0.3s ease;
+        }
+
+        .history-item:hover {
+            background: #f8f9fa;
+        }
+
+        .history-item-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .history-item-image {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .history-item-image:hover {
+            transform: scale(1.05);
+        }
+
+        .history-item-details h4 {
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .history-item-details h4:hover {
+            color: #667eea;
+        }
+
+        .history-item-artist {
+            font-size: 0.8rem;
+            color: #667eea;
+        }
+
+        .history-item-date {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .history-item-duration {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .history-item-likes {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #e53e3e;
+            font-weight: 500;
+        }
+
+        .play-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #667eea;
+            transition: transform 0.3s ease;
+            padding: 0.5rem;
+            border-radius: 50%;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.1);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .remove-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #e53e3e;
+            transition: transform 0.3s ease;
+            padding: 0.5rem;
+            border-radius: 50%;
+        }
+
+        .remove-btn:hover {
+            transform: scale(1.1);
+            background: rgba(229, 62, 62, 0.1);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #48bb78;
+        }
+
+        .status-dot.error {
+            background: #f56565;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-state-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .error-container {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-container h3 {
+            color: #c53030;
+            margin-bottom: 0.5rem;
+        }
+
+        .error-container p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #48bb78;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 3000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.error {
+            background: #e53e3e;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .audio-player-modal {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1a1a2e;
+            color: white;
+            padding: 1rem 2rem;
+            z-index: 2000;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .audio-player-modal.active {
+            display: block;
+        }
+
+        .audio-player-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .audio-info {
+            flex: 1;
+        }
+
+        .audio-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .audio-artist {
+            font-size: 0.85rem;
+            color: #999;
+        }
+
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .close-player {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        audio {
+            width: 300px;
+        }
+
+        .footer {
+            background: #1a1a2e;
+            color: white;
+            padding: 3rem 2rem 1rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+        }
+
+        .footer-section h4 {
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-section a {
+            color: #999;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section a:hover {
+            color: #667eea;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 2rem auto 0;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .auth-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .user-id-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .history-header {
+                display: none;
+            }
+
+            .history-item {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+                padding: 1rem;
+            }
+
+            .history-item-info {
+                grid-column: 1;
+            }
+
+            .history-item-date, .history-item-duration, .history-item-likes, .history-item-actions {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding-left: 60px;
+            }
+
+            .history-item-date::before {
+                content: "Дата:";
+                font-weight: 600;
+                color: #555;
+            }
+
+            .history-item-duration::before {
+                content: "Длительность:";
+                font-weight: 600;
+                color: #555;
+            }
+
+            .history-item-likes::before {
+                content: "Лайки:";
+                font-weight: 600;
+                color: #555;
+            }
+
+            .history-item-actions {
+                justify-content: flex-end;
+                gap: 1rem;
+            }
+
+            .audio-player-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            audio {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">🎧</span>
+                <span class="logo-text">Mute</span>
+            </div>
+            <div class="nav-links">
+                <a href="/">Главная</a>
+                <a href="/products.html">Продукты</a>
+                <a href="/music.html">Музыка</a>
+                <a href="#" class="active">История прослушиваний</a>
+                <div class="auth-buttons">
+                    <a href="/login" class="btn btn-outline">Войти</a>
+                    <a href="/register" class="btn btn-primary">Регистрация</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>🎧 История прослушиваний</h1>
+        </div>
+
+        <div class="user-id-section">
+            <label>ID пользователя:</label>
+            <input type="text" id="userIdInput" placeholder="Введите ID пользователя">
+            <button class="refresh-btn" id="loadHistoryBtn">📋 Загрузить историю</button>
+        </div>
+
+        <div class="status-bar" id="statusBar">
+            <div class="status-info">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Введите ID пользователя и нажмите загрузить</span>
+            </div>
+            <span id="historyCount">0 треков</span>
+        </div>
+
+        <div class="loading-container" id="loadingContainer">
+            <div class="loading-spinner"></div>
+            <p>Загрузка истории прослушиваний...</p>
+        </div>
+
+        <div id="historyContainer"></div>
+    </div>
+
+    <!-- Аудиоплеер -->
+    <div class="audio-player-modal" id="audioPlayerModal">
+        <div class="audio-player-content">
+            <div class="audio-info">
+                <div class="audio-title" id="currentTrackTitle">Название трека</div>
+                <div class="audio-artist" id="currentTrackArtist">Исполнитель</div>
+            </div>
+            <div class="audio-controls">
+                <audio id="audioPlayer" controls>
+                    <source src="" type="audio/mpeg">
+                    Ваш браузер не поддерживает аудио элемент.
+                </audio>
+                <button class="close-player" onclick="closeAudioPlayer()">✕</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Mute</h4>
+                <p>Бесплатная музыка для всех</p>
+            </div>
+            <div class="footer-section">
+                <h4>Навигация</h4>
+                <ul>
+                    <li><a href="/">Главная</a></li>
+                    <li><a href="/products.html">Продукты</a></li>
+                    <li><a href="/music.html">Музыка</a></li>
+                    <li><a href="#">История прослушиваний</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Пользователям</h4>
+                <ul>
+                    <li><a href="/register">Регистрация</a></li>
+                    <li><a href="/login">Вход</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Mute. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <script>
+        let currentUserId = '';
+        let listeningHistory = [];
+        let currentPlaying = null;
+        const apiBaseUrl = 'http://localhost:3003';
+
+        const loadingContainer = document.getElementById('loadingContainer');
+        const historyContainer = document.getElementById('historyContainer');
+        const userIdInput = document.getElementById('userIdInput');
+        const loadHistoryBtn = document.getElementById('loadHistoryBtn');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const historyCount = document.getElementById('historyCount');
+        const audioPlayerModal = document.getElementById('audioPlayerModal');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const currentTrackTitle = document.getElementById('currentTrackTitle');
+        const currentTrackArtist = document.getElementById('currentTrackArtist');
+
+        // Загрузка ID пользователя из localStorage
+        const savedUserId = localStorage.getItem('listeningUserId');
+        if (savedUserId) {
+            userIdInput.value = savedUserId;
+            currentUserId = savedUserId;
+            loadListeningHistory();
+        }
+
+        userIdInput.addEventListener('change', () => {
+            currentUserId = userIdInput.value.trim();
+            if (currentUserId) {
+                localStorage.setItem('listeningUserId', currentUserId);
+                loadListeningHistory();
+            }
+        });
+
+        loadHistoryBtn.addEventListener('click', () => {
+            currentUserId = userIdInput.value.trim();
+            if (!currentUserId) {
+                showNotification('Введите ID пользователя', 'error');
+                return;
+            }
+            localStorage.setItem('listeningUserId', currentUserId);
+            loadListeningHistory();
+        });
+
+        userIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loadHistoryBtn.click();
+            }
+        });
+
+        async function loadListeningHistory() {
+            showLoading();
+            updateStatus('loading', 'Загрузка истории прослушиваний...');
+
+            try {
+                const url = `${apiBaseUrl}/listening-history/${currentUserId}`;
+                console.log('Запрос к API:', url);
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'include'
+                });
+
+                console.log('Статус ответа:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ошибка! Статус: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Получены данные:', data);
+
+                // Обработка формата ответа
+                if (data && data.GetListeningHistoryJSONResponse && Array.isArray(data.GetListeningHistoryJSONResponse)) {
+                    listeningHistory = data.GetListeningHistoryJSONResponse;
+                } else if (Array.isArray(data)) {
+                    listeningHistory = data;
+                } else if (data.data && Array.isArray(data.data)) {
+                    listeningHistory = data.data;
+                } else if (data.items && Array.isArray(data.items)) {
+                    listeningHistory = data.items;
+                } else {
+                    let found = false;
+                    for (let key in data) {
+                        if (Array.isArray(data[key])) {
+                            console.log(`Найден массив в поле "${key}"`);
+                            listeningHistory = data[key];
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        console.warn('Неожиданный формат данных:', data);
+                        listeningHistory = [];
+                    }
+                }
+
+                console.log(`Загружено треков в истории: ${listeningHistory.length}`);
+
+                renderHistory();
+
+                updateStatus('success', `История загружена для пользователя ${currentUserId}`);
+                historyCount.textContent = `${listeningHistory.length} треков`;
+
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+                updateStatus('error', 'Ошибка загрузки');
+                showError(error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function removeFromHistory(musicId, musicName) {
+            if (!confirm(`Удалить "${musicName}" из истории прослушиваний?`)) {
+                return;
+            }
+
+            showLoading();
+            updateStatus('loading', 'Удаление...');
+
+            try {
+                const url = `${apiBaseUrl}/listening-history/${currentUserId}`;
+                console.log('DELETE запрос к:', url);
+
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ music_id: musicId }),
+                    credentials: 'include'
+                });
+
+                console.log('Статус ответа:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ошибка! Статус: ${response.status}`);
+                }
+
+                showNotification(`Трек "${musicName}" удален из истории`);
+                await loadListeningHistory();
+
+            } catch (error) {
+                console.error('Ошибка удаления:', error);
+                updateStatus('error', 'Ошибка удаления');
+                showNotification('Не удалось удалить трек', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function playMusic(music) {
+            const songUrl = music.song_url || music.music_url;
+            
+            if (!songUrl) {
+                showNotification('Аудиофайл недоступен', 'error');
+                return;
+            }
+            
+            currentPlaying = music;
+            currentTrackTitle.textContent = music.music_name || music.name || 'Название трека';
+            currentTrackArtist.textContent = music.uploader_username || music.uploader_id || 'Неизвестный исполнитель';
+            
+            audioPlayer.src = songUrl;
+            audioPlayer.load();
+            audioPlayer.play();
+            audioPlayerModal.classList.add('active');
+            
+            audioPlayer.onended = () => {
+                closeAudioPlayer();
+            };
+        }
+
+        function closeAudioPlayer() {
+            audioPlayer.pause();
+            audioPlayer.src = '';
+            audioPlayerModal.classList.remove('active');
+            currentPlaying = null;
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Дата не указана';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch {
+                return dateString;
+            }
+        }
+
+        function renderHistory() {
+            if (!listeningHistory || listeningHistory.length === 0) {
+                historyContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎧</div>
+                        <h3>История прослушиваний пуста</h3>
+                        <p>Слушайте музыку, чтобы она отображалась здесь</p>
+                        <button class="btn btn-primary" onclick="window.location.href='/music.html'">Перейти к музыке</button>
+                    </div>
+                `;
+                return;
+            }
+
+            historyContainer.innerHTML = `
+                <div class="history-container">
+                    <div class="history-header">
+                        <span>Трек</span>
+                        <span>Дата прослушивания</span>
+                        <span>Длительность</span>
+                        <span>Лайки</span>
+                        <span>Действия</span>
+                        <span></span>
+                    </div>
+                    ${listeningHistory.map(item => {
+                        const musicId = item.music_id || item.id;
+                        const musicName = item.music_name || item.name || 'Без названия';
+                        const artist = item.uploader_username || item.uploader_id || 'Неизвестный исполнитель';
+                        const cover = item.music_cover || item.cover;
+                        const likes = item.music_likes || item.likes || 0;
+                        const duration = item.music_duration || item.duration_seconds || 0;
+                        const listeningDate = item.listening_date || item.createdAt || new Date().toISOString();
+                        
+                        return `
+                            <div class="history-item">
+                                <div class="history-item-info">
+                                    <div class="history-item-image" onclick="playMusic(${JSON.stringify(item).replace(/'/g, "\\'")})">
+                                        <span>🎵</span>
+                                    </div>
+                                    <div class="history-item-details">
+                                        <h4 onclick="playMusic(${JSON.stringify(item).replace(/'/g, "\\'")})">${escapeHtml(musicName)}</h4>
+                                        <div class="history-item-artist">${escapeHtml(artist)}</div>
+                                    </div>
+                                </div>
+                                <div class="history-item-date">${formatDate(listeningDate)}</div>
+                                <div class="history-item-duration">${formatDuration(duration)}</div>
+                                <div class="history-item-likes">❤️ ${likes}</div>
+                                <div class="history-item-actions">
+                                    <button class="play-btn" onclick="playMusic(${JSON.stringify(item).replace(/'/g, "\\'")})">▶️</button>
+                                    <button class="remove-btn" onclick="removeFromHistory('${musicId}', '${escapeHtml(musicName).replace(/'/g, "\\'")}')">✕</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type === 'error' ? 'error' : ''}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function showLoading() {
+            loadingContainer.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingContainer.style.display = 'none';
+        }
+
+        function updateStatus(type, message) {
+            statusText.textContent = message;
+            statusDot.className = 'status-dot';
+            if (type === 'success') {
+                statusDot.style.background = '#48bb78';
+            } else if (type === 'error') {
+                statusDot.style.background = '#f56565';
+            } else {
+                statusDot.style.background = '#fbbf24';
+            }
+        }
+
+        function showError(message) {
+            historyContainer.innerHTML = `
+                <div class="error-container">
+                    <div class="error-icon">⚠️</div>
+                    <h3>Ошибка загрузки</h3>
+                    <p>${message}</p>
+                    <p>Проверьте:</p>
+                    <ul style="list-style: none; margin-bottom: 1.5rem;">
+                        <li>✓ Запущен ли сервер на порту 3004</li>
+                        <li>✓ Корректный ли ID пользователя</li>
+                        <li>✓ Настроены ли CORS заголовки</li>
+                    </ul>
+                    <button class="btn btn-primary" onclick="loadListeningHistory()">Повторить попытку</button>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

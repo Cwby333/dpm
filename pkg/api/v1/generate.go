@@ -9,11 +9,9 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"dpm/internal/models"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"path"
@@ -79,6 +77,16 @@ type Register struct {
 	Username *string `json:"username,omitempty"`
 }
 
+// DeleteFavorJSONBody defines parameters for DeleteFavor.
+type DeleteFavorJSONBody struct {
+	MusicID string `json:"musicID"`
+}
+
+// AddFavorJSONBody defines parameters for AddFavor.
+type AddFavorJSONBody struct {
+	MusicID string `json:"musicID"`
+}
+
 // DeleteListeningFromLHJSONBody defines parameters for DeleteListeningFromLH.
 type DeleteListeningFromLHJSONBody struct {
 	MusicId string `json:"music_id"`
@@ -102,6 +110,12 @@ type RegisterJSONBody struct {
 	Username *string `json:"username,omitempty"`
 }
 
+// DeleteFavorJSONRequestBody defines body for DeleteFavor for application/json ContentType.
+type DeleteFavorJSONRequestBody DeleteFavorJSONBody
+
+// AddFavorJSONRequestBody defines body for AddFavor for application/json ContentType.
+type AddFavorJSONRequestBody AddFavorJSONBody
+
 // DeleteListeningFromLHJSONRequestBody defines body for DeleteListeningFromLH for application/json ContentType.
 type DeleteListeningFromLHJSONRequestBody DeleteListeningFromLHJSONBody
 
@@ -116,6 +130,15 @@ type RegisterJSONRequestBody RegisterJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+
+	// (DELETE /favor/{userID})
+	DeleteFavor(w http.ResponseWriter, r *http.Request, userID string)
+
+	// (GET /favor/{userID})
+	GetFavor(w http.ResponseWriter, r *http.Request, userID string)
+
+	// (POST /favor/{userID})
+	AddFavor(w http.ResponseWriter, r *http.Request, userID string)
 
 	// (DELETE /listening-history/{userID})
 	DeleteListeningFromLH(w http.ResponseWriter, r *http.Request, userID string)
@@ -150,6 +173,81 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// DeleteFavor operation middleware
+func (siw *ServerInterfaceWrapper) DeleteFavor(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "userID" -------------
+	var userID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userID", r.PathValue("userID"), &userID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteFavor(w, r, userID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetFavor operation middleware
+func (siw *ServerInterfaceWrapper) GetFavor(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "userID" -------------
+	var userID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userID", r.PathValue("userID"), &userID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetFavor(w, r, userID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddFavor operation middleware
+func (siw *ServerInterfaceWrapper) AddFavor(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "userID" -------------
+	var userID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userID", r.PathValue("userID"), &userID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddFavor(w, r, userID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // DeleteListeningFromLH operation middleware
 func (siw *ServerInterfaceWrapper) DeleteListeningFromLH(w http.ResponseWriter, r *http.Request) {
@@ -427,6 +525,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc("DELETE "+options.BaseURL+"/favor/{userID}", wrapper.DeleteFavor)
+	m.HandleFunc("GET "+options.BaseURL+"/favor/{userID}", wrapper.GetFavor)
+	m.HandleFunc("POST "+options.BaseURL+"/favor/{userID}", wrapper.AddFavor)
 	m.HandleFunc("DELETE "+options.BaseURL+"/listening-history/{userID}", wrapper.DeleteListeningFromLH)
 	m.HandleFunc("GET "+options.BaseURL+"/listening-history/{userID}", wrapper.GetLH)
 	m.HandleFunc("POST "+options.BaseURL+"/listening-history/{userID}", wrapper.AddListeningToLH)
@@ -451,6 +552,86 @@ type GetMusicResponseJSONResponse struct {
 	Name            *string `json:"name,omitempty"`
 	SongUrl         *string `json:"song_url,omitempty"`
 	UploaderId      *string `json:"uploader_id,omitempty"`
+}
+
+type DeleteFavorRequestObject struct {
+	UserID string `json:"userID"`
+	Body   *DeleteFavorJSONRequestBody
+}
+
+type DeleteFavorResponseObject interface {
+	VisitDeleteFavorResponse(w http.ResponseWriter) error
+}
+
+type DeleteFavor200JSONResponse string
+
+func (response DeleteFavor200JSONResponse) VisitDeleteFavorResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteFavor500JSONResponse string
+
+func (response DeleteFavor500JSONResponse) VisitDeleteFavorResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetFavorRequestObject struct {
+	UserID string `json:"userID"`
+}
+
+type GetFavorResponseObject interface {
+	VisitGetFavorResponse(w http.ResponseWriter) error
+}
+
+type GetFavor200JSONResponse struct{ GetMusicJSONResponse }
+
+func (response GetFavor200JSONResponse) VisitGetFavorResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetFavor500JSONResponse string
+
+func (response GetFavor500JSONResponse) VisitGetFavorResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AddFavorRequestObject struct {
+	UserID string `json:"userID"`
+	Body   *AddFavorJSONRequestBody
+}
+
+type AddFavorResponseObject interface {
+	VisitAddFavorResponse(w http.ResponseWriter) error
+}
+
+type AddFavor200JSONResponse string
+
+func (response AddFavor200JSONResponse) VisitAddFavorResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AddFavor500JSONResponse string
+
+func (response AddFavor500JSONResponse) VisitAddFavorResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
 }
 
 type DeleteListeningFromLHRequestObject struct {
@@ -557,35 +738,13 @@ type Login200JSONResponse struct {
 
 func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
-	access, ok := response.Headers.AccessToken.(models.JWTAccess)
-	if !ok {
-		slog.Error("not access")
-	}
-	refresh, ok := response.Headers.RefreshToken.(models.JWTRefresh)
-	if !ok {
-		slog.Error("not refresh")
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name: "Access-Token",
-		Value: access.Sign,
-		Expires: time.Now().Add(time.Hour * 12),
-		Secure: true,
-		HttpOnly: true,
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name: "Refresh-Token",
-		Value: refresh.Sign,
-		Expires: time.Now().Add(time.Hour * 48),
-		Secure: true,
-		HttpOnly: true,
-		Path: "/refresh",
-	})
-
+	w.Header().Set("Access-Token", fmt.Sprint(response.Headers.AccessToken))
+	w.Header().Set("Refresh-Token", fmt.Sprint(response.Headers.RefreshToken))
 	w.WriteHeader(200)
 
-	return nil
+	return json.NewEncoder(w).Encode(response.Body)
 }
+
 type Login500JSONResponse struct {
 	Message *string `json:"message,omitempty"`
 }
@@ -708,6 +867,15 @@ func (response Register500JSONResponse) VisitRegisterResponse(w http.ResponseWri
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
+	// (DELETE /favor/{userID})
+	DeleteFavor(ctx context.Context, request DeleteFavorRequestObject) (DeleteFavorResponseObject, error)
+
+	// (GET /favor/{userID})
+	GetFavor(ctx context.Context, request GetFavorRequestObject) (GetFavorResponseObject, error)
+
+	// (POST /favor/{userID})
+	AddFavor(ctx context.Context, request AddFavorRequestObject) (AddFavorResponseObject, error)
+
 	// (DELETE /listening-history/{userID})
 	DeleteListeningFromLH(ctx context.Context, request DeleteListeningFromLHRequestObject) (DeleteListeningFromLHResponseObject, error)
 
@@ -760,6 +928,98 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// DeleteFavor operation middleware
+func (sh *strictHandler) DeleteFavor(w http.ResponseWriter, r *http.Request, userID string) {
+	var request DeleteFavorRequestObject
+
+	request.UserID = userID
+
+	var body DeleteFavorJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteFavor(ctx, request.(DeleteFavorRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteFavor")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteFavorResponseObject); ok {
+		if err := validResponse.VisitDeleteFavorResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetFavor operation middleware
+func (sh *strictHandler) GetFavor(w http.ResponseWriter, r *http.Request, userID string) {
+	var request GetFavorRequestObject
+
+	request.UserID = userID
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetFavor(ctx, request.(GetFavorRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetFavor")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetFavorResponseObject); ok {
+		if err := validResponse.VisitGetFavorResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddFavor operation middleware
+func (sh *strictHandler) AddFavor(w http.ResponseWriter, r *http.Request, userID string) {
+	var request AddFavorRequestObject
+
+	request.UserID = userID
+
+	var body AddFavorJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddFavor(ctx, request.(AddFavorRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddFavor")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddFavorResponseObject); ok {
+		if err := validResponse.VisitAddFavorResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // DeleteListeningFromLH operation middleware
@@ -993,25 +1253,26 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9xYzW7jNhB+FYIt0ItieVvsxae6dZsYyKJB6p4WC4OWxhI3EsklRwkMQ+9ekJRk2WK8",
-	"zm/T3GQPOZyfj9/McEsTWSopQKChky3NgaWg3ec0ScCYhbwBYX8mUiAItJ9MqYInDLkU8VcjndgkOZTM",
-	"fuFGAZ1Qg5qLjNZ1XUf0GtYaTP4cyuqIavhWgcHfZMrBmXopM/4wvUpLBRqb/YoZcyd1GjgxopUBLVgJ",
-	"IXO8LVxDSiefu5Wk0/clarfI1VdIkDr7UzCJ5sqaRif0Gr6RlUw3ZC01iQvnigtZxg2CfoJbUDJeBH16",
-	"KYeJP/LhbuvWW3+EUVIY78Q54KUVCS6yC25Q6s2DQsIRSqfoRw1rOqE/xDvEx36ZiQ9PuG4ssOFoPGFa",
-	"s03IkXNAUrT7Sd6YWEdW8KkyPHl+c73aE21jRUHKdkNrU+fg49GVVtotXBpIpEhNDy5cIGQ2mRHlYYwV",
-	"/Abu2eFsXSby1mN/sPUeaEbUSJEtKx1GfKUKaaltGTSoPgGwfzkJwZwhueNFQVZANGClBaRktSGx0jKt",
-	"Eoy3zcd8VpPzPxbEBs1Fyp3T5NDR1n2oG8S6w9cyZejka6lLhnRC7R9nyEug0dDr78XSy9tMHsvHPXn0",
-	"wu9m8yVy1pMfZ6yDzEa0u5XvGtB9ouYpbc7Z39jaHQ2dj6i3uGdGmNa5WMuWRliCvcJDywpBaWnX/prZ",
-	"/0aJLFtLJvRThUAaOR3cN5clUvJESwP6lidALhaLKzK9mruasbc7osixgOA2GtFb0MZr/TAaj8b2MKlA",
-	"MMXphP4yGo8+UFsUMXcpjLvrdtbQeby1EJvPaocTKMBfwn2DZ+7/Xi1Ya1kGSoM720d7nnb7OjL4U8vy",
-	"8sLZo1kJ6Nqxz1tqOxxn4y6A3ijazzXqCqIjDdSXfvu0eQL9H6GFA/B1K0P4OSz3P4/HT2sQD2H0d+X6",
-	"WJvyj8+uG/QtaAJaSx2STxP7Ycgdx5zYZP1kgnjIAIdwCvcVh+Cx7dHLgmWYnFBr0q2LQw3b6wRfSROI",
-	"4zRNff9DuDghoNM07cxfyP/LRZzPTryH89n7v4Z1RJs5ygYrCIp/DGhiRRYHpJtjmEh3s4z9kQEStFOr",
-	"KzmswhwENqYOoOPH0EFew9elN8LGl+3Q96QcHMACjGEZPLLZbdMVDV8EzropPuRYszzuvx7sHgBO27v3",
-	"WuCM+/hfhmLAM6YqS2bHUJ9xyyt3sGJKWU/jsu0uG1Yf8PW0KHwH+kh27aa/l75IfU8Hk+RONE3QV7hO",
-	"5mMQbxvGqXvRGNY4z82rDXEEOohWG6oDEt7X43U4BQF2bonvNUrf/nT9hqHrexOfOCmglzxl9R/B75WV",
-	"v6+2bReW33NIbkgOrMCctAOEjYruvcc9pKZE/k0s2q8rTCnSaiQ5Ly2HmI1BKAd3oHsIfERh6fa+xdry",
-	"hi9HG7c+tdf1vwEAAP//L9MaUS0XAAA=",
+	"H4sIAAAAAAAC/+xZX2/bNhD/KgQ3oC9KlG7oi5/mLWsSIMWCLHsqioCWzhIbiWSPpwSGoe8+kJRk2VIS",
+	"51/rFHmTfeTx/vz4u9NpyRNdGq1AkeWTJc9BpID+cZokYO2FvgLlfiZaEShyj8KYQiaCpFbxV6u92CY5",
+	"lMI90cIAn3BLKFXG67quI34OcwSbP4eyOuII3yqw9KdOJXhTT3UmH6bXoDaA1Ow3wtobjenIiRGvLKAS",
+	"JYyZE2yRCCmffO5Wsk7fl6jdomdfISHu7U/BJiiNM41P+Dl8YzOdLthcI4sL74oPWSYtAT7BLSiFLEZ9",
+	"eimHWTjy4W5j6204whqtbHDiCOjUiZRU2bG0pHHxoJBIgtIr+hVhzif8l3iF+Dgss/HmCeeNBS4cjScC",
+	"USzGHDkCYkW7n+WNiXXkBJ8qK5PnNzeo3dI2URSsbDe0NnUOPh5daYV+4aWFRKvU9uAiFUHmkhlxOY6x",
+	"Ql7BLTu8rZeJvg7YH2y9BZoRt1pllxWOI74yhXbUdjlqUL0FYP/xEka5IHYji4LNgCFQhQpSNluw2KBO",
+	"q4TiZfNwclizo78vmAuaj5Q/p8mhp63bUDeIdYevy1SQl881loL4hLs/9kiWwKOh1/fFMsjbTN6Vj1vy",
+	"GIT3ZvMlctaT381YG5mNeHcrf2pA94laprw5Z31ja3c0dD7iweKeGeO0LtVctzQiEuoVHl5WBAa1W/tH",
+	"5v7bT3TZWjLhnyoC1sj54L75LLFSJqgt4LVMgB1fXJyx6dmJrxlruyNOkgoY3cYjfg1og9b3+wf7B+4w",
+	"bUAJI/mE/75/sP+eu6JIuU9hPBfXGuOlg9XJYe2xAQWEi7du5KH/P/ArI83clneWeQXcHxLCepJ2iz82",
+	"MiNQlEC+2/q85K6B8Sas4hPO5/1UElYQ3dEffel3R4snsLv36OTwfmi1C8fAsVnLfzs4eFr3t4mRfyvf",
+	"pLp8fnh23YDXgAwQNY7Jp4l7sOxGUr6Z9wxoiBVXjO/ExxHQy4NjmI6xTqNbF3ddzPeJsdF2JHTTNN3y",
+	"jk3T9O2Cvc4LVkc87hqdvaaRfggLr7rwOepypCkfJ+SuDfuIujw9fh3I2arsdyvfyPmdHcXDrUR9P3jc",
+	"i+nxrlH14FV5N1hbqi0COk3TzvwL/Vou4huFb1J4O4wbB8V/FpA5kcMB6yZIQqWrKZL7kQEx0legfLMv",
+	"KspBUWPqADphADjI6/h16Q0P49N23PakHGzAAqwVGTxyzNCmKxrOYve6+emYY83yuD+3XY1et9u7Nqf1",
+	"xn34kaEY8IytylLgos2445UbmAljnKdx2b7XN6w+4OtpUYRedtcb4b6ngxneSjRNKFS4ThZiEC8bxql7",
+	"0RjWuMDNswXzBDqIVhuqDRJe1xN0eAUj7NwS33d7S+kPbncVuqE3CYnTCnrJM07/Hfg9c/Kfq21bheWv",
+	"HJIrloMoKGft6MZFBXtfQh5SU6LwNSJaryvCGNZqZLksHYfYhSUoB3eg+wTziMLS7d3F2rLDl6ONW5/a",
+	"6/r/AAAA///F+887pxwAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

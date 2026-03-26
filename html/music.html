@@ -18,7 +18,6 @@
             color: #333;
         }
 
-        /* Навигация */
         .navbar {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
@@ -119,14 +118,12 @@
             color: white;
         }
 
-        /* Основной контент */
         .main-content {
             max-width: 1200px;
             margin: 80px auto 0;
             padding: 2rem;
         }
 
-        /* Заголовок страницы */
         .page-header {
             display: flex;
             justify-content: space-between;
@@ -199,7 +196,50 @@
             transform: rotate(180deg);
         }
 
-        /* Индикатор загрузки */
+        .user-id-section {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-id-section label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .user-id-section input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e1e1e1;
+            border-radius: 6px;
+            font-size: 1rem;
+            min-width: 250px;
+        }
+
+        .user-id-section input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .user-id-section .status-badge {
+            font-size: 0.85rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .user-id-section .status-badge.active {
+            background: #48bb78;
+            color: white;
+        }
+
         .loading-container {
             display: none;
             flex-direction: column;
@@ -226,7 +266,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Сетка музыки */
         .music-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -257,6 +296,7 @@
             color: white;
             font-size: 4rem;
             position: relative;
+            cursor: pointer;
         }
 
         .music-cover .play-overlay {
@@ -271,7 +311,6 @@
             justify-content: center;
             opacity: 0;
             transition: opacity 0.3s ease;
-            cursor: pointer;
         }
 
         .music-card:hover .play-overlay {
@@ -304,30 +343,26 @@
             font-weight: 600;
             margin-bottom: 0.5rem;
             color: #333;
+            cursor: pointer;
+        }
+
+        .music-name:hover {
+            color: #667eea;
+        }
+
+        .music-artist {
+            font-size: 0.9rem;
+            color: #667eea;
+            margin-bottom: 0.5rem;
         }
 
         .music-meta {
             display: flex;
             align-items: center;
             gap: 1rem;
-            margin-bottom: 0.75rem;
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .uploader-id {
-            background: #f0f0f0;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-family: monospace;
-        }
-
-        .music-stats {
-            display: flex;
-            gap: 1rem;
             margin-bottom: 1rem;
             color: #666;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         .likes {
@@ -365,6 +400,7 @@
 
         .btn-play:hover {
             background: #5a67d8;
+            transform: translateY(-2px);
         }
 
         .btn-like {
@@ -377,120 +413,6 @@
             color: #e53e3e;
         }
 
-        .btn-like.active {
-            background: #e53e3e;
-            color: white;
-        }
-
-        /* Модальное окно */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 10px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        .modal-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            color: #333;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #666;
-            transition: color 0.3s ease;
-        }
-
-        .modal-close:hover {
-            color: #f56565;
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
-        .music-detail-cover {
-            width: 100%;
-            height: 200px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .music-detail-info {
-            display: grid;
-            gap: 1rem;
-        }
-
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .detail-label {
-            font-weight: 600;
-            color: #555;
-        }
-
-        .detail-value {
-            color: #333;
-        }
-
-        .detail-value.likes {
-            color: #e53e3e;
-            font-weight: 600;
-        }
-
-        /* Аудиоплеер */
-        .audio-player {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .audio-player audio {
-            width: 100%;
-        }
-
-        /* Статус бар */
         .status-bar {
             display: flex;
             justify-content: space-between;
@@ -517,7 +439,53 @@
             background: #f56565;
         }
 
-        /* Пагинация */
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-state-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .error-container {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-container h3 {
+            color: #c53030;
+            margin-bottom: 0.5rem;
+        }
+
+        .error-container p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
         .pagination {
             display: flex;
             justify-content: center;
@@ -552,72 +520,39 @@
             cursor: not-allowed;
         }
 
-        /* Сообщения об ошибках */
-        .error-container {
-            background: white;
-            border-radius: 10px;
-            padding: 2rem;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .error-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-
-        .error-container h3 {
-            color: #c53030;
-            margin-bottom: 0.5rem;
-        }
-
-        .error-container p {
-            color: #666;
-            margin-bottom: 1.5rem;
-        }
-
-        .retry-btn {
-            padding: 0.75rem 2rem;
-            background: #667eea;
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #48bb78;
             color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 3000;
+            animation: slideIn 0.3s ease;
         }
 
-        .retry-btn:hover {
-            background: #5a67d8;
-            transform: translateY(-2px);
+        .notification.error {
+            background: #e53e3e;
         }
 
-        /* Пустое состояние */
-        .empty-state {
-            text-align: center;
-            padding: 4rem;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .empty-state-icon {
-            font-size: 5rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        .empty-state h3 {
+        .notification.info {
+            background: #fbbf24;
             color: #333;
-            margin-bottom: 0.5rem;
         }
 
-        .empty-state p {
-            color: #666;
-            margin-bottom: 1.5rem;
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
-        /* Футер */
         .footer {
             background: #1a1a2e;
             color: white;
@@ -666,7 +601,6 @@
             font-size: 0.9rem;
         }
 
-        /* Адаптивность */
         @media (max-width: 768px) {
             .nav-container {
                 flex-direction: column;
@@ -688,12 +622,13 @@
                 align-items: stretch;
             }
 
-            .search-box input {
-                width: 100%;
-            }
-
             .header-actions {
                 flex-direction: column;
+            }
+
+            .user-id-section {
+                flex-direction: column;
+                align-items: stretch;
             }
 
             .music-grid {
@@ -703,7 +638,6 @@
     </style>
 </head>
 <body>
-    <!-- Навигация -->
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
@@ -712,9 +646,9 @@
             </div>
             <div class="nav-links">
                 <a href="/">Главная</a>
+                <a href="/products.html">Продукты</a>
                 <a href="#" class="active">Музыка</a>
-                <a href="#">Продукты</a>
-                <a href="#">О нас</a>
+                <a href="/listening-history.html">История</a>
                 <div class="auth-buttons">
                     <a href="/login" class="btn btn-outline">Войти</a>
                     <a href="/register" class="btn btn-primary">Регистрация</a>
@@ -723,9 +657,7 @@
         </div>
     </nav>
 
-    <!-- Основной контент -->
     <div class="main-content">
-        <!-- Заголовок страницы -->
         <div class="page-header">
             <h1>Каталог музыки</h1>
             <div class="header-actions">
@@ -733,49 +665,34 @@
                     <input type="text" id="searchInput" placeholder="Поиск музыки...">
                     <button id="searchBtn">🔍</button>
                 </div>
-                <button class="refresh-btn" id="refreshBtn" title="Обновить">🔄</button>
+                <button class="refresh-btn" id="refreshBtn">🔄</button>
             </div>
         </div>
 
-        <!-- Статус бар -->
+        <div class="user-id-section">
+            <label>ID пользователя:</label>
+            <input type="text" id="userIdInput" placeholder="Введите ID пользователя для сохранения истории">
+            <span class="status-badge" id="userStatusBadge">Не авторизован</span>
+        </div>
+
         <div class="status-bar" id="statusBar">
             <div class="status-info">
                 <span class="status-dot" id="statusDot"></span>
-                <span id="statusText">Загрузка...</span>
+                <span id="statusText">Загрузка музыки...</span>
             </div>
             <span id="musicCount">0 треков</span>
         </div>
 
-        <!-- Индикатор загрузки -->
         <div class="loading-container" id="loadingContainer">
             <div class="loading-spinner"></div>
             <p>Загрузка музыки...</p>
         </div>
 
-        <!-- Контейнер для музыки -->
         <div id="musicContainer"></div>
 
-        <!-- Пагинация -->
         <div class="pagination" id="pagination"></div>
     </div>
 
-    <!-- Модальное окно деталей трека -->
-    <div class="modal" id="musicModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle">Детали трека</h2>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Содержимое будет заполнено динамически -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Аудиоплеер (скрытый) -->
-    <audio id="audioPlayer" style="display: none;"></audio>
-
-    <!-- Футер -->
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-section">
@@ -786,8 +703,9 @@
                 <h4>Навигация</h4>
                 <ul>
                     <li><a href="/">Главная</a></li>
+                    <li><a href="/products.html">Продукты</a></li>
                     <li><a href="#">Музыка</a></li>
-                    <li><a href="#">Продукты</a></li>
+                    <li><a href="/listening-history.html">История</a></li>
                 </ul>
             </div>
             <div class="footer-section">
@@ -810,8 +728,8 @@
         let currentPage = 1;
         let musicPerPage = 12;
         let isLoading = false;
-        let apiUrl = 'http://localhost:3003/music'; // Предполагаемый порт для music микросервиса
-        let currentlyPlaying = null;
+        let currentUserId = localStorage.getItem('musicUserId') || '';
+        const apiBaseUrl = 'http://localhost:3003';
 
         // DOM элементы
         const loadingContainer = document.getElementById('loadingContainer');
@@ -823,34 +741,113 @@
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
         const musicCount = document.getElementById('musicCount');
-        const modal = document.getElementById('musicModal');
-        const modalBody = document.getElementById('modalBody');
-        const audioPlayer = document.getElementById('audioPlayer');
+        const userIdInput = document.getElementById('userIdInput');
+        const userStatusBadge = document.getElementById('userStatusBadge');
 
-        // Загрузка музыки при загрузке страницы
-        document.addEventListener('DOMContentLoaded', fetchMusic);
+        // Инициализация ID пользователя
+        if (currentUserId) {
+            userIdInput.value = currentUserId;
+            updateUserStatus(true);
+        }
 
-        // Обновление по кнопке
-        refreshBtn.addEventListener('click', fetchMusic);
-
-        // Поиск при вводе
-        searchInput.addEventListener('input', () => {
-            filterMusic();
-        });
-
-        // Поиск по кнопке
-        searchBtn.addEventListener('click', () => {
-            filterMusic();
-        });
-
-        // Поиск по Enter
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                filterMusic();
+        userIdInput.addEventListener('change', () => {
+            currentUserId = userIdInput.value.trim();
+            if (currentUserId) {
+                localStorage.setItem('musicUserId', currentUserId);
+                updateUserStatus(true);
+                showNotification('ID пользователя сохранен, история будет записываться', 'info');
+            } else {
+                updateUserStatus(false);
+                showNotification('ID пользователя очищен, история не будет сохраняться', 'info');
             }
         });
 
-        // Функция загрузки музыки
+        function updateUserStatus(isActive) {
+            if (isActive && currentUserId) {
+                userStatusBadge.textContent = `Пользователь: ${currentUserId.substring(0, 8)}...`;
+                userStatusBadge.classList.add('active');
+            } else {
+                userStatusBadge.textContent = 'Не авторизован';
+                userStatusBadge.classList.remove('active');
+            }
+        }
+
+        // Функция добавления трека в историю прослушиваний
+        async function addToListeningHistory(musicId) {
+            if (!currentUserId) {
+                console.log('ID пользователя не указан, история не сохраняется');
+                return false;
+            }
+            
+            try {
+                console.log(`Добавление трека ${musicId} в историю для пользователя ${currentUserId}`);
+                
+                const response = await fetch(`${apiBaseUrl}/listening-history/${currentUserId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ musicID: musicId }),
+                    credentials: 'include'
+                });
+                
+                console.log('Статус ответа:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.text();
+                    console.log('Ответ сервера:', result);
+                    return true;
+                } else {
+                    const errorText = await response.text();
+                    console.error('Ошибка добавления в историю:', errorText);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Ошибка при добавлении в историю:', error);
+                return false;
+            }
+        }
+
+        // Функция воспроизведения музыки
+        async function playMusic(musicId, musicName, artistName, songUrl) {
+            console.log('playMusic вызван:', { musicId, musicName, artistName, songUrl });
+            
+            // Добавляем в историю прослушиваний
+            if (currentUserId) {
+                showNotification(`Добавление "${musicName}" в историю...`, 'info');
+                const added = await addToListeningHistory(musicId);
+                if (added) {
+                    showNotification(`✅ "${musicName}" добавлен в историю прослушиваний`);
+                } else {
+                    showNotification(`⚠️ Не удалось добавить "${musicName}" в историю`, 'error');
+                }
+            } else {
+                showNotification('⚠️ Введите ID пользователя для сохранения истории', 'info');
+            }
+            
+            // Демо-воспроизведение
+            showNotification(`🎵 Воспроизведение: ${musicName} - ${artistName || 'Неизвестный'} (демо-режим)`, 'info');
+        }
+
+        // Функция лайка (демо)
+        async function likeMusic(musicId, musicName) {
+            if (!currentUserId) {
+                showNotification('Введите ID пользователя', 'error');
+                return;
+            }
+            
+            showNotification(`❤️ Лайк для "${musicName}" (демо-режим)`);
+            
+            // Обновляем лайки в интерфейсе
+            const music = allMusic.find(m => m.id === musicId);
+            if (music) {
+                music.likes = (music.likes || 0) + 1;
+                renderMusic();
+            }
+        }
+
+        // Загрузка музыки
         async function fetchMusic() {
             if (isLoading) return;
             
@@ -858,18 +855,11 @@
             updateStatus('loading', 'Загрузка музыки...');
             
             try {
-                console.log('Запрос к API:', apiUrl);
-                
-                const response = await fetch(apiUrl, {
+                const response = await fetch(`${apiBaseUrl}/music`, {
                     method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Accept': 'application/json' },
                     mode: 'cors'
                 });
-
-                console.log('Статус ответа:', response.status);
 
                 if (!response.ok) {
                     throw new Error(`HTTP ошибка! Статус: ${response.status}`);
@@ -878,42 +868,16 @@
                 const data = await response.json();
                 console.log('Получены данные:', data);
                 
-                // Обработка формата вашего сервера (аналогично продуктам)
+                // Обработка формата ответа
                 if (data && data.GetMusicJSONResponse && Array.isArray(data.GetMusicJSONResponse)) {
-                    console.log('Найдена музыка в поле GetMusicJSONResponse');
                     allMusic = data.GetMusicJSONResponse;
-                }
-                // Поддержка других возможных форматов
-                else if (Array.isArray(data)) {
+                } else if (Array.isArray(data)) {
                     allMusic = data;
-                } else if (data.music && Array.isArray(data.music)) {
-                    allMusic = data.music;
-                } else if (data.data && Array.isArray(data.data)) {
-                    allMusic = data.data;
-                } else if (data.items && Array.isArray(data.items)) {
-                    allMusic = data.items;
                 } else {
-                    // Пробуем найти любое поле с массивом
-                    let found = false;
-                    for (let key in data) {
-                        if (Array.isArray(data[key])) {
-                            console.log(`Найден массив в поле "${key}"`);
-                            allMusic = data[key];
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        console.warn('Неожиданный формат данных:', data);
-                        allMusic = [];
-                    }
+                    allMusic = [];
                 }
                 
                 console.log(`Загружено треков: ${allMusic.length}`);
-                
-                if (allMusic.length > 0) {
-                    console.log('Пример первого трека:', allMusic[0]);
-                }
                 
                 filterMusic();
                 
@@ -929,16 +893,14 @@
             }
         }
 
-        // Фильтрация музыки
         function filterMusic() {
             const searchTerm = searchInput.value.toLowerCase().trim();
             
             filteredMusic = allMusic.filter(music => {
                 if (!music) return false;
-                
                 const matchesSearch = searchTerm === '' || 
-                    (music.name && music.name.toLowerCase().includes(searchTerm));
-                
+                    (music.name && music.name.toLowerCase().includes(searchTerm)) ||
+                    (music.uploader_username && music.uploader_username.toLowerCase().includes(searchTerm));
                 return matchesSearch;
             });
             
@@ -953,7 +915,51 @@
             }
         }
 
-        // Рендер музыки
+        function formatDuration(seconds) {
+            if (!seconds) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function createMusicCard(music) {
+            const duration = formatDuration(music.duration_seconds);
+            const musicId = music.id;
+            const musicName = escapeHtml(music.name || 'Без названия');
+            const artistName = escapeHtml(music.uploader_username || music.uploader_id || 'Неизвестный исполнитель');
+            const songUrl = music.song_url || '';
+            
+            return `
+                <div class="music-card">
+                    <div class="music-cover" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}', '${songUrl}')">
+                        <span>🎵</span>
+                        <div class="play-overlay">
+                            <div class="play-button">▶️</div>
+                        </div>
+                    </div>
+                    <div class="music-info">
+                        <h3 class="music-name" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}', '${songUrl}')">${musicName}</h3>
+                        <div class="music-artist">${artistName}</div>
+                        <div class="music-meta">
+                            <span class="likes">❤️ ${music.likes || 0}</span>
+                            <span class="duration">⏱️ ${duration}</span>
+                        </div>
+                        <div class="music-actions">
+                            <button class="music-btn btn-play" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}', '${songUrl}')">▶️ Слушать</button>
+                            <button class="music-btn btn-like" onclick="likeMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}')">❤️</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         function renderMusic() {
             const start = (currentPage - 1) * musicPerPage;
             const end = start + musicPerPage;
@@ -977,53 +983,6 @@
             `;
         }
 
-        // Создание карточки трека
-        function createMusicCard(music) {
-            const isPlaying = currentlyPlaying === music.id;
-            const duration = formatDuration(music.duration_seconds);
-            
-            return `
-                <div class="music-card">
-                    <div class="music-cover">
-                        <span>🎵</span>
-                        <div class="play-overlay" onclick="playMusic('${music.id}')">
-                            <div class="play-button">${isPlaying ? '⏸️' : '▶️'}</div>
-                        </div>
-                    </div>
-                    <div class="music-info">
-                        <h3 class="music-name">${music.name || 'Без названия'}</h3>
-                        <div class="music-meta">
-                            <span class="uploader-id">ID: ${music.uploader_id ? music.uploader_id.substring(0, 8) + '...' : 'Неизвестно'}</span>
-                        </div>
-                        <div class="music-stats">
-                            <span class="likes">❤️ ${music.likes || 0}</span>
-                            <span class="duration">⏱️ ${duration}</span>
-                        </div>
-                        <div class="music-actions">
-                            <button class="music-btn btn-play" onclick="playMusic('${music.id}')">
-                                ${isPlaying ? 'Пауза' : 'Слушать'}
-                            </button>
-                            <button class="music-btn btn-like" onclick="likeMusic('${music.id}')">
-                                ❤️
-                            </button>
-                            <button class="music-btn btn-view" onclick="viewMusic('${music.id}')">
-                                Детали
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Форматирование длительности
-        function formatDuration(seconds) {
-            if (!seconds) return '0:00';
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        // Рендер пагинации
         function renderPagination() {
             const totalPages = Math.ceil(filteredMusic.length / musicPerPage);
             
@@ -1033,7 +992,6 @@
             }
             
             let paginationHTML = '';
-            
             paginationHTML += `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>←</button>`;
             
             for (let i = 1; i <= totalPages; i++) {
@@ -1045,11 +1003,9 @@
             }
             
             paginationHTML += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>→</button>`;
-            
             paginationContainer.innerHTML = paginationHTML;
         }
 
-        // Смена страницы
         function changePage(page) {
             currentPage = page;
             renderMusic();
@@ -1057,144 +1013,27 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Воспроизведение музыки (демо)
-        function playMusic(musicId) {
-            const music = allMusic.find(m => m.id === musicId);
-            if (!music) return;
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type === 'error' ? 'error' : type === 'info' ? 'info' : ''}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
             
-            if (currentlyPlaying === musicId) {
-                // Останавливаем
-                audioPlayer.pause();
-                currentlyPlaying = null;
-            } else {
-                // В реальном приложении здесь будет запрос к /music/play/{musicId}
-                // Для демо просто показываем уведомление
-                alert(`Воспроизведение: ${music.name}\n(Демо-режим, в реальном приложении здесь будет стриминг аудио)`);
-                
-                // Имитация плеера
-                currentlyPlaying = musicId;
-            }
-            
-            // Обновляем интерфейс
-            renderMusic();
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
         }
 
-        // Лайк музыки (демо)
-        function likeMusic(musicId) {
-            const music = allMusic.find(m => m.id === musicId);
-            if (!music) return;
-            
-            // В реальном приложении здесь будет POST запрос для лайка
-            music.likes = (music.likes || 0) + 1;
-            
-            // Обновляем отображение
-            renderMusic();
-            
-            alert(`Вы поставили лайк треку "${music.name}"`);
-        }
-
-        // Просмотр деталей трека
-        async function viewMusic(musicId) {
-            showLoading();
-            
-            try {
-                // Пробуем получить с детального эндпоинта
-                const response = await fetch(`${apiUrl}/${musicId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                
-                let music;
-                if (response.ok) {
-                    const data = await response.json();
-                    // Обрабатываем формат ответа
-                    if (data && data.GetMusicJSONResponse) {
-                        music = data.GetMusicJSONResponse;
-                    } else {
-                        music = data;
-                    }
-                } else {
-                    // Если детальный эндпоинт не работает, ищем в загруженных данных
-                    music = allMusic.find(m => m.id === musicId);
-                }
-                
-                if (!music) {
-                    throw new Error('Трек не найден');
-                }
-                
-                showMusicModal(music);
-                
-            } catch (error) {
-                alert('Ошибка загрузки деталей трека: ' + error.message);
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // Показать модальное окно с деталями трека
-        function showMusicModal(music) {
-            const duration = formatDuration(music.duration_seconds);
-            
-            modalBody.innerHTML = `
-                <div class="music-detail-cover">
-                    <span>🎵</span>
-                </div>
-                <div class="music-detail-info">
-                    <div class="detail-row">
-                        <span class="detail-label">ID:</span>
-                        <span class="detail-value">${music.id || 'Не указан'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Название:</span>
-                        <span class="detail-value">${music.name || 'Не указано'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">ID загрузившего:</span>
-                        <span class="detail-value uploader-id">${music.uploader_id || 'Не указан'}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Лайки:</span>
-                        <span class="detail-value likes">❤️ ${music.likes || 0}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Длительность:</span>
-                        <span class="detail-value">${duration}</span>
-                    </div>
-                </div>
-                <div class="audio-player">
-                    <audio controls>
-                        <source src="#" type="audio/mpeg">
-                        Ваш браузер не поддерживает аудио элемент.
-                    </audio>
-                    <p style="text-align: center; margin-top: 0.5rem; color: #666; font-size: 0.85rem;">
-                        * В реальном приложении здесь будет стриминг аудио
-                    </p>
-                </div>
-            `;
-            
-            modal.classList.add('active');
-        }
-
-        // Закрыть модальное окно
-        function closeModal() {
-            modal.classList.remove('active');
-        }
-
-        // Показать загрузку
         function showLoading() {
             isLoading = true;
             loadingContainer.style.display = 'flex';
         }
 
-        // Скрыть загрузку
         function hideLoading() {
             isLoading = false;
             loadingContainer.style.display = 'none';
         }
 
-        // Обновление статуса
         function updateStatus(type, message) {
             statusText.textContent = message;
             statusDot.className = 'status-dot';
@@ -1207,7 +1046,6 @@
             }
         }
 
-        // Показать ошибку
         function showError(message) {
             musicContainer.innerHTML = `
                 <div class="error-container">
@@ -1217,20 +1055,25 @@
                     <p>Проверьте:</p>
                     <ul style="list-style: none; margin-bottom: 1.5rem;">
                         <li>✓ Запущен ли сервер на порту 3004</li>
-                        <li>✓ Доступен ли эндпоинт ${apiUrl}</li>
+                        <li>✓ Доступен ли эндпоинт ${apiBaseUrl}/music</li>
                         <li>✓ Настроены ли CORS заголовки</li>
                     </ul>
-                    <button class="retry-btn" onclick="fetchMusic()">Повторить попытку</button>
+                    <button class="btn btn-primary" onclick="fetchMusic()">Повторить попытку</button>
                 </div>
             `;
         }
 
-        // Закрытие модального окна по клику вне его
-        window.onclick = function(event) {
-            if (event.target === modal) {
-                closeModal();
-            }
-        }
+        // Загрузка данных при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchMusic();
+        });
+
+        refreshBtn.addEventListener('click', fetchMusic);
+        searchBtn.addEventListener('click', filterMusic);
+        searchInput.addEventListener('input', filterMusic);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') filterMusic();
+        });
     </script>
 </body>
 </html>
