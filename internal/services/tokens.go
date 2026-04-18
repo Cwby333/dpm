@@ -3,7 +3,9 @@ package services
 import (
 	"context"
 	"dpm/internal/models"
+	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -62,4 +64,35 @@ func (s UserService) createTokens(ctx context.Context, user models.User) (access
 	refresh.Type = "refresh"
 
 	return access, refresh, nil
+}
+
+func (s UserService) CheckAccessToken(ctx context.Context, token string) (jwt.MapClaims, error) {
+	const op = "./internal/services/tokens.go.CheckAccessToken()"
+
+	slog.Info("CheckAccessToken")
+
+	sk := s.Key
+
+	t, err := jwt.ParseWithClaims(token, jwt.MapClaims{}, func(t *jwt.Token) (any, error) {
+		return []byte(sk), nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err.Error())
+	}
+
+	slog.Info(t.Raw)
+
+	if !t.Valid {
+		slog.Error("token invalid")
+		return nil, fmt.Errorf("%s: %w", op, errors.New("token invalid"))
+	}
+
+	claims, ok := t.Claims.(jwt.MapClaims)
+	if !ok {
+		slog.Info("not jwtMapClaims")
+		return jwt.MapClaims{}, nil
+	}
+	
+
+	return claims, nil
 }

@@ -5,6 +5,7 @@ import (
 	"dpm/internal/models"
 	"dpm/internal/services"
 	"dpm/pkg/api/v1"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -30,9 +31,10 @@ func NewHandler(uService *services.UserService, mService *services.MusicService,
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
@@ -45,33 +47,119 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	h.Mux.Handle("GET /ping", http.HandlerFunc(strict.GetPing))
-	h.Mux.Handle("POST /login", http.HandlerFunc(strict.Login))
+	h.Mux.Handle("POST /login", corsMiddleware(http.HandlerFunc(strict.Login)))
+	h.Mux.Handle("OPTIONS /login", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
 	h.Mux.Handle("POST /register", corsMiddleware(http.HandlerFunc(strict.Register)))
+	h.Mux.Handle("OPTIONS /register", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
 	h.Mux.Handle("GET /music/{musicID}", corsMiddleware(wrapGetMusic(strict)))
-	h.Mux.Handle("GET /music", corsMiddleware(http.HandlerFunc(strict.GetAllMusic)))
+	h.Mux.Handle("GET /music", corsMiddleware(wrapGetAllMusic(strict)))
+	h.Mux.Handle("OPTIONS /music", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
 	h.Mux.Handle("POST /listening-history/{userID}", corsMiddleware(wrapAddLToLH(strict)))
 	h.Mux.Handle("DELETE /listening-history/{userID}", corsMiddleware(wrapDeleteLFromLH(strict)))
 	h.Mux.Handle("GET /listening-history/{userID}", corsMiddleware(wrapGetLH(strict)))
-	h.Mux.Handle("POST /favor/{userID}", corsMiddleware(wrapCreateFavor(strict)))
-	h.Mux.Handle("GET /favor/{userID}", corsMiddleware(wrapGetFavor(strict)))
-	h.Mux.Handle("DELETE /favor/{userID}", corsMiddleware(wrapDeleteFavor(strict)))
+	h.Mux.Handle("OPTIONS /listening-history", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("POST /favor", corsMiddleware(wrapCreateFavor(strict)))
+	h.Mux.Handle("GET /favor", corsMiddleware(wrapGetFavor(strict)))
+	h.Mux.Handle("DELETE /favor", corsMiddleware(wrapDeleteFavor(strict)))
+	h.Mux.Handle("OPTIONS /favor", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+}
+
+func wrapGetAllMusic(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info(err.Error())
+			c = &http.Cookie{
+				Value: "",
+			}
+			// return
+		} else {
+			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
+		}
+		strict.GetAllMusic(w, r, api.GetAllMusicParams{AccessToken: &c.Value})
+	}
 }
 
 func wrapDeleteFavor(strict api.ServerInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		strict.DeleteFavor(w, r, r.PathValue("userID"))
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapDeleteFavor error")
+			slog.Info(err.Error())
+			c = &http.Cookie{
+			}
+			return
+		} else {
+			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
+		}
+		strict.DeleteFavor(w, r, api.DeleteFavorParams{AccessToken: c.Value})
 	}
 }
 
 func wrapGetFavor(strict api.ServerInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		strict.GetFavor(w, r, r.PathValue("userID"))	
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapGetFavor error")
+			slog.Info(err.Error())
+			c = &http.Cookie{
+			}
+			return
+		} else {
+			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
+		}
+		strict.GetFavor(w, r, api.GetFavorParams{AccessToken: c.Value})	
 	}
 }
 
 func wrapCreateFavor(strict api.ServerInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		strict.AddFavor(w, r, r.PathValue("userID"))
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapCreateFavor error")
+			slog.Info(err.Error())
+			c = &http.Cookie{
+			}
+			return
+		} else {
+			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
+		}
+		strict.AddFavor(w, r, api.AddFavorParams{AccessToken: c.Value})
 	}
 }
 
@@ -147,16 +235,20 @@ func (h Handler) Login(ctx context.Context, request api.LoginRequestObject) (api
 	msg := "Success"
 
 	return api.Login200JSONResponse{
+		Body: struct{Message *string "json:\"message,omitempty\""}{&msg},
 		Headers: api.Login200ResponseHeaders{
 			AccessToken: access,
 			RefreshToken: refresh,
 		},
-		Body: struct{Message *string "json:\"message,omitempty\""}{Message: &msg},
 	}, nil
 }
 
 func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequestObject) (api.GetAllMusicResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.GetAllMusic()"
+
+	if request.Params.AccessToken != nil {
+		slog.Info(*request.Params.AccessToken)
+	}
 
 	slog.Info("Get request")
 
@@ -277,12 +369,21 @@ func (h Handler) DeleteListeningFromLH(ctx context.Context, request api.DeleteLi
 func (h Handler) AddFavor(ctx context.Context, request api.AddFavorRequestObject) (api.AddFavorResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.AddFavor()"
 
+	t := request.Params.AccessToken
+
+	if t == "" {
+		slog.Info("DeleteFavor token empty")
+		return api.AddFavor500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+
 	f := models.ListeningHistory{
-		UserID: request.UserID,
+		UserID: claims["sub"].(string),
 		MusicID: request.Body.MusicID,
 	}
 	slog.Info(fmt.Sprintf("%+v", f))
-	err := h.fService.CreateFavor(ctx, f)
+	err = h.fService.CreateFavor(ctx, f)
 	if err != nil {
 		return api.AddFavor500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
 	}
@@ -293,8 +394,17 @@ func (h Handler) AddFavor(ctx context.Context, request api.AddFavorRequestObject
 func (h Handler) GetFavor(ctx context.Context, request api.GetFavorRequestObject) (api.GetFavorResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.GetFavor()"
 
+	t := request.Params.AccessToken
+
+	if t == "" {
+		slog.Info("DeleteFavor token empty")
+		return api.GetFavor500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+
 	f := models.ListeningHistory{
-		UserID: request.UserID,
+		UserID: claims["sub"].(string),
 	}
 	slog.Info(fmt.Sprintf("%+v", f))
 	favor, err := h.fService.ReadFavor(ctx, f)
@@ -324,11 +434,20 @@ func (h Handler) GetFavor(ctx context.Context, request api.GetFavorRequestObject
 func (h Handler) DeleteFavor(ctx context.Context, request api.DeleteFavorRequestObject) (api.DeleteFavorResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.DeleteFavor()"
 
+	t := request.Params.AccessToken
+
+	if t == "" {
+		slog.Info("DeleteFavor token empty")
+		return api.DeleteFavor500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+
 	lhi := models.ListeningHistory{
-		UserID: request.UserID,
+		UserID: claims["sub"].(string),
 		MusicID: request.Body.MusicID,
 	}
-	err := h.fService.DeleteFavor(ctx, lhi)
+	err = h.fService.DeleteFavor(ctx, lhi)
 	if err != nil {
 		return api.DeleteFavor500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
 	}

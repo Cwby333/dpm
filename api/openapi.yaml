@@ -10,14 +10,14 @@ info:
 #   - url: "https://music-microservice.mute-project/api/v1"
 #     description: "Base url"
 paths:
-  /favor/{userID}:
+  /favor:
     description: "Actions with user's favor"
     get:
       description: "Get user's favor"
       operationId: "getFavor"
       parameters:
-        - name: userID
-          in: path
+        - name: Access-Token
+          in: cookie
           required: true
           allowEmptyValue: false
           deprecated: false
@@ -37,8 +37,8 @@ paths:
       description: "Add music to user's favor"
       operationId: "addFavor"
       parameters:
-        - name: userID
-          in: path
+        - name: Access-Token
+          in: cookie
           required: true
           allowEmptyValue: false
           deprecated: false
@@ -71,8 +71,8 @@ paths:
       description: "Delete music to user's favor"
       operationId: "deleteFavor"
       parameters:
-        - name: userID
-          in: path
+        - name: Access-Token
+          in: cookie
           required: true
           allowEmptyValue: false
           deprecated: false
@@ -198,6 +198,12 @@ paths:
     get:
       summary: "Get all music"
       operationId: "getAllMusic"
+      parameters:
+        - name: Access-Token
+          in: cookie
+          schema:
+            type: string
+          required: false
       responses:
         200:
           description: "Success"

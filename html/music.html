@@ -973,7 +973,8 @@ async function toggleFavor(musicId, musicName) {
                 const response = await fetch(`${apiBaseUrl}/music`, {
                     method: 'GET',
                     headers: { 'Accept': 'application/json' },
-                    mode: 'cors'
+                    mode: 'cors',
+                    credentials: 'include'
                 });
 
                 if (!response.ok) {
