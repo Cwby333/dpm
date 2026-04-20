@@ -14,6 +14,7 @@ import (
 type Pg interface {
 	CreateUser(ctx context.Context, user models.User) error
 	ReadPsw(ctx context.Context, user models.User) (string, error)
+	ReadUserID(ctx context.Context, user models.User) (string, error)
 }
 
 type UserService struct {
@@ -56,11 +57,18 @@ func (us *UserService) Login(ctx context.Context, u models.User) (models.JWTAcce
 		return models.JWTAccess{}, models.JWTRefresh{}, fmt.Errorf("%s: %w", op, err)
 	}
 
+	id, err := us.Pg.ReadUserID(ctx, u)
+	if err != nil {
+		return models.JWTAccess{}, models.JWTRefresh{}, fmt.Errorf("%s: %w", op, err)
+	}
+	u.ID = id
+
 	slog.Info(u.HashPsw, hashPsw)
 	err = bcrypt.CompareHashAndPassword([]byte(hashPsw), []byte(u.HashPsw))
 	if err != nil {
 		return models.JWTAccess{}, models.JWTRefresh{}, fmt.Errorf("%s CompareHash: %w", op, err)
 	}
+	slog.Info("Login subject " + u.ID)
 
 	access, refresh, err := us.createTokens(ctx, u)
 	slog.Info(fmt.Sprint("access token " + access.Sign))

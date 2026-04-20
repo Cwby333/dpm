@@ -64,8 +64,8 @@ func (p *Postgres) CreateListeningHistoryItem(ctx context.Context, listeningHist
 func (p *Postgres) DeleteListeningHistoryItem(ctx context.Context, lhi models.ListeningHistory) error {
 	const op = "./internal/adapters/repo/postgres/listeningHistory.go.DeleteListeningHistoryItem()"
 
-	q := "DELETE FROM listening_history WHERE user_id = $1 AND music_id = $2"
-	tag, err := p.pool.Exec(ctx, q, lhi.UserID, lhi.MusicID)
+	q := "DELETE FROM listening_history WHERE user_id = $1 AND music_id = $2  AND listening_date = $3"
+	tag, err := p.pool.Exec(ctx, q, lhi.UserID, lhi.MusicID, lhi.ListeningDate)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

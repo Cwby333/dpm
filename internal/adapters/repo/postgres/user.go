@@ -36,6 +36,27 @@ func (pg *Postgres) CreateUser(ctx context.Context, user models.User) error {
 	return nil
 }
 
+func (pg *Postgres) ReadUserID(ctx context.Context, user models.User) (string, error) {
+	const op = "./internal/adapters/repo/postgres/user.go.ReadUserID"
+
+	q := "SELECT id FROM users WHERE username = $1"
+
+	rows, err := pg.pool.Query(ctx, q, user.Username)
+	if err != nil {
+		return "", fmt.Errorf("%s %s: %w", op, q, err)
+	}
+
+	id := ""
+	for rows.Next() {
+		err = rows.Scan(&id)
+		if err != nil {
+			return "", fmt.Errorf("%s %s: %w", op, q, err)
+		}
+	}
+
+	return id, nil
+}
+
 func (pg *Postgres) ReadPsw(ctx context.Context, user models.User) (string, error) {
 	const op = "./internal/adapters/repo/postgres/user.go.ReadPsw()"
 

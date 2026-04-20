@@ -106,12 +106,28 @@ type AddFavorParams struct {
 
 // DeleteListeningFromLHJSONBody defines parameters for DeleteListeningFromLH.
 type DeleteListeningFromLHJSONBody struct {
-	MusicId string `json:"music_id"`
+	ListeningDate *time.Time `json:"listening_date,omitempty"`
+	MusicId       string     `json:"music_id"`
+}
+
+// DeleteListeningFromLHParams defines parameters for DeleteListeningFromLH.
+type DeleteListeningFromLHParams struct {
+	AccessToken string `form:"Access-Token" json:"Access-Token"`
+}
+
+// GetLHParams defines parameters for GetLH.
+type GetLHParams struct {
+	AccessToken string `form:"Access-Token" json:"Access-Token"`
 }
 
 // AddListeningToLHJSONBody defines parameters for AddListeningToLH.
 type AddListeningToLHJSONBody struct {
 	MusicID string `json:"musicID"`
+}
+
+// AddListeningToLHParams defines parameters for AddListeningToLH.
+type AddListeningToLHParams struct {
+	AccessToken string `form:"Access-Token" json:"Access-Token"`
 }
 
 // LoginJSONBody defines parameters for Login.
@@ -162,14 +178,14 @@ type ServerInterface interface {
 	// (POST /favor)
 	AddFavor(w http.ResponseWriter, r *http.Request, params AddFavorParams)
 
-	// (DELETE /listening-history/{userID})
-	DeleteListeningFromLH(w http.ResponseWriter, r *http.Request, userID string)
+	// (DELETE /listening-history)
+	DeleteListeningFromLH(w http.ResponseWriter, r *http.Request, params DeleteListeningFromLHParams)
 
-	// (GET /listening-history/{userID})
-	GetLH(w http.ResponseWriter, r *http.Request, userID string)
+	// (GET /listening-history)
+	GetLH(w http.ResponseWriter, r *http.Request, params GetLHParams)
 
-	// (POST /listening-history/{userID})
-	AddListeningToLH(w http.ResponseWriter, r *http.Request, userID string)
+	// (POST /listening-history)
+	AddListeningToLH(w http.ResponseWriter, r *http.Request, params AddListeningToLHParams)
 
 	// (POST /login)
 	Login(w http.ResponseWriter, r *http.Request)
@@ -312,17 +328,29 @@ func (siw *ServerInterfaceWrapper) DeleteListeningFromLH(w http.ResponseWriter, 
 
 	var err error
 
-	// ------------- Path parameter "userID" -------------
-	var userID string
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteListeningFromLHParams
 
-	err = runtime.BindStyledParameterWithOptions("simple", "userID", r.PathValue("userID"), &userID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userID", Err: err})
-		return
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = value
+
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
+			return
+		}
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteListeningFromLH(w, r, userID)
+		siw.Handler.DeleteListeningFromLH(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -337,17 +365,29 @@ func (siw *ServerInterfaceWrapper) GetLH(w http.ResponseWriter, r *http.Request)
 
 	var err error
 
-	// ------------- Path parameter "userID" -------------
-	var userID string
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetLHParams
 
-	err = runtime.BindStyledParameterWithOptions("simple", "userID", r.PathValue("userID"), &userID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userID", Err: err})
-		return
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = value
+
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
+			return
+		}
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetLH(w, r, userID)
+		siw.Handler.GetLH(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -362,17 +402,29 @@ func (siw *ServerInterfaceWrapper) AddListeningToLH(w http.ResponseWriter, r *ht
 
 	var err error
 
-	// ------------- Path parameter "userID" -------------
-	var userID string
+	// Parameter object where we will unmarshal all parameters from the context
+	var params AddListeningToLHParams
 
-	err = runtime.BindStyledParameterWithOptions("simple", "userID", r.PathValue("userID"), &userID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userID", Err: err})
-		return
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = value
+
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
+			return
+		}
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AddListeningToLH(w, r, userID)
+		siw.Handler.AddListeningToLH(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -606,9 +658,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/favor", wrapper.DeleteFavor)
 	m.HandleFunc("GET "+options.BaseURL+"/favor", wrapper.GetFavor)
 	m.HandleFunc("POST "+options.BaseURL+"/favor", wrapper.AddFavor)
-	m.HandleFunc("DELETE "+options.BaseURL+"/listening-history/{userID}", wrapper.DeleteListeningFromLH)
-	m.HandleFunc("GET "+options.BaseURL+"/listening-history/{userID}", wrapper.GetLH)
-	m.HandleFunc("POST "+options.BaseURL+"/listening-history/{userID}", wrapper.AddListeningToLH)
+	m.HandleFunc("DELETE "+options.BaseURL+"/listening-history", wrapper.DeleteListeningFromLH)
+	m.HandleFunc("GET "+options.BaseURL+"/listening-history", wrapper.GetLH)
+	m.HandleFunc("POST "+options.BaseURL+"/listening-history", wrapper.AddListeningToLH)
 	m.HandleFunc("POST "+options.BaseURL+"/login", wrapper.Login)
 	m.HandleFunc("GET "+options.BaseURL+"/music", wrapper.GetAllMusic)
 	m.HandleFunc("GET "+options.BaseURL+"/music/{musicID}", wrapper.GetMusic)
@@ -713,7 +765,7 @@ func (response AddFavor500JSONResponse) VisitAddFavorResponse(w http.ResponseWri
 }
 
 type DeleteListeningFromLHRequestObject struct {
-	UserID string `json:"userID"`
+	Params DeleteListeningFromLHParams
 	Body   *DeleteListeningFromLHJSONRequestBody
 }
 
@@ -740,7 +792,7 @@ func (response DeleteListeningFromLH500JSONResponse) VisitDeleteListeningFromLHR
 }
 
 type GetLHRequestObject struct {
-	UserID string `json:"userID"`
+	Params GetLHParams
 }
 
 type GetLHResponseObject interface {
@@ -768,7 +820,7 @@ func (response GetLH500JSONResponse) VisitGetLHResponse(w http.ResponseWriter) e
 }
 
 type AddListeningToLHRequestObject struct {
-	UserID string `json:"userID"`
+	Params AddListeningToLHParams
 	Body   *AddListeningToLHJSONRequestBody
 }
 
@@ -984,13 +1036,13 @@ type StrictServerInterface interface {
 	// (POST /favor)
 	AddFavor(ctx context.Context, request AddFavorRequestObject) (AddFavorResponseObject, error)
 
-	// (DELETE /listening-history/{userID})
+	// (DELETE /listening-history)
 	DeleteListeningFromLH(ctx context.Context, request DeleteListeningFromLHRequestObject) (DeleteListeningFromLHResponseObject, error)
 
-	// (GET /listening-history/{userID})
+	// (GET /listening-history)
 	GetLH(ctx context.Context, request GetLHRequestObject) (GetLHResponseObject, error)
 
-	// (POST /listening-history/{userID})
+	// (POST /listening-history)
 	AddListeningToLH(ctx context.Context, request AddListeningToLHRequestObject) (AddListeningToLHResponseObject, error)
 
 	// (POST /login)
@@ -1131,10 +1183,10 @@ func (sh *strictHandler) AddFavor(w http.ResponseWriter, r *http.Request, params
 }
 
 // DeleteListeningFromLH operation middleware
-func (sh *strictHandler) DeleteListeningFromLH(w http.ResponseWriter, r *http.Request, userID string) {
+func (sh *strictHandler) DeleteListeningFromLH(w http.ResponseWriter, r *http.Request, params DeleteListeningFromLHParams) {
 	var request DeleteListeningFromLHRequestObject
 
-	request.UserID = userID
+	request.Params = params
 
 	var body DeleteListeningFromLHJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -1164,10 +1216,10 @@ func (sh *strictHandler) DeleteListeningFromLH(w http.ResponseWriter, r *http.Re
 }
 
 // GetLH operation middleware
-func (sh *strictHandler) GetLH(w http.ResponseWriter, r *http.Request, userID string) {
+func (sh *strictHandler) GetLH(w http.ResponseWriter, r *http.Request, params GetLHParams) {
 	var request GetLHRequestObject
 
-	request.UserID = userID
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetLH(ctx, request.(GetLHRequestObject))
@@ -1190,10 +1242,10 @@ func (sh *strictHandler) GetLH(w http.ResponseWriter, r *http.Request, userID st
 }
 
 // AddListeningToLH operation middleware
-func (sh *strictHandler) AddListeningToLH(w http.ResponseWriter, r *http.Request, userID string) {
+func (sh *strictHandler) AddListeningToLH(w http.ResponseWriter, r *http.Request, params AddListeningToLHParams) {
 	var request AddListeningToLHRequestObject
 
-	request.UserID = userID
+	request.Params = params
 
 	var body AddListeningToLHJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -1363,26 +1415,26 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"sVbt8OXo4jYsFU3zfwAAAP//DqU5IU0dAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

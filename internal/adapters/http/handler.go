@@ -45,8 +45,28 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func recoveryMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func ()  {
+			if err := recover(); err != nil {
+				slog.Error(fmt.Sprintf("Recover middleware: %v", err))
+			}
+		}()
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	h.Mux.Handle("GET /ping", http.HandlerFunc(strict.GetPing))
+	h.Mux.Handle("OPTIONS /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
 	h.Mux.Handle("POST /login", corsMiddleware(http.HandlerFunc(strict.Login)))
 	h.Mux.Handle("OPTIONS /login", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
@@ -75,9 +95,9 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
-	h.Mux.Handle("POST /listening-history/{userID}", corsMiddleware(wrapAddLToLH(strict)))
-	h.Mux.Handle("DELETE /listening-history/{userID}", corsMiddleware(wrapDeleteLFromLH(strict)))
-	h.Mux.Handle("GET /listening-history/{userID}", corsMiddleware(wrapGetLH(strict)))
+	h.Mux.Handle("POST /listening-history", corsMiddleware(wrapAddLToLH(strict)))
+	h.Mux.Handle("DELETE /listening-history", corsMiddleware(wrapDeleteLFromLH(strict)))
+	h.Mux.Handle("GET /listening-history", corsMiddleware(wrapGetLH(strict)))
 	h.Mux.Handle("OPTIONS /listening-history", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
@@ -165,19 +185,49 @@ func wrapCreateFavor(strict api.ServerInterface) http.HandlerFunc {
 
 func wrapGetLH(strict api.ServerInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		strict.GetLH(w, r, r.PathValue("userID"))
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapGetLH error")
+			slog.Info(err.Error())
+			c = &http.Cookie{
+			}
+			return
+		} else {
+			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
+		}
+		strict.GetLH(w, r, api.GetLHParams{AccessToken: c.Value})
 	}
 }
 
 func wrapDeleteLFromLH(strict api.ServerInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		strict.DeleteListeningFromLH(w, r, r.PathValue("userID"))
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapDelLFromLH error")
+			slog.Info(err.Error())
+			c = &http.Cookie{
+			}
+			return
+		} else {
+			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
+		}
+		strict.DeleteListeningFromLH(w, r, api.DeleteListeningFromLHParams{AccessToken: c.Value})
 	}
 }
 
 func wrapAddLToLH(strict api.ServerInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		strict.AddListeningToLH(w, r, r.PathValue("userID"))
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapAddLToLH error")
+			slog.Info(err.Error())
+			c = &http.Cookie{
+			}
+			return
+		} else {
+			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
+		}
+		strict.AddListeningToLH(w, r, api.AddListeningToLHParams{AccessToken: c.Value})
 	}
 }
 
@@ -304,13 +354,27 @@ func (h Handler) GetMusic(ctx context.Context, request api.GetMusicRequestObject
 func (h Handler) AddListeningToLH(ctx context.Context, request api.AddListeningToLHRequestObject) (api.AddListeningToLHResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.AddListeningToLH"
 
+	t := request.Params.AccessToken
+
+	if t == "" {
+		slog.Info("DeleteFavor token empty")
+		return api.AddListeningToLH500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.AddListeningToLH500JSONResponse(err.Error()), nil
+	}
+
 	lhi := models.ListeningHistory{
-		UserID: request.UserID,
+		UserID: claims["sub"].(string),
 		MusicID: request.Body.MusicID,
 	}
 	slog.Info(fmt.Sprintf("%+v", lhi))
-	err := h.lhService.CreateListeningHistoryItem(ctx, lhi)
+	err = h.lhService.CreateListeningHistoryItem(ctx, lhi)
 	if err != nil {
+		slog.Error(err.Error())
 		return api.AddListeningToLH500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -320,9 +384,27 @@ func (h Handler) AddListeningToLH(ctx context.Context, request api.AddListeningT
 func (h Handler) GetLH(ctx context.Context, request api.GetLHRequestObject) (api.GetLHResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.GetLH()"
 	
-	lhi := models.ListeningHistory{
-		UserID: request.UserID,
+	t := request.Params.AccessToken
+
+	slog.Info("GetLH Token: ", t)
+
+	if t == "" {
+		slog.Info("DeleteFavor token empty")
+		return api.GetLH500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
 	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.GetLH500JSONResponse(err.Error()), nil
+	}
+
+	slog.Info(fmt.Sprintf("Claims is nil: %v", claims == nil))
+
+	lhi := models.ListeningHistory{
+		UserID: claims["sub"].(string),
+	}
+
 	lh, err := h.lhService.ReadListeningHistory(ctx, lhi)
 	if err != nil {
 		return api.GetLH500JSONResponse(err.Error()), nil
@@ -352,13 +434,27 @@ func (h Handler) GetLH(ctx context.Context, request api.GetLHRequestObject) (api
 func (h Handler) DeleteListeningFromLH(ctx context.Context, request api.DeleteListeningFromLHRequestObject) (api.DeleteListeningFromLHResponseObject, error) {	
 	const op = "./internal/adapters/http/handler.go.DeleteListingFromLH()"
 
-	slog.Info(request.UserID)
+	t := request.Params.AccessToken
+
+	if t == "" {
+		slog.Info("DeleteFavor token empty")
+		return api.DeleteListeningFromLH500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)	
+	if err != nil {
+		slog.Error(err.Error())
+		return api.DeleteListeningFromLH500JSONResponse(err.Error()), nil
+	}
+
+	slog.Info(t)
 	slog.Info(request.Body.MusicId)
 	lhi := models.ListeningHistory{
-		UserID: request.UserID,
+		UserID: claims["sub"].(string),
 		MusicID: request.Body.MusicId,
+		ListeningDate: *request.Body.ListeningDate,
 	}
-	err := h.lhService.DeleteListeningHistoryItem(ctx, lhi)
+	err = h.lhService.DeleteListeningHistoryItem(ctx, lhi)
 	if err != nil {
 		return api.DeleteListeningFromLH500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
 	}
@@ -377,6 +473,10 @@ func (h Handler) AddFavor(ctx context.Context, request api.AddFavorRequestObject
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.AddFavor500JSONResponse(err.Error()), nil
+	}
 
 	f := models.ListeningHistory{
 		UserID: claims["sub"].(string),
@@ -385,6 +485,7 @@ func (h Handler) AddFavor(ctx context.Context, request api.AddFavorRequestObject
 	slog.Info(fmt.Sprintf("%+v", f))
 	err = h.fService.CreateFavor(ctx, f)
 	if err != nil {
+		slog.Error(err.Error())
 		return api.AddFavor500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -402,6 +503,10 @@ func (h Handler) GetFavor(ctx context.Context, request api.GetFavorRequestObject
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.GetFavor500JSONResponse(err.Error()), nil
+	}
 
 	f := models.ListeningHistory{
 		UserID: claims["sub"].(string),
@@ -442,6 +547,10 @@ func (h Handler) DeleteFavor(ctx context.Context, request api.DeleteFavorRequest
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.DeleteFavor500JSONResponse(err.Error()), nil
+	}
 
 	lhi := models.ListeningHistory{
 		UserID: claims["sub"].(string),

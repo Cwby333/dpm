@@ -60,6 +60,7 @@
             display: flex;
             gap: 2rem;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .nav-links a {
@@ -148,54 +149,10 @@
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        .user-id-section {
-            background: white;
-            border-radius: 10px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 2rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .user-id-section label {
-            font-weight: 600;
-            color: #555;
-        }
-
-        .user-id-section input {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            border: 2px solid #e1e1e1;
-            border-radius: 6px;
-            font-size: 1rem;
-            min-width: 250px;
-        }
-
-        .user-id-section input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .user-id-section .status-badge {
-            font-size: 0.85rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            background: #f0f0f0;
-            color: #666;
-        }
-
-        .user-id-section .status-badge.active {
-            background: #48bb78;
-            color: white;
-        }
-
         .refresh-btn {
             padding: 0.75rem 1.5rem;
-            background: #667eea;
-            color: white;
+            background: white;
+            color: #667eea;
             border: none;
             border-radius: 8px;
             cursor: pointer;
@@ -204,11 +161,12 @@
             align-items: center;
             gap: 0.5rem;
             transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .refresh-btn:hover {
-            background: #5a67d8;
-            transform: scale(1.02);
+            background: #f0f0f0;
+            transform: rotate(180deg);
         }
 
         .loading-container {
@@ -642,11 +600,6 @@
                 align-items: stretch;
             }
 
-            .user-id-section {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
             .favor-grid {
                 grid-template-columns: 1fr;
             }
@@ -675,7 +628,7 @@
                 <a href="/music.html">Музыка</a>
                 <a href="#" class="active">Избранное</a>
                 <a href="/listening-history.html">История</a>
-                <div class="auth-buttons">
+                <div class="auth-buttons" id="authButtons">
                     <a href="/login" class="btn btn-outline">Войти</a>
                     <a href="/register" class="btn btn-primary">Регистрация</a>
                 </div>
@@ -686,19 +639,13 @@
     <div class="main-content">
         <div class="page-header">
             <h1>⭐ Избранное</h1>
-        </div>
-
-        <div class="user-id-section">
-            <label>ID пользователя:</label>
-            <input type="text" id="userIdInput" placeholder="Введите ID пользователя">
-            <button class="refresh-btn" id="loadFavorBtn">📋 Загрузить избранное</button>
-            <span class="status-badge" id="userStatusBadge">Не авторизован</span>
+            <button class="refresh-btn" id="refreshBtn">🔄 Обновить</button>
         </div>
 
         <div class="status-bar" id="statusBar">
             <div class="status-info">
                 <span class="status-dot" id="statusDot"></span>
-                <span id="statusText">Введите ID пользователя и нажмите загрузить</span>
+                <span id="statusText">Загрузка избранного...</span>
             </div>
             <span id="favorCount">0 треков</span>
         </div>
@@ -758,122 +705,63 @@
     </footer>
 
     <script>
-        let currentUserId = '';
+        // Конфигурация
+        const apiBaseUrl = 'http://localhost:3003';
         let favorItems = [];
         let musicDetails = new Map();
-        let audioPlayer = null;
-        let currentPlaying = null;
-        const apiBaseUrl = 'http://localhost:3003';
-        const favorApiUrl = 'http://localhost:3003';
+        let audioPlayerElement = null;
+        let audioPlayerBar = null;
 
+        // DOM элементы
         const loadingContainer = document.getElementById('loadingContainer');
         const favorContainer = document.getElementById('favorContainer');
-        const userIdInput = document.getElementById('userIdInput');
-        const loadFavorBtn = document.getElementById('loadFavorBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
         const favorCount = document.getElementById('favorCount');
-        const userStatusBadge = document.getElementById('userStatusBadge');
-        const audioPlayerBar = document.getElementById('audioPlayerBar');
-        const audioPlayerElement = document.getElementById('audioPlayer');
-        const currentTrackTitle = document.getElementById('currentTrackTitle');
-        const currentTrackArtist = document.getElementById('currentTrackArtist');
 
-        // Загрузка ID пользователя из localStorage
-        const savedUserId = localStorage.getItem('favorUserId');
-        if (savedUserId) {
-            userIdInput.value = savedUserId;
-            currentUserId = savedUserId;
-            updateUserStatus(true);
-            loadFavor();
-        }
+        // Инициализация аудиоплеера
+        audioPlayerElement = document.getElementById('audioPlayer');
+        audioPlayerBar = document.getElementById('audioPlayerBar');
 
-        userIdInput.addEventListener('change', () => {
-            currentUserId = userIdInput.value.trim();
-            if (currentUserId) {
-                localStorage.setItem('favorUserId', currentUserId);
-                updateUserStatus(true);
-                loadFavor();
-            } else {
-                updateUserStatus(false);
-                favorItems = [];
-                renderFavor();
-            }
-        });
-
-        loadFavorBtn.addEventListener('click', () => {
-            currentUserId = userIdInput.value.trim();
-            if (!currentUserId) {
-                showNotification('Введите ID пользователя', 'error');
-                return;
-            }
-            localStorage.setItem('favorUserId', currentUserId);
-            updateUserStatus(true);
-            loadFavor();
-        });
-
-        userIdInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                loadFavorBtn.click();
-            }
-        });
-
-        function updateUserStatus(isActive) {
-            if (isActive && currentUserId) {
-                userStatusBadge.textContent = `Пользователь: ${currentUserId.substring(0, 8)}...`;
-                userStatusBadge.classList.add('active');
-            } else {
-                userStatusBadge.textContent = 'Не авторизован';
-                userStatusBadge.classList.remove('active');
-            }
-        }
-
+        // Загрузка избранного (только один запрос, без /ping)
         async function loadFavor() {
             showLoading();
             updateStatus('loading', 'Загрузка избранного...');
 
             try {
-                const url = `${favorApiUrl}/favor/${currentUserId}`;
-                console.log('Запрос к API:', url);
-
-                const response = await fetch(url, {
+                // Простой GET запрос на /favor с credentials: 'include'
+                // Браузер сам отправит Access-Token cookie
+                const response = await fetch(`${apiBaseUrl}/favor`, {
                     method: 'GET',
                     headers: { 'Accept': 'application/json' },
                     credentials: 'include'
                 });
 
-                console.log('Статус ответа:', response.status);
+                console.log('Статус ответа /favor:', response.status);
+
+                // Если 401 или 403 — пользователь не авторизован
+                if (response.status === 401 || response.status === 403) {
+                    renderUnauthorizedState();
+                    updateStatus('error', 'Не авторизован. Пожалуйста, войдите в систему.');
+                    favorCount.textContent = '0 треков';
+                    return;
+                }
 
                 if (!response.ok) {
                     throw new Error(`HTTP ошибка! Статус: ${response.status}`);
                 }
 
                 const data = await response.json();
-                console.log('Получены данные:', data);
+                console.log('Получены данные избранного:', data);
 
-                // Обработка формата ответа (GetMusic - так как в OpenAPI указан $ref: "#/components/responses/GetMusic")
+                // Обработка формата ответа (согласно OpenAPI - GetMusic)
                 if (data && data.GetMusicJSONResponse && Array.isArray(data.GetMusicJSONResponse)) {
                     favorItems = data.GetMusicJSONResponse;
                 } else if (Array.isArray(data)) {
                     favorItems = data;
-                } else if (data.data && Array.isArray(data.data)) {
-                    favorItems = data.data;
-                } else if (data.items && Array.isArray(data.items)) {
-                    favorItems = data.items;
                 } else {
-                    let found = false;
-                    for (let key in data) {
-                        if (Array.isArray(data[key])) {
-                            console.log(`Найден массив в поле "${key}"`);
-                            favorItems = data[key];
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        console.warn('Неожиданный формат данных:', data);
-                        favorItems = [];
-                    }
+                    favorItems = [];
                 }
 
                 console.log(`Загружено треков в избранном: ${favorItems.length}`);
@@ -883,7 +771,7 @@
 
                 renderFavor();
 
-                updateStatus('success', `Избранное загружено для пользователя ${currentUserId}`);
+                updateStatus('success', 'Избранное загружено');
                 favorCount.textContent = `${favorItems.length} треков`;
 
             } catch (error) {
@@ -895,14 +783,16 @@
             }
         }
 
+        // Загрузка детальной информации о треках
         async function loadMusicDetails() {
             for (const item of favorItems) {
-                const musicId = item.musicID || item.id;
+                const musicId = item.id || item.musicID;
                 if (musicId && !musicDetails.has(musicId)) {
                     try {
                         const response = await fetch(`${apiBaseUrl}/music/${musicId}`, {
                             method: 'GET',
-                            headers: { 'Accept': 'application/json' }
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'include'
                         });
                         
                         if (response.ok) {
@@ -923,6 +813,7 @@
             }
         }
 
+        // Удаление из избранного
         async function removeFromFavor(musicId, musicName) {
             if (!confirm(`Удалить "${musicName}" из избранного?`)) {
                 return;
@@ -932,10 +823,8 @@
             updateStatus('loading', 'Удаление...');
 
             try {
-                const url = `${favorApiUrl}/favor/${currentUserId}`;
-                console.log('DELETE запрос к:', url);
-
-                const response = await fetch(url, {
+                // DELETE запрос на /favor (без userID в URL)
+                const response = await fetch(`${apiBaseUrl}/favor`, {
                     method: 'DELETE',
                     headers: {
                         'Accept': 'application/json',
@@ -945,13 +834,22 @@
                     credentials: 'include'
                 });
 
-                console.log('Статус ответа:', response.status);
+                console.log('Статус ответа DELETE:', response.status);
+
+                if (response.status === 401 || response.status === 403) {
+                    showNotification('Сессия истекла, пожалуйста, войдите снова', 'error');
+                    renderUnauthorizedState();
+                    return;
+                }
 
                 if (!response.ok) {
                     throw new Error(`HTTP ошибка! Статус: ${response.status}`);
                 }
 
                 showNotification(`⭐ Трек "${musicName}" удален из избранного`);
+                
+                // Очищаем кэш деталей и обновляем список
+                musicDetails.clear();
                 await loadFavor();
 
             } catch (error) {
@@ -963,34 +861,28 @@
             }
         }
 
-        async function playMusic(musicId, musicName, artistName, songUrl) {
+        // Воспроизведение музыки
+        function playMusic(musicId, musicName, artistName, songUrl) {
             if (!songUrl) {
                 showNotification('Аудиофайл недоступен', 'error');
                 return;
             }
             
-            // Воспроизведение
             if (audioPlayerElement.src !== songUrl) {
                 audioPlayerElement.src = songUrl;
                 audioPlayerElement.load();
             }
             
-            currentTrackTitle.textContent = musicName;
-            currentTrackArtist.textContent = artistName || 'Неизвестный исполнитель';
-            currentPlaying = { id: musicId, name: musicName, artist: artistName };
+            document.getElementById('currentTrackTitle').textContent = musicName;
+            document.getElementById('currentTrackArtist').textContent = artistName || 'Неизвестный исполнитель';
             
             audioPlayerElement.play();
             audioPlayerBar.classList.add('active');
-            
-            audioPlayerElement.onended = () => {
-                // Можно оставить плеер открытым или закрыть
-            };
         }
 
         function closeAudioPlayer() {
             audioPlayerElement.pause();
             audioPlayerBar.classList.remove('active');
-            currentPlaying = null;
         }
 
         function formatDuration(seconds) {
@@ -1005,6 +897,18 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function renderUnauthorizedState() {
+            favorContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔒</div>
+                    <h3>Требуется авторизация</h3>
+                    <p>Войдите в систему, чтобы просмотреть избранное</p>
+                    <button class="btn btn-primary" onclick="window.location.href='/login'">Войти</button>
+                    <button class="btn btn-outline" onclick="window.location.href='/register'" style="margin-left: 1rem;">Зарегистрироваться</button>
+                </div>
+            `;
         }
 
         function renderFavor() {
@@ -1023,13 +927,12 @@
             favorContainer.innerHTML = `
                 <div class="favor-grid">
                     ${favorItems.map(item => {
-                        const musicId = item.musicID || item.id;
+                        const musicId = item.id || item.musicID;
                         const music = musicDetails.get(musicId) || item;
-                        const name = music.name || item.music_name || item.name || 'Без названия';
+                        const name = music.name || item.name || 'Без названия';
                         const artist = music.uploader_username || music.uploader_id || item.uploader_username || item.uploader_id || 'Неизвестный исполнитель';
-                        const cover = music.music_cover || item.music_cover;
-                        const likes = music.likes || item.music_likes || 0;
-                        const duration = music.duration_seconds || item.music_duration || 0;
+                        const likes = music.likes || item.likes || 0;
+                        const duration = music.duration_seconds || item.duration_seconds || 0;
                         const songUrl = music.song_url || item.song_url || '';
                         
                         return `
@@ -1072,10 +975,12 @@
 
         function showLoading() {
             loadingContainer.style.display = 'flex';
+            favorContainer.style.display = 'none';
         }
 
         function hideLoading() {
             loadingContainer.style.display = 'none';
+            favorContainer.style.display = 'block';
         }
 
         function updateStatus(type, message) {
@@ -1091,6 +996,7 @@
         }
 
         function showError(message) {
+            favorContainer.style.display = 'block';
             favorContainer.innerHTML = `
                 <div class="error-container">
                     <div class="error-icon">⚠️</div>
@@ -1098,14 +1004,25 @@
                     <p>${message}</p>
                     <p>Проверьте:</p>
                     <ul style="list-style: none; margin-bottom: 1.5rem;">
-                        <li>✓ Запущен ли сервер на порту 3004</li>
-                        <li>✓ Корректный ли ID пользователя</li>
+                        <li>✓ Запущен ли сервер на порту 3003</li>
                         <li>✓ Настроены ли CORS заголовки</li>
+                        <li>✓ Правильно ли настроены cookies</li>
                     </ul>
                     <button class="btn btn-primary" onclick="loadFavor()">Повторить попытку</button>
                 </div>
             `;
         }
+
+        // Кнопка обновления
+        refreshBtn.addEventListener('click', () => {
+            musicDetails.clear();
+            loadFavor();
+        });
+
+        // Загрузка данных при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFavor();
+        });
     </script>
 </body>
 </html>

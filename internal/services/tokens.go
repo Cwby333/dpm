@@ -38,6 +38,7 @@ func (s UserService) createTokens(ctx context.Context, user models.User) (access
 	access = accessToken.Claims.(models.JWTAccess)
 	access.Sign = accessSign
 	access.Type = "access"
+	slog.Info(fmt.Sprintf("createTokensSubject: %v", access.Subject))
 
 	refreshTokenID := uuid.NewString()
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, models.JWTRefresh{
@@ -77,10 +78,14 @@ func (s UserService) CheckAccessToken(ctx context.Context, token string) (jwt.Ma
 		return []byte(sk), nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err.Error())
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	slog.Info(t.Raw)
+	if t != nil {
+		slog.Info(t.Raw)
+	}else {
+		slog.Info("T is nil")
+	}
 
 	if !t.Valid {
 		slog.Error("token invalid")
@@ -92,7 +97,16 @@ func (s UserService) CheckAccessToken(ctx context.Context, token string) (jwt.Ma
 		slog.Info("not jwtMapClaims")
 		return jwt.MapClaims{}, nil
 	}
-	
+
+	for i := range claims {
+		slog.Info(i, claims[i])
+	}
+	sub, err := claims.GetSubject()
+	if err != nil {
+		slog.Info("haven't subject")
+		return claims, nil
+	}
+	slog.Info(sub)
 
 	return claims, nil
 }

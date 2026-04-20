@@ -102,14 +102,14 @@ paths:
               schema:
                 type: string
 
-  /listening-history/{userID}:
+  /listening-history:
     description: "Actions with user's listening history"
     get:
       description: "Get listening history"
       operationId: "getLH"
       parameters:
-        - name: userID
-          in: path
+        - name: Access-Token
+          in: cookie
           required: true
           allowEmptyValue: false
           deprecated: false
@@ -129,8 +129,8 @@ paths:
       description: "Delete listening from listening history"
       operationId: "deleteListeningFromLH"
       parameters:
-        - name: userID
-          in: path
+        - name: Access-Token
+          in: cookie
           required: true
           allowEmptyValue: false
           deprecated: false
@@ -146,6 +146,9 @@ paths:
               properties:
                 music_id:
                   type: string
+                listening_date:
+                  type: string
+                  format: date-time
       responses:
         200:
           description: "Success"
@@ -163,8 +166,8 @@ paths:
       description: "Add music in listening history"
       operationId: "addListeningToLH"
       parameters:
-        - name: userID
-          in: path
+        - name: Access-Token
+          in: cookie
           required: true
           allowEmptyValue: false
           deprecated: false

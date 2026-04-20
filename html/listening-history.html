@@ -60,6 +60,7 @@
             display: flex;
             gap: 2rem;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .nav-links a {
@@ -148,41 +149,10 @@
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        .user-id-section {
-            background: white;
-            border-radius: 10px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 2rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .user-id-section label {
-            font-weight: 600;
-            color: #555;
-        }
-
-        .user-id-section input {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            border: 2px solid #e1e1e1;
-            border-radius: 6px;
-            font-size: 1rem;
-            min-width: 250px;
-        }
-
-        .user-id-section input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
         .refresh-btn {
             padding: 0.75rem 1.5rem;
-            background: #667eea;
-            color: white;
+            background: white;
+            color: #667eea;
             border: none;
             border-radius: 8px;
             cursor: pointer;
@@ -191,11 +161,12 @@
             align-items: center;
             gap: 0.5rem;
             transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .refresh-btn:hover {
-            background: #5a67d8;
-            transform: scale(1.02);
+            background: #f0f0f0;
+            transform: rotate(180deg);
         }
 
         .loading-container {
@@ -434,6 +405,11 @@
             background: #e53e3e;
         }
 
+        .notification.info {
+            background: #fbbf24;
+            color: #333;
+        }
+
         @keyframes slideIn {
             from {
                 transform: translateX(100%);
@@ -572,11 +548,6 @@
                 align-items: stretch;
             }
 
-            .user-id-section {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
             .history-header {
                 display: none;
             }
@@ -643,8 +614,9 @@
                 <a href="/">Главная</a>
                 <a href="/products.html">Продукты</a>
                 <a href="/music.html">Музыка</a>
-                <a href="#" class="active">История прослушиваний</a>
-                <div class="auth-buttons">
+                <a href="/favor.html">Избранное</a>
+                <a href="#" class="active">История</a>
+                <div class="auth-buttons" id="authButtons">
                     <a href="/login" class="btn btn-outline">Войти</a>
                     <a href="/register" class="btn btn-primary">Регистрация</a>
                 </div>
@@ -655,18 +627,13 @@
     <div class="main-content">
         <div class="page-header">
             <h1>🎧 История прослушиваний</h1>
-        </div>
-
-        <div class="user-id-section">
-            <label>ID пользователя:</label>
-            <input type="text" id="userIdInput" placeholder="Введите ID пользователя">
-            <button class="refresh-btn" id="loadHistoryBtn">📋 Загрузить историю</button>
+            <button class="refresh-btn" id="refreshBtn">🔄 Обновить</button>
         </div>
 
         <div class="status-bar" id="statusBar">
             <div class="status-info">
                 <span class="status-dot" id="statusDot"></span>
-                <span id="statusText">Введите ID пользователя и нажмите загрузить</span>
+                <span id="statusText">Загрузка истории...</span>
             </div>
             <span id="historyCount">0 треков</span>
         </div>
@@ -708,7 +675,8 @@
                     <li><a href="/">Главная</a></li>
                     <li><a href="/products.html">Продукты</a></li>
                     <li><a href="/music.html">Музыка</a></li>
-                    <li><a href="#">История прослушиваний</a></li>
+                    <li><a href="/favor.html">Избранное</a></li>
+                    <li><a href="#">История</a></li>
                 </ul>
             </div>
             <div class="footer-section">
@@ -725,15 +693,15 @@
     </footer>
 
     <script>
-        let currentUserId = '';
+        // Конфигурация
+        const apiBaseUrl = 'http://localhost:3003';
         let listeningHistory = [];
         let currentPlaying = null;
-        const apiBaseUrl = 'http://localhost:3003';
 
+        // DOM элементы
         const loadingContainer = document.getElementById('loadingContainer');
         const historyContainer = document.getElementById('historyContainer');
-        const userIdInput = document.getElementById('userIdInput');
-        const loadHistoryBtn = document.getElementById('loadHistoryBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
         const historyCount = document.getElementById('historyCount');
@@ -742,91 +710,50 @@
         const currentTrackTitle = document.getElementById('currentTrackTitle');
         const currentTrackArtist = document.getElementById('currentTrackArtist');
 
-        // Загрузка ID пользователя из localStorage
-        const savedUserId = localStorage.getItem('listeningUserId');
-        if (savedUserId) {
-            userIdInput.value = savedUserId;
-            currentUserId = savedUserId;
-            loadListeningHistory();
-        }
-
-        userIdInput.addEventListener('change', () => {
-            currentUserId = userIdInput.value.trim();
-            if (currentUserId) {
-                localStorage.setItem('listeningUserId', currentUserId);
-                loadListeningHistory();
-            }
-        });
-
-        loadHistoryBtn.addEventListener('click', () => {
-            currentUserId = userIdInput.value.trim();
-            if (!currentUserId) {
-                showNotification('Введите ID пользователя', 'error');
-                return;
-            }
-            localStorage.setItem('listeningUserId', currentUserId);
-            loadListeningHistory();
-        });
-
-        userIdInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                loadHistoryBtn.click();
-            }
-        });
-
+        // Загрузка истории прослушиваний (GET /listening-history)
         async function loadListeningHistory() {
             showLoading();
             updateStatus('loading', 'Загрузка истории прослушиваний...');
 
             try {
-                const url = `${apiBaseUrl}/listening-history/${currentUserId}`;
-                console.log('Запрос к API:', url);
-
-                const response = await fetch(url, {
+                // GET запрос на /listening-history (без userID в URL)
+                const response = await fetch(`${apiBaseUrl}/listening-history`, {
                     method: 'GET',
                     headers: { 'Accept': 'application/json' },
                     credentials: 'include'
                 });
 
-                console.log('Статус ответа:', response.status);
+                console.log('Статус ответа /listening-history:', response.status);
+
+                // Если 401 или 403 — пользователь не авторизован
+                if (response.status === 401 || response.status === 403) {
+                    renderUnauthorizedState();
+                    updateStatus('error', 'Не авторизован. Пожалуйста, войдите в систему.');
+                    historyCount.textContent = '0 треков';
+                    return;
+                }
 
                 if (!response.ok) {
                     throw new Error(`HTTP ошибка! Статус: ${response.status}`);
                 }
 
                 const data = await response.json();
-                console.log('Получены данные:', data);
+                console.log('Получены данные истории:', data);
 
-                // Обработка формата ответа
+                // Обработка формата ответа согласно OpenAPI (GetListeningHistory)
                 if (data && data.GetListeningHistoryJSONResponse && Array.isArray(data.GetListeningHistoryJSONResponse)) {
                     listeningHistory = data.GetListeningHistoryJSONResponse;
                 } else if (Array.isArray(data)) {
                     listeningHistory = data;
-                } else if (data.data && Array.isArray(data.data)) {
-                    listeningHistory = data.data;
-                } else if (data.items && Array.isArray(data.items)) {
-                    listeningHistory = data.items;
                 } else {
-                    let found = false;
-                    for (let key in data) {
-                        if (Array.isArray(data[key])) {
-                            console.log(`Найден массив в поле "${key}"`);
-                            listeningHistory = data[key];
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        console.warn('Неожиданный формат данных:', data);
-                        listeningHistory = [];
-                    }
+                    listeningHistory = [];
                 }
 
                 console.log(`Загружено треков в истории: ${listeningHistory.length}`);
 
                 renderHistory();
 
-                updateStatus('success', `История загружена для пользователя ${currentUserId}`);
+                updateStatus('success', 'История прослушиваний загружена');
                 historyCount.textContent = `${listeningHistory.length} треков`;
 
             } catch (error) {
@@ -838,48 +765,59 @@
             }
         }
 
-        async function removeFromHistory(musicId, musicName) {
-            if (!confirm(`Удалить "${musicName}" из истории прослушиваний?`)) {
-                return;
-            }
+        // Удаление из истории (DELETE /listening-history)
+        // Удаление из истории (DELETE /listening-history) с указанием listening_date
+async function removeFromHistory(musicId, musicName, listeningDate) {
+    if (!confirm(`Удалить "${musicName}" из истории прослушиваний?`)) {
+        return;
+    }
 
-            showLoading();
-            updateStatus('loading', 'Удаление...');
+    showLoading();
+    updateStatus('loading', 'Удаление...');
 
-            try {
-                const url = `${apiBaseUrl}/listening-history/${currentUserId}`;
-                console.log('DELETE запрос к:', url);
+    try {
+        // DELETE запрос на /listening-history с music_id и listening_date
+        const response = await fetch(`${apiBaseUrl}/listening-history`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                music_id: musicId,
+                listening_date: listeningDate 
+            }),
+            credentials: 'include'
+        });
 
-                const response = await fetch(url, {
-                    method: 'DELETE',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ music_id: musicId }),
-                    credentials: 'include'
-                });
+        console.log('Статус ответа DELETE:', response.status);
+        console.log('Отправлено тело:', { music_id: musicId, listening_date: listeningDate });
 
-                console.log('Статус ответа:', response.status);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ошибка! Статус: ${response.status}`);
-                }
-
-                showNotification(`Трек "${musicName}" удален из истории`);
-                await loadListeningHistory();
-
-            } catch (error) {
-                console.error('Ошибка удаления:', error);
-                updateStatus('error', 'Ошибка удаления');
-                showNotification('Не удалось удалить трек', 'error');
-            } finally {
-                hideLoading();
-            }
+        if (response.status === 401 || response.status === 403) {
+            showNotification('Сессия истекла, пожалуйста, войдите снова', 'error');
+            renderUnauthorizedState();
+            return;
         }
 
+        if (!response.ok) {
+            throw new Error(`HTTP ошибка! Статус: ${response.status}`);
+        }
+
+        showNotification(`Трек "${musicName}" удален из истории`);
+        await loadListeningHistory();
+
+    } catch (error) {
+        console.error('Ошибка удаления:', error);
+        updateStatus('error', 'Ошибка удаления');
+        showNotification('Не удалось удалить трек', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+        // Воспроизведение музыки
         function playMusic(music) {
-            const songUrl = music.song_url || music.music_url;
+            const songUrl = music.song_url;
             
             if (!songUrl) {
                 showNotification('Аудиофайл недоступен', 'error');
@@ -896,7 +834,7 @@
             audioPlayerModal.classList.add('active');
             
             audioPlayer.onended = () => {
-                closeAudioPlayer();
+                // Можно оставить плеер открытым или закрыть
             };
         }
 
@@ -930,6 +868,25 @@
             }
         }
 
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderUnauthorizedState() {
+            historyContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔒</div>
+                    <h3>Требуется авторизация</h3>
+                    <p>Войдите в систему, чтобы просмотреть историю прослушиваний</p>
+                    <button class="btn btn-primary" onclick="window.location.href='/login'">Войти</button>
+                    <button class="btn btn-outline" onclick="window.location.href='/register'" style="margin-left: 1rem;">Зарегистрироваться</button>
+                </div>
+            `;
+        }
+
         function renderHistory() {
             if (!listeningHistory || listeningHistory.length === 0) {
                 historyContainer.innerHTML = `
@@ -954,22 +911,24 @@
                         <span></span>
                     </div>
                     ${listeningHistory.map(item => {
-                        const musicId = item.music_id || item.id;
-                        const musicName = item.music_name || item.name || 'Без названия';
+                        const musicId = item.music_id;
+                        const musicName = item.music_name || 'Без названия';
                         const artist = item.uploader_username || item.uploader_id || 'Неизвестный исполнитель';
-                        const cover = item.music_cover || item.cover;
-                        const likes = item.music_likes || item.likes || 0;
-                        const duration = item.music_duration || item.duration_seconds || 0;
-                        const listeningDate = item.listening_date || item.createdAt || new Date().toISOString();
+                        const likes = item.music_likes || 0;
+                        const duration = item.music_duration || 0;
+                        const listeningDate = item.listening_date || new Date().toISOString();
+                        
+                        // Экранируем данные для безопасного встраивания в JSON
+                        const itemJson = JSON.stringify(item).replace(/'/g, "\\'");
                         
                         return `
                             <div class="history-item">
                                 <div class="history-item-info">
-                                    <div class="history-item-image" onclick="playMusic(${JSON.stringify(item).replace(/'/g, "\\'")})">
+                                    <div class="history-item-image" onclick="playMusic(${itemJson})">
                                         <span>🎵</span>
                                     </div>
                                     <div class="history-item-details">
-                                        <h4 onclick="playMusic(${JSON.stringify(item).replace(/'/g, "\\'")})">${escapeHtml(musicName)}</h4>
+                                        <h4 onclick="playMusic(${itemJson})">${escapeHtml(musicName)}</h4>
                                         <div class="history-item-artist">${escapeHtml(artist)}</div>
                                     </div>
                                 </div>
@@ -977,8 +936,8 @@
                                 <div class="history-item-duration">${formatDuration(duration)}</div>
                                 <div class="history-item-likes">❤️ ${likes}</div>
                                 <div class="history-item-actions">
-                                    <button class="play-btn" onclick="playMusic(${JSON.stringify(item).replace(/'/g, "\\'")})">▶️</button>
-                                    <button class="remove-btn" onclick="removeFromHistory('${musicId}', '${escapeHtml(musicName).replace(/'/g, "\\'")}')">✕</button>
+                                    <button class="play-btn" onclick="playMusic(${itemJson})">▶️</button>
+                                    <button class="remove-btn" onclick="removeFromHistory('${musicId}', '${escapeHtml(musicName).replace(/'/g, "\\'")}', '${listeningDate}')">✕</button>
                                 </div>
                             </div>
                         `;
@@ -987,16 +946,9 @@
             `;
         }
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');
-            notification.className = `notification ${type === 'error' ? 'error' : ''}`;
+            notification.className = `notification ${type === 'error' ? 'error' : type === 'info' ? 'info' : ''}`;
             notification.textContent = message;
             document.body.appendChild(notification);
             
@@ -1007,10 +959,12 @@
 
         function showLoading() {
             loadingContainer.style.display = 'flex';
+            historyContainer.style.display = 'none';
         }
 
         function hideLoading() {
             loadingContainer.style.display = 'none';
+            historyContainer.style.display = 'block';
         }
 
         function updateStatus(type, message) {
@@ -1026,6 +980,7 @@
         }
 
         function showError(message) {
+            historyContainer.style.display = 'block';
             historyContainer.innerHTML = `
                 <div class="error-container">
                     <div class="error-icon">⚠️</div>
@@ -1033,14 +988,23 @@
                     <p>${message}</p>
                     <p>Проверьте:</p>
                     <ul style="list-style: none; margin-bottom: 1.5rem;">
-                        <li>✓ Запущен ли сервер на порту 3004</li>
-                        <li>✓ Корректный ли ID пользователя</li>
+                        <li>✓ Запущен ли сервер на порту 3003</li>
                         <li>✓ Настроены ли CORS заголовки</li>
+                        <li>✓ Правильно ли настроены cookies</li>
                     </ul>
                     <button class="btn btn-primary" onclick="loadListeningHistory()">Повторить попытку</button>
                 </div>
             `;
         }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            loadListeningHistory();
+        });
+
+        refreshBtn.addEventListener('click', () => {
+            loadListeningHistory();
+        });
     </script>
 </body>
 </html>
