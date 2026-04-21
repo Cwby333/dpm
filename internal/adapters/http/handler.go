@@ -17,15 +17,17 @@ type Handler struct {
 	mService  *services.MusicService
 	lhService *services.ListeningHistoryService
 	fService *services.FavorService
+	likeService services.LikeService
 }
 
-func NewHandler(uService *services.UserService, mService *services.MusicService, lhService *services.ListeningHistoryService, fService *services.FavorService) Handler {
+func NewHandler(uService *services.UserService, mService *services.MusicService, lhService *services.ListeningHistoryService, fService *services.FavorService, likeService *services.LikeService) Handler {
 	return Handler{
 		Mux:       http.NewServeMux(),
 		uServices: uService,
 		mService:  mService,
 		lhService: lhService,
 		fService: fService,
+		likeService: *likeService,
 	}
 }
 
@@ -117,6 +119,70 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
+	h.Mux.Handle("GET /profile", corsMiddleware(wrapGetProfile(strict)))
+	h.Mux.Handle("OPTIONS /profile", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("POST /music/like", corsMiddleware(wrapPostLike(strict)))
+	h.Mux.Handle("DELETE /music/like", corsMiddleware(wrapDeleteLike(strict)))
+	h.Mux.Handle("OPTIONS /music/like", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+}
+
+func wrapDeleteLike(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapDeleteLike")
+			slog.Error(err.Error())
+			return
+		}else {
+			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
+		}
+
+		strict.DeleteMusicLike(w, r, api.DeleteMusicLikeParams{AccessToken: c.Value})
+	}
+}
+
+func wrapPostLike(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapPostLike")
+			slog.Error(err.Error())
+			return
+		}else {
+			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
+		}
+
+		strict.PostMusicLike(w, r, api.PostMusicLikeParams{AccessToken: c.Value})
+	}
+}
+
+func wrapGetProfile(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapGetProfile")
+			slog.Error(err.Error())
+			return
+		}else {
+			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
+		}
+
+		strict.GetProfile(w, r, api.GetProfileParams{AccessToken: c.Value})
+	}
 }
 
 func wrapGetAllMusic(strict api.ServerInterface) http.HandlerFunc {
@@ -562,4 +628,101 @@ func (h Handler) DeleteFavor(ctx context.Context, request api.DeleteFavorRequest
 	}
 
 	return api.DeleteFavor200JSONResponse("Success"), nil
+}
+
+func (h Handler) GetProfile(ctx context.Context, request api.GetProfileRequestObject) (api.GetProfileResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetProfile()"
+
+	t := request.Params.AccessToken
+
+	if t == "" {
+		slog.Info("GET /profile token empty")
+		return api.GetProfile500JSONResponse("Token empty"), fmt.Errorf("%s: %w", op, errors.New("Token empty"))
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.GetProfile500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	}
+
+	u := models.User{
+		ID: claims["sub"].(string),
+	}
+
+	us, err := h.uServices.ReadUser(ctx, u)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.GetProfile500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	}
+
+	sTime := fmt.Sprint(us.RegisterAt)
+	return api.GetProfile200JSONResponse{
+		GetProfileJSONResponse: api.GetProfileJSONResponse{
+			Email: &us.Email,
+			Username: &us.Username,
+			RegisterAt: &sTime,
+			Likes: &us.Likes,
+		},
+	}, nil
+}
+
+func (h Handler) PostMusicLike(ctx context.Context, request api.PostMusicLikeRequestObject) (api.PostMusicLikeResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.PostMusicLike()"
+
+	t := request.Params.AccessToken
+
+	if t == "" {
+		slog.Info("Token empty")
+		return api.PostMusicLike500JSONResponse("Token empty"), fmt.Errorf("%s: %w", op, errors.New("Token empty"))
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.PostMusicLike500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	}
+
+	l := models.Like{
+		UserID: claims["sub"].(string),
+		MusicID: *request.Body.MusicID,
+	}
+
+	err = h.likeService.CreateLike(ctx, l)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.PostMusicLike500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	}
+
+	return api.PostMusicLike200JSONResponse("Success"), nil
+}
+
+func (h Handler) DeleteMusicLike(ctx context.Context, request api.DeleteMusicLikeRequestObject) (api.DeleteMusicLikeResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.DeleteMusic()"
+
+	t := request.Params.AccessToken
+
+	if t == "" {
+		slog.Info("Token empty")
+		return api.DeleteMusicLike500JSONResponse("Token empty"), fmt.Errorf("%s: %w", op, errors.New("Token empty"))
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.DeleteMusicLike500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	}
+
+	l := models.Like{
+		UserID: claims["sub"].(string),
+		MusicID: *request.Body.MusicID,
+	}
+
+	err = h.likeService.DeleteLike(ctx, l)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.DeleteMusicLike200JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	}
+
+	return api.DeleteMusicLike200JSONResponse("Success"), nil
 }

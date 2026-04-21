@@ -258,15 +258,6 @@
             flex-wrap: wrap;
         }
 
-        .artist-link {
-            color: #667eea;
-            text-decoration: none;
-        }
-
-        .artist-link:hover {
-            text-decoration: underline;
-        }
-
         .music-stats {
             display: flex;
             gap: 2rem;
@@ -290,21 +281,6 @@
         .stat-value {
             font-weight: 600;
             color: #333;
-        }
-
-        .music-description {
-            margin-bottom: 2rem;
-        }
-
-        .music-description h3 {
-            font-size: 1.2rem;
-            margin-bottom: 0.75rem;
-            color: #333;
-        }
-
-        .music-description p {
-            color: #666;
-            line-height: 1.6;
         }
 
         .action-buttons {
@@ -562,26 +538,18 @@
 
         // DOM элементы
         const contentContainer = document.getElementById('contentContainer');
-        const loadingContainer = document.getElementById('loadingContainer');
 
         // Получение musicID из URL
         function getMusicIdFromUrl() {
-            const path = window.location.pathname;
-            const segments = path.split('/');
-            // Ожидаемый формат: /music-detail.html/{musicID} или /music/{musicID}
-            const lastSegment = segments[segments.length - 1];
-            // Если последний сегмент не пустой и не является html файлом
-            if (lastSegment && !lastSegment.includes('.html')) {
-                return lastSegment;
-            }
-            // Проверяем query параметр
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('id');
         }
 
-        // Добавление в историю прослушиваний (POST /listening-history)
+        // Добавление в историю прослушиваний (POST /listening-history) - как в music.html
         async function addToListeningHistory(musicId) {
             try {
+                console.log(`Добавление трека ${musicId} в историю прослушиваний`);
+                
                 const response = await fetch(`${apiBaseUrl}/listening-history`, {
                     method: 'POST',
                     headers: {
@@ -593,10 +561,15 @@
                 });
                 
                 if (response.ok) {
-                    console.log(`Трек ${musicId} добавлен в историю`);
+                    console.log(`Трек ${musicId} успешно добавлен в историю`);
                     return true;
+                } else if (response.status === 401 || response.status === 403) {
+                    console.log('Пользователь не авторизован, история не сохранена');
+                    return false;
+                } else {
+                    console.error('Ошибка добавления в историю:', response.status);
+                    return false;
                 }
-                return false;
             } catch (error) {
                 console.error('Ошибка при добавлении в историю:', error);
                 return false;
@@ -678,26 +651,17 @@
             }
         }
 
-        // Воспроизведение музыки
-        async function playMusic() {
-            if (!musicData) return;
-            
-            const songUrl = musicData.song_url;
-            if (!songUrl) {
-                showNotification('Аудиофайл недоступен', 'error');
-                return;
+        // Воспроизведение музыки (как в music.html)
+        async function playMusic(musicId, musicName, artistName, songUrl) {
+            // Отправляем запрос на добавление в историю прослушиваний
+            const added = await addToListeningHistory(musicId);
+            if (added) {
+                showNotification(`🎵 "${musicName}" добавлен в историю прослушиваний`, 'info');
+            } else {
+                console.log(`Трек "${musicName}" не добавлен в историю (возможно, пользователь не авторизован)`);
             }
             
-            // Добавляем в историю прослушиваний
-            await addToListeningHistory(musicData.id);
-            
-            const audioPlayer = document.getElementById('audioPlayer');
-            if (audioPlayer) {
-                audioPlayer.src = songUrl;
-                audioPlayer.load();
-                audioPlayer.play();
-                showNotification(`🎵 Воспроизведение: ${musicData.name}`, 'info');
-            }
+            showNotification(`🎵 Воспроизведение: ${musicName} - ${artistName || 'Неизвестный'} (демо-режим)`, 'info');
         }
 
         // Загрузка данных о музыке (GET /music/{musicID})
@@ -770,6 +734,7 @@
             if (!musicData) return;
             
             const duration = formatDuration(musicData.duration_seconds);
+            const musicId = musicData.id;
             const musicName = escapeHtml(musicData.name || 'Без названия');
             const artistName = escapeHtml(musicData.uploader_username || musicData.uploader_id || 'Неизвестный исполнитель');
             const songUrl = musicData.song_url || '';
@@ -778,7 +743,7 @@
                 <div class="music-detail-card">
                     <div class="music-cover-large">
                         <span>🎵</span>
-                        <div class="play-overlay" onclick="playMusic()">
+                        <div class="play-overlay" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}', '${songUrl}')">
                             <div class="play-button-large">▶️</div>
                         </div>
                     </div>
@@ -799,20 +764,15 @@
                                 <span class="stat-value">${duration}</span>
                                 <span>длительность</span>
                             </div>
-                            <div class="stat">
-                                <span class="stat-icon">🎵</span>
-                                <span class="stat-value">${musicData.id || '—'}</span>
-                                <span>ID трека</span>
-                            </div>
                         </div>
                         <div class="action-buttons">
-                            <button class="action-btn action-btn-play" onclick="playMusic()">
+                            <button class="action-btn action-btn-play" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}', '${songUrl}')">
                                 ▶️ Слушать
                             </button>
                             <button class="action-btn action-btn-favor" id="favorBtn" onclick="toggleFavor('${musicData.id}', '${musicName.replace(/'/g, "\\'")}')">
                                 ${favorStatus ? '⭐ В избранном' : '☆ В избранное'}
                             </button>
-                            <button class="action-btn action-btn-back" onclick="window.location.href='/music.html'">
+                            <button class="action-btn action-btn-back" onclick="window.location.href='music.html'">
                                 ← Назад к списку
                             </button>
                         </div>
@@ -850,9 +810,7 @@
             `;
         }
 
-        function hideLoading() {
-            // Убираем loading индикатор, рендер уже сделан
-        }
+        function hideLoading() {}
 
         function showError(message) {
             contentContainer.innerHTML = `
@@ -860,13 +818,7 @@
                     <div class="error-icon">⚠️</div>
                     <h3>Ошибка загрузки</h3>
                     <p>${message}</p>
-                    <p>Проверьте:</p>
-                    <ul style="list-style: none; margin-bottom: 1.5rem;">
-                        <li>✓ Запущен ли сервер на порту 3003</li>
-                        <li>✓ Корректный ли ID трека</li>
-                        <li>✓ Настроены ли CORS заголовки</li>
-                    </ul>
-                    <button class="btn btn-primary" onclick="window.location.href='/music.html'">Вернуться к списку</button>
+                    <button class="btn btn-primary" onclick="window.location.href='music.html'">Вернуться к списку</button>
                 </div>
             `;
         }

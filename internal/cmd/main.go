@@ -71,7 +71,9 @@ func main() {
 
 	fService := services.NewFavorService(pg)
 
-	handler := http.NewHandler(uService, mService, lhService, fService)
+	likeService := services.NewLikeService(pg)
+
+	handler := http.NewHandler(uService, mService, lhService, fService, likeService)
 
 	server := http.NewServer(handler)
 

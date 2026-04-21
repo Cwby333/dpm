@@ -367,6 +367,17 @@
             align-items: center;
             gap: 0.25rem;
             color: #e53e3e;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .likes:hover {
+            transform: scale(1.05);
+        }
+
+        .likes.liked {
+            color: #e53e3e;
+            font-weight: bold;
         }
 
         .duration {
@@ -403,11 +414,20 @@
         .btn-like {
             background: #f0f0f0;
             color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
         .btn-like:hover {
             background: #fed7d7;
             color: #e53e3e;
+        }
+
+        .btn-like.liked {
+            background: #e53e3e;
+            color: white;
         }
 
         .status-bar {
@@ -718,6 +738,7 @@
         let musicPerPage = 12;
         let isLoading = false;
         let favorStatus = new Map();
+        let likeStatus = new Map(); // Хранит статус лайка для каждого трека
 
         // DOM элементы
         const loadingContainer = document.getElementById('loadingContainer');
@@ -761,6 +782,50 @@
             }
         }
 
+        // Поставить/убрать лайк (POST/DELETE /music/like)
+        async function toggleLike(musicId, musicName) {
+            const isLiked = likeStatus.get(musicId) || false;
+            const method = isLiked ? 'DELETE' : 'POST';
+            const actionText = isLiked ? 'удален лайк' : 'поставлен лайк';
+            
+            try {
+                const response = await fetch(`${apiBaseUrl}/music/like`, {
+                    method: method,
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ musicID: musicId }),
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    // Обновляем статус лайка
+                    likeStatus.set(musicId, !isLiked);
+                    
+                    // Обновляем количество лайков в allMusic
+                    const music = allMusic.find(m => m.id === musicId);
+                    if (music) {
+                        if (!isLiked) {
+                            music.likes = (music.likes || 0) + 1;
+                        } else {
+                            music.likes = (music.likes || 1) - 1;
+                        }
+                    }
+                    
+                    showNotification(`❤️ "${musicName}" — ${actionText}`, 'info');
+                    renderMusic(); // Обновляем отображение
+                } else if (response.status === 401 || response.status === 403) {
+                    showNotification('Пожалуйста, войдите в систему, чтобы ставить лайки', 'error');
+                } else {
+                    throw new Error('Ошибка при выполнении операции');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                showNotification(`Ошибка: ${error.message}`, 'error');
+            }
+        }
+
         // Загрузка статуса избранного (GET /favor)
         async function loadFavorStatus() {
             try {
@@ -784,7 +849,6 @@
                     
                     favorStatus.clear();
                     favorItems.forEach(item => {
-                        // Используем id или productID для хранения статуса
                         const musicId = item.id || item.productID;
                         if (musicId) {
                             favorStatus.set(musicId, true);
@@ -799,6 +863,48 @@
                 }
             } catch (error) {
                 console.error('Ошибка загрузки избранного:', error);
+            }
+        }
+
+        // Загрузка статуса лайков (GET /music/like)
+        async function loadLikeStatus() {
+            try {
+                console.log('Загрузка статуса лайков');
+                // Сначала получаем все треки, которые пользователь лайкнул
+                // Согласно OpenAPI, GET /music/like должен возвращать список лайкнутых треков
+                const response = await fetch(`${apiBaseUrl}/music/like`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Лайки получены:', data);
+                    
+                    likeStatus.clear();
+                    // Ожидаем массив ID треков или объект с лайками
+                    if (Array.isArray(data)) {
+                        data.forEach(item => {
+                            const musicId = item.musicID || item.id;
+                            if (musicId) {
+                                likeStatus.set(musicId, true);
+                            }
+                        });
+                    } else if (data && data.likes && Array.isArray(data.likes)) {
+                        data.likes.forEach(musicId => {
+                            likeStatus.set(musicId, true);
+                        });
+                    }
+                    
+                    renderMusic();
+                } else if (response.status === 401 || response.status === 403) {
+                    console.log('Пользователь не авторизован, статус лайков не загружен');
+                    likeStatus.clear();
+                    renderMusic();
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки статуса лайков:', error);
             }
         }
 
@@ -846,22 +952,10 @@
             if (added) {
                 showNotification(`🎵 "${musicName}" добавлен в историю прослушиваний`, 'info');
             } else {
-                // Не показываем ошибку, если пользователь не авторизован — это нормально
                 console.log(`Трек "${musicName}" не добавлен в историю (возможно, пользователь не авторизован)`);
             }
             
             showNotification(`🎵 Воспроизведение: ${musicName} - ${artistName || 'Неизвестный'} (демо-режим)`, 'info');
-        }
-
-        // Лайк (демо)
-        async function likeMusic(musicId, musicName) {
-            showNotification(`❤️ Лайк для "${musicName}" (демо-режим)`);
-            
-            const music = allMusic.find(m => m.id === musicId);
-            if (music) {
-                music.likes = (music.likes || 0) + 1;
-                renderMusic();
-            }
         }
 
         // Загрузка музыки (GET /music)
@@ -900,8 +994,11 @@
                 updateStatus('success', 'Музыка загружена');
                 musicCount.textContent = `${allMusic.length} треков`;
                 
-                // Загружаем статус избранного (если пользователь авторизован, сервер вернет данные)
-                await loadFavorStatus();
+                // Загружаем статус избранного и лайков
+                await Promise.all([
+                    loadFavorStatus(),
+                    loadLikeStatus()
+                ]);
                 
             } catch (error) {
                 console.error('Ошибка загрузки:', error);
@@ -955,6 +1052,8 @@
             const artistName = escapeHtml(music.uploader_username || music.uploader_id || 'Неизвестный исполнитель');
             const songUrl = music.song_url || '';
             const isInFavor = favorStatus.get(musicId) || false;
+            const isLiked = likeStatus.get(musicId) || false;
+            const likesCount = music.likes || 0;
             
             return `
                 <div class="music-card">
@@ -968,15 +1067,19 @@
                         </div>
                     </div>
                     <div class="music-info">
-                        <h3 class="music-name" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}', '${songUrl}')">${musicName}</h3>
+                        <h3 class="music-name" onclick="window.location.href='music-id.html?id=${musicId}'">${musicName}</h3>
                         <div class="music-artist">${artistName}</div>
                         <div class="music-meta">
-                            <span class="likes">❤️ ${music.likes || 0}</span>
+                            <span class="likes ${isLiked ? 'liked' : ''}" onclick="toggleLike('${musicId}', '${musicName.replace(/'/g, "\\'")}')">
+                                ❤️ ${likesCount}
+                            </span>
                             <span class="duration">⏱️ ${duration}</span>
                         </div>
                         <div class="music-actions">
                             <button class="music-btn btn-play" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}', '${songUrl}')">▶️ Слушать</button>
-                            <button class="music-btn btn-like" onclick="likeMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}')">❤️</button>
+                            <button class="music-btn btn-like ${isLiked ? 'liked' : ''}" onclick="toggleLike('${musicId}', '${musicName.replace(/'/g, "\\'")}')">
+                                ❤️ ${isLiked ? 'Лайкнут' : 'Лайк'}
+                            </button>
                         </div>
                     </div>
                 </div>

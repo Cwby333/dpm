@@ -462,75 +462,6 @@
             }
         }
 
-        .audio-player-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #1a1a2e;
-            color: white;
-            padding: 0.75rem 2rem;
-            z-index: 2000;
-            transform: translateY(100%);
-            transition: transform 0.3s ease;
-            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .audio-player-bar.active {
-            transform: translateY(0);
-        }
-
-        .audio-player-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .audio-info {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .audio-title {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-            font-size: 0.9rem;
-        }
-
-        .audio-artist {
-            font-size: 0.75rem;
-            color: #999;
-        }
-
-        .audio-controls {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        audio {
-            width: 300px;
-        }
-
-        .close-player {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 50%;
-            transition: background 0.3s ease;
-        }
-
-        .close-player:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
         .footer {
             background: #1a1a2e;
             color: white;
@@ -603,15 +534,6 @@
             .favor-grid {
                 grid-template-columns: 1fr;
             }
-
-            .audio-player-content {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            audio {
-                width: 100%;
-            }
         }
     </style>
 </head>
@@ -658,23 +580,6 @@
         <div id="favorContainer"></div>
     </div>
 
-    <!-- Аудиоплеер -->
-    <div class="audio-player-bar" id="audioPlayerBar">
-        <div class="audio-player-content">
-            <div class="audio-info">
-                <div class="audio-title" id="currentTrackTitle">Название трека</div>
-                <div class="audio-artist" id="currentTrackArtist">Исполнитель</div>
-            </div>
-            <div class="audio-controls">
-                <audio id="audioPlayer" controls>
-                    <source src="" type="audio/mpeg">
-                    Ваш браузер не поддерживает аудио элемент.
-                </audio>
-                <button class="close-player" onclick="closeAudioPlayer()">✕</button>
-            </div>
-        </div>
-    </div>
-
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-section">
@@ -709,8 +614,6 @@
         const apiBaseUrl = 'http://localhost:3003';
         let favorItems = [];
         let musicDetails = new Map();
-        let audioPlayerElement = null;
-        let audioPlayerBar = null;
 
         // DOM элементы
         const loadingContainer = document.getElementById('loadingContainer');
@@ -720,18 +623,56 @@
         const statusText = document.getElementById('statusText');
         const favorCount = document.getElementById('favorCount');
 
-        // Инициализация аудиоплеера
-        audioPlayerElement = document.getElementById('audioPlayer');
-        audioPlayerBar = document.getElementById('audioPlayerBar');
+        // Добавление в историю прослушиваний (POST /listening-history) - как в music.html
+        async function addToListeningHistory(musicId) {
+            try {
+                console.log(`Добавление трека ${musicId} в историю прослушиваний`);
+                
+                const response = await fetch(`${apiBaseUrl}/listening-history`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ musicID: musicId }),
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    console.log(`Трек ${musicId} успешно добавлен в историю`);
+                    return true;
+                } else if (response.status === 401 || response.status === 403) {
+                    console.log('Пользователь не авторизован, история не сохранена');
+                    return false;
+                } else {
+                    console.error('Ошибка добавления в историю:', response.status);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Ошибка при добавлении в историю:', error);
+                return false;
+            }
+        }
 
-        // Загрузка избранного (только один запрос, без /ping)
+        // Воспроизведение музыки (как в music.html)
+        async function playMusic(musicId, musicName, artistName, songUrl) {
+            // Отправляем запрос на добавление в историю прослушиваний
+            const added = await addToListeningHistory(musicId);
+            if (added) {
+                showNotification(`🎵 "${musicName}" добавлен в историю прослушиваний`, 'info');
+            } else {
+                console.log(`Трек "${musicName}" не добавлен в историю (возможно, пользователь не авторизован)`);
+            }
+            
+            showNotification(`🎵 Воспроизведение: ${musicName} - ${artistName || 'Неизвестный'} (демо-режим)`, 'info');
+        }
+
+        // Загрузка избранного (GET /favor)
         async function loadFavor() {
             showLoading();
             updateStatus('loading', 'Загрузка избранного...');
 
             try {
-                // Простой GET запрос на /favor с credentials: 'include'
-                // Браузер сам отправит Access-Token cookie
                 const response = await fetch(`${apiBaseUrl}/favor`, {
                     method: 'GET',
                     headers: { 'Accept': 'application/json' },
@@ -740,7 +681,6 @@
 
                 console.log('Статус ответа /favor:', response.status);
 
-                // Если 401 или 403 — пользователь не авторизован
                 if (response.status === 401 || response.status === 403) {
                     renderUnauthorizedState();
                     updateStatus('error', 'Не авторизован. Пожалуйста, войдите в систему.');
@@ -755,7 +695,6 @@
                 const data = await response.json();
                 console.log('Получены данные избранного:', data);
 
-                // Обработка формата ответа (согласно OpenAPI - GetMusic)
                 if (data && data.GetMusicJSONResponse && Array.isArray(data.GetMusicJSONResponse)) {
                     favorItems = data.GetMusicJSONResponse;
                 } else if (Array.isArray(data)) {
@@ -766,9 +705,7 @@
 
                 console.log(`Загружено треков в избранном: ${favorItems.length}`);
 
-                // Загружаем детальную информацию о музыке
                 await loadMusicDetails();
-
                 renderFavor();
 
                 updateStatus('success', 'Избранное загружено');
@@ -823,7 +760,6 @@
             updateStatus('loading', 'Удаление...');
 
             try {
-                // DELETE запрос на /favor (без userID в URL)
                 const response = await fetch(`${apiBaseUrl}/favor`, {
                     method: 'DELETE',
                     headers: {
@@ -848,7 +784,6 @@
 
                 showNotification(`⭐ Трек "${musicName}" удален из избранного`);
                 
-                // Очищаем кэш деталей и обновляем список
                 musicDetails.clear();
                 await loadFavor();
 
@@ -859,30 +794,6 @@
             } finally {
                 hideLoading();
             }
-        }
-
-        // Воспроизведение музыки
-        function playMusic(musicId, musicName, artistName, songUrl) {
-            if (!songUrl) {
-                showNotification('Аудиофайл недоступен', 'error');
-                return;
-            }
-            
-            if (audioPlayerElement.src !== songUrl) {
-                audioPlayerElement.src = songUrl;
-                audioPlayerElement.load();
-            }
-            
-            document.getElementById('currentTrackTitle').textContent = musicName;
-            document.getElementById('currentTrackArtist').textContent = artistName || 'Неизвестный исполнитель';
-            
-            audioPlayerElement.play();
-            audioPlayerBar.classList.add('active');
-        }
-
-        function closeAudioPlayer() {
-            audioPlayerElement.pause();
-            audioPlayerBar.classList.remove('active');
         }
 
         function formatDuration(seconds) {
@@ -945,7 +856,7 @@
                                     <button class="remove-favor-btn" onclick="event.stopPropagation(); removeFromFavor('${musicId}', '${escapeHtml(name).replace(/'/g, "\\'")}')" title="Удалить из избранного">✕</button>
                                 </div>
                                 <div class="favor-info">
-                                    <h3 class="favor-name" onclick="playMusic('${musicId}', '${escapeHtml(name).replace(/'/g, "\\'")}', '${escapeHtml(artist).replace(/'/g, "\\'")}', '${songUrl}')">${escapeHtml(name)}</h3>
+                                    <h3 class="favor-name" onclick="window.location.href='music-id.html?id=${musicId}'">${escapeHtml(name)}</h3>
                                     <div class="favor-artist">${escapeHtml(artist)}</div>
                                     <div class="favor-meta">
                                         <span class="favor-likes">❤️ ${likes}</span>
@@ -1013,13 +924,11 @@
             `;
         }
 
-        // Кнопка обновления
         refreshBtn.addEventListener('click', () => {
             musicDetails.clear();
             loadFavor();
         });
 
-        // Загрузка данных при загрузке страницы
         document.addEventListener('DOMContentLoaded', () => {
             loadFavor();
         });

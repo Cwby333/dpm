@@ -5,6 +5,7 @@ import (
 	"dpm/internal/models"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	// "log/slog"
 
@@ -78,18 +79,18 @@ func (p *Postgres) GetMusic(ctx context.Context, id string) (models.Music, error
 	return MusicPgToMusic(product), nil
 }
 
-func (p *Postgres) GetAllMusic(ctx context.Context) ([]models.Music, error) {
+func (p *Postgres) GetAllMusic(ctx context.Context, u models.User) ([]models.Music, []models.Like, error) {
 	const op = "./internal/adapters/repo/postgres/music.go.GetAllMusic()"
 
 	q := "SELECT id, name, uploader_id, likes, duration_seconds, music_cover, song_url FROM music"
 	rows, err := p.pool.Query(ctx, q)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		return nil, nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	products, err := pgx.CollectRows(rows, pgx.RowToStructByName[Music])
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		return nil, nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	pSlice := make([]models.Music, 0, 4)
@@ -97,5 +98,28 @@ func (p *Postgres) GetAllMusic(ctx context.Context) ([]models.Music, error) {
 		pSlice = append(pSlice, MusicPgToMusic(products[i]))
 	}
 
-	return pSlice, nil
+	if u.ID == "" {
+		return pSlice, nil, nil
+	}
+
+	q = "SELECT music_id FROM users_music_likes WHERE user_id = $1"
+	rows, err = p.pool.Query(ctx, q, u.ID)
+	if err != nil {
+		slog.Error(err.Error())
+		return pSlice, nil, nil
+	}	
+
+	l, err := pgx.CollectRows(rows, pgx.RowToStructByName[LikeDB])
+	if err != nil {
+		slog.Error(err.Error())
+		return pSlice, nil, nil
+	}
+
+	lSlice := make([]models.Like, 0, len(l))
+
+	for i := range l {
+		lSlice = append(lSlice, LDBToLike(l[i]))
+	}
+
+	return pSlice, lSlice, nil
 }

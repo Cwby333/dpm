@@ -15,6 +15,7 @@ type Pg interface {
 	CreateUser(ctx context.Context, user models.User) error
 	ReadPsw(ctx context.Context, user models.User) (string, error)
 	ReadUserID(ctx context.Context, user models.User) (string, error)
+	ReadUser(ctx context.Context, user models.User) (models.User, error)
 }
 
 type UserService struct {
@@ -75,4 +76,15 @@ func (us *UserService) Login(ctx context.Context, u models.User) (models.JWTAcce
 	slog.Info(fmt.Sprint("access refresh " + refresh.Sign))
 
 	return access, refresh, nil
+}
+
+func (s *UserService) ReadUser(ctx context.Context, user models.User) (models.User, error) {
+	const op = "./internal/services/user.go.ReadUser()"
+
+	u, err := s.Pg.ReadUser(ctx, user)
+	if err != nil {
+		return models.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return u, nil
 }

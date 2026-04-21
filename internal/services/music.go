@@ -10,7 +10,7 @@ import (
 type RepoMusic interface {
 	CreateMusic(ctx context.Context, product models.Music) error
 	GetMusic(ctx context.Context, id string) (models.Music, error)
-	GetAllMusic(ctx context.Context) ([]models.Music, error)
+	GetAllMusic(ctx context.Context, u models.User) ([]models.Music, []models.Like, error)
 }
 
 type MusicService struct {
@@ -46,13 +46,13 @@ func (s *MusicService) GetMusic(ctx context.Context, id string) (models.Music, e
 	return product, nil
 }
 
-func (s *MusicService) GetAllMusic(ctx context.Context) ([]models.Music, error) {
+func (s *MusicService) GetAllMusic(ctx context.Context, u models.User) ([]models.Music, []models.Like, error) {
 	const op = "./internal/services/music.go.GetAllProducts()"
 
-	p, err := s.repo.GetAllMusic(ctx)
+	p, l, err := s.repo.GetAllMusic(ctx, u)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
+		return nil, nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return p, nil
+	return p, l, nil
 }

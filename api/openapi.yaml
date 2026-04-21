@@ -10,6 +10,26 @@ info:
 #   - url: "https://music-microservice.mute-project/api/v1"
 #     description: "Base url"
 paths:
+  /profile:
+    description: "User's profile"
+    get:
+      description: "Get user's profile"
+      parameters:
+        - name: Access-Token
+          in: cookie
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "Success"
+          $ref: "#/components/responses/GetProfile"
+        500:
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                type: string
   /favor:
     description: "Actions with user's favor"
     get:
@@ -192,6 +212,66 @@ paths:
                 type: string
         500:
           description: "Server error"
+          content:
+            application/json:
+              schema:
+                type: string
+  /music/like:
+    description: "Action with user's like on music"
+    delete:
+      description: "Delete user's like on music"
+      parameters:
+        - name: Access-Token
+          in: cookie
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                musicID:
+                  type: string
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: string
+        500:
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                type: string
+    post:
+      description: "Post user's like on music"
+      parameters:
+        - name: Access-Token
+          in: cookie
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                musicID:
+                  type: string
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: string
+        500:
+          description: "Error"
           content:
             application/json:
               schema:
@@ -449,12 +529,29 @@ paths:
 
 components:
   responses:
+    GetLikes:
+      description: "GET /music/like"
+    GetProfile:
+      description: "GET /profile"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+              register_at:
+                type: string
+              likes:
+                type: integer
+              email:
+                type: string
     GetListeningHistory:
       description: "Get listening history"
       content:
         application/json:
           schema:
-            type: array
+            type: object
             items:
               $ref: "#/components/schemas/ListeningHistoryResponse"
     GetMusic:
@@ -462,9 +559,19 @@ components:
       content:
         application/json:
           schema:
-            type: array
-            items:
-              $ref: "#/components/schemas/Music"
+            type: object
+            required: 
+              - music
+            properties:
+              music:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Music"
+              music_likes:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MusicLikes"
+
     GetMusicResponse:
       description: "Object that will be returned by /product/{productID} GET operation"
       content:
@@ -487,6 +594,32 @@ components:
               song_url:
                 type: string
   requestBodies:
+    UploadSong:
+      description: "Object that client must provide in upload song operation"
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            description: "Object that must provide in upload song operation"
+            required: 
+              - title
+                song
+                song_cover
+                author_cover
+            properties:
+              title:
+                type: string
+              author_name: 
+                type: string
+              music:
+                type: string
+                format: binary
+                description: "File with song, content-type: audio/mp3"
+              music_cover:
+                type: string
+                format: binary
+                description: "File with cover of song, image/jpg"
+
     Register:
       description: 'Req body for /register'
       content:
@@ -605,6 +738,12 @@ components:
             type: string
 
   schemas:
+    MusicLikes:
+      type: object
+      properties:
+        music_id:
+          type: string
+          
     ListeningHistoryResponse:
       type: object
       properties:

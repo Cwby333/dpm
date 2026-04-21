@@ -6,8 +6,31 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
+
+	"github.com/jackc/pgx/v5"
 	// "log/slog"
 )
+
+type UserDB struct {
+	ID         string `db:"id"`
+	Username   string `db:"username"`
+	Email      string `db:"email"`
+	HashPsw    string `db:"hash_psw"`
+	RegisterAt time.Time `db:"register_at"`
+	Likes      int `db:"likes"`
+}
+
+func UDBToUser(u UserDB) models.User {
+	return models.User{
+		ID: u.ID,
+		Username: u.Username,
+		Email: u.Email,
+		HashPsw: u.HashPsw,
+		RegisterAt: u.RegisterAt,
+		Likes: u.Likes,
+	}
+}
 
 func (pg *Postgres) CreateUser(ctx context.Context, user models.User) error {
 	const op = "./internal/adapters/repo/postgres/user.go.CreateUser()"
@@ -76,4 +99,21 @@ func (pg *Postgres) ReadPsw(ctx context.Context, user models.User) (string, erro
 	}
 
 	return psw, nil
+}
+
+func (pg *Postgres) ReadUser(ctx context.Context, user models.User) (models.User, error) {
+	const op = "./internal/adapters/repo/postgres/user.go.ReadUser()"
+
+	q := "SELECT id, username, email, register_at, hash_psw, likes FROM users WHERE id = $1"
+	rows, err := pg.pool.Query(ctx, q, user.ID)
+	if err != nil {
+		return models.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	u, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[UserDB])
+	if err != nil {
+		return models.User{}, fmt.Errorf("%s: RowToStruct: %w", op, err)
+	}
+
+	return UDBToUser(u), nil	
 }

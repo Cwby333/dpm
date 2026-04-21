@@ -66,6 +66,14 @@ type GetMusicResponse struct {
 	UploaderId      *string `json:"uploader_id,omitempty"`
 }
 
+// GetProfile defines model for GetProfile.
+type GetProfile struct {
+	Email      *string `json:"email,omitempty"`
+	Likes      *int    `json:"likes,omitempty"`
+	RegisterAt *string `json:"register_at,omitempty"`
+	Username   *string `json:"username,omitempty"`
+}
+
 // Login defines model for Login.
 type Login struct {
 	Password *string `json:"password,omitempty"`
@@ -141,6 +149,31 @@ type GetAllMusicParams struct {
 	AccessToken *string `form:"Access-Token,omitempty" json:"Access-Token,omitempty"`
 }
 
+// DeleteMusicLikeJSONBody defines parameters for DeleteMusicLike.
+type DeleteMusicLikeJSONBody struct {
+	MusicID *string `json:"musicID,omitempty"`
+}
+
+// DeleteMusicLikeParams defines parameters for DeleteMusicLike.
+type DeleteMusicLikeParams struct {
+	AccessToken string `form:"Access-Token" json:"Access-Token"`
+}
+
+// PostMusicLikeJSONBody defines parameters for PostMusicLike.
+type PostMusicLikeJSONBody struct {
+	MusicID *string `json:"musicID,omitempty"`
+}
+
+// PostMusicLikeParams defines parameters for PostMusicLike.
+type PostMusicLikeParams struct {
+	AccessToken string `form:"Access-Token" json:"Access-Token"`
+}
+
+// GetProfileParams defines parameters for GetProfile.
+type GetProfileParams struct {
+	AccessToken string `form:"Access-Token" json:"Access-Token"`
+}
+
 // RegisterJSONBody defines parameters for Register.
 type RegisterJSONBody struct {
 	Email    *string `json:"email,omitempty"`
@@ -162,6 +195,12 @@ type AddListeningToLHJSONRequestBody AddListeningToLHJSONBody
 
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody LoginJSONBody
+
+// DeleteMusicLikeJSONRequestBody defines body for DeleteMusicLike for application/json ContentType.
+type DeleteMusicLikeJSONRequestBody DeleteMusicLikeJSONBody
+
+// PostMusicLikeJSONRequestBody defines body for PostMusicLike for application/json ContentType.
+type PostMusicLikeJSONRequestBody PostMusicLikeJSONBody
 
 // RegisterJSONRequestBody defines body for Register for application/json ContentType.
 type RegisterJSONRequestBody RegisterJSONBody
@@ -193,11 +232,20 @@ type ServerInterface interface {
 	// (GET /music)
 	GetAllMusic(w http.ResponseWriter, r *http.Request, params GetAllMusicParams)
 
+	// (DELETE /music/like)
+	DeleteMusicLike(w http.ResponseWriter, r *http.Request, params DeleteMusicLikeParams)
+
+	// (POST /music/like)
+	PostMusicLike(w http.ResponseWriter, r *http.Request, params PostMusicLikeParams)
+
 	// (GET /music/{musicID})
 	GetMusic(w http.ResponseWriter, r *http.Request, musicID string)
 
 	// (GET /ping)
 	GetPing(w http.ResponseWriter, r *http.Request)
+
+	// (GET /profile)
+	GetProfile(w http.ResponseWriter, r *http.Request, params GetProfileParams)
 
 	// (POST /register)
 	Register(w http.ResponseWriter, r *http.Request)
@@ -482,6 +530,80 @@ func (siw *ServerInterfaceWrapper) GetAllMusic(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteMusicLike operation middleware
+func (siw *ServerInterfaceWrapper) DeleteMusicLike(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteMusicLikeParams
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = value
+
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
+			return
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteMusicLike(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostMusicLike operation middleware
+func (siw *ServerInterfaceWrapper) PostMusicLike(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostMusicLikeParams
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = value
+
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
+			return
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostMusicLike(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetMusic operation middleware
 func (siw *ServerInterfaceWrapper) GetMusic(w http.ResponseWriter, r *http.Request) {
 
@@ -512,6 +634,43 @@ func (siw *ServerInterfaceWrapper) GetPing(w http.ResponseWriter, r *http.Reques
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetPing(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetProfile operation middleware
+func (siw *ServerInterfaceWrapper) GetProfile(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetProfileParams
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = value
+
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
+			return
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetProfile(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -663,8 +822,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/listening-history", wrapper.AddListeningToLH)
 	m.HandleFunc("POST "+options.BaseURL+"/login", wrapper.Login)
 	m.HandleFunc("GET "+options.BaseURL+"/music", wrapper.GetAllMusic)
+	m.HandleFunc("DELETE "+options.BaseURL+"/music/like", wrapper.DeleteMusicLike)
+	m.HandleFunc("POST "+options.BaseURL+"/music/like", wrapper.PostMusicLike)
 	m.HandleFunc("GET "+options.BaseURL+"/music/{musicID}", wrapper.GetMusic)
 	m.HandleFunc("GET "+options.BaseURL+"/ping", wrapper.GetPing)
+	m.HandleFunc("GET "+options.BaseURL+"/profile", wrapper.GetProfile)
 	m.HandleFunc("POST "+options.BaseURL+"/register", wrapper.Register)
 
 	return m
@@ -682,6 +844,13 @@ type GetMusicResponseJSONResponse struct {
 	Name            *string `json:"name,omitempty"`
 	SongUrl         *string `json:"song_url,omitempty"`
 	UploaderId      *string `json:"uploader_id,omitempty"`
+}
+
+type GetProfileJSONResponse struct {
+	Email      *string `json:"email,omitempty"`
+	Likes      *int    `json:"likes,omitempty"`
+	RegisterAt *string `json:"register_at,omitempty"`
+	Username   *string `json:"username,omitempty"`
 }
 
 type DeleteFavorRequestObject struct {
@@ -941,6 +1110,60 @@ func (response GetAllMusic500JSONResponse) VisitGetAllMusicResponse(w http.Respo
 	return json.NewEncoder(w).Encode(response)
 }
 
+type DeleteMusicLikeRequestObject struct {
+	Params DeleteMusicLikeParams
+	Body   *DeleteMusicLikeJSONRequestBody
+}
+
+type DeleteMusicLikeResponseObject interface {
+	VisitDeleteMusicLikeResponse(w http.ResponseWriter) error
+}
+
+type DeleteMusicLike200JSONResponse string
+
+func (response DeleteMusicLike200JSONResponse) VisitDeleteMusicLikeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteMusicLike500JSONResponse string
+
+func (response DeleteMusicLike500JSONResponse) VisitDeleteMusicLikeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostMusicLikeRequestObject struct {
+	Params PostMusicLikeParams
+	Body   *PostMusicLikeJSONRequestBody
+}
+
+type PostMusicLikeResponseObject interface {
+	VisitPostMusicLikeResponse(w http.ResponseWriter) error
+}
+
+type PostMusicLike200JSONResponse string
+
+func (response PostMusicLike200JSONResponse) VisitPostMusicLikeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostMusicLike500JSONResponse string
+
+func (response PostMusicLike500JSONResponse) VisitPostMusicLikeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type GetMusicRequestObject struct {
 	MusicID string `json:"musicID"`
 }
@@ -988,6 +1211,32 @@ func (response GetPing200JSONResponse) VisitGetPingResponse(w http.ResponseWrite
 type GetPing500JSONResponse string
 
 func (response GetPing500JSONResponse) VisitGetPingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetProfileRequestObject struct {
+	Params GetProfileParams
+}
+
+type GetProfileResponseObject interface {
+	VisitGetProfileResponse(w http.ResponseWriter) error
+}
+
+type GetProfile200JSONResponse struct{ GetProfileJSONResponse }
+
+func (response GetProfile200JSONResponse) VisitGetProfileResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetProfile500JSONResponse string
+
+func (response GetProfile500JSONResponse) VisitGetProfileResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 
@@ -1051,11 +1300,20 @@ type StrictServerInterface interface {
 	// (GET /music)
 	GetAllMusic(ctx context.Context, request GetAllMusicRequestObject) (GetAllMusicResponseObject, error)
 
+	// (DELETE /music/like)
+	DeleteMusicLike(ctx context.Context, request DeleteMusicLikeRequestObject) (DeleteMusicLikeResponseObject, error)
+
+	// (POST /music/like)
+	PostMusicLike(ctx context.Context, request PostMusicLikeRequestObject) (PostMusicLikeResponseObject, error)
+
 	// (GET /music/{musicID})
 	GetMusic(ctx context.Context, request GetMusicRequestObject) (GetMusicResponseObject, error)
 
 	// (GET /ping)
 	GetPing(ctx context.Context, request GetPingRequestObject) (GetPingResponseObject, error)
+
+	// (GET /profile)
+	GetProfile(ctx context.Context, request GetProfileRequestObject) (GetProfileResponseObject, error)
 
 	// (POST /register)
 	Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error)
@@ -1331,6 +1589,72 @@ func (sh *strictHandler) GetAllMusic(w http.ResponseWriter, r *http.Request, par
 	}
 }
 
+// DeleteMusicLike operation middleware
+func (sh *strictHandler) DeleteMusicLike(w http.ResponseWriter, r *http.Request, params DeleteMusicLikeParams) {
+	var request DeleteMusicLikeRequestObject
+
+	request.Params = params
+
+	var body DeleteMusicLikeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteMusicLike(ctx, request.(DeleteMusicLikeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteMusicLike")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteMusicLikeResponseObject); ok {
+		if err := validResponse.VisitDeleteMusicLikeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostMusicLike operation middleware
+func (sh *strictHandler) PostMusicLike(w http.ResponseWriter, r *http.Request, params PostMusicLikeParams) {
+	var request PostMusicLikeRequestObject
+
+	request.Params = params
+
+	var body PostMusicLikeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostMusicLike(ctx, request.(PostMusicLikeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostMusicLike")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostMusicLikeResponseObject); ok {
+		if err := validResponse.VisitPostMusicLikeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetMusic operation middleware
 func (sh *strictHandler) GetMusic(w http.ResponseWriter, r *http.Request, musicID string) {
 	var request GetMusicRequestObject
@@ -1381,6 +1705,32 @@ func (sh *strictHandler) GetPing(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetProfile operation middleware
+func (sh *strictHandler) GetProfile(w http.ResponseWriter, r *http.Request, params GetProfileParams) {
+	var request GetProfileRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetProfile(ctx, request.(GetProfileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetProfile")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetProfileResponseObject); ok {
+		if err := validResponse.VisitGetProfileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Register operation middleware
 func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var request RegisterRequestObject
@@ -1415,26 +1765,28 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xZX2/bNhD/KgQ3oC9KlG7oi5/mLWsSIMWCLHsqioAWzxIbiWTJUwIj0HcfSEqybNGJ",
-	"86epU+RN9pHHu/v9eHc63dJMVVpJkGjp5JYWwDgY/zjNMrD2Ql2BdD8zJREkukemdSkyhkLJ9KtVXmyz",
-	"AirmnnChgU6oRSNkTpumaRJ6DnMDtngOZU1CDXyrweKfigvwpp6qXDxMrzZKg8F2v2bW3ijDIycmtLZg",
-	"JKsgZk6wRRjgdPK5X0l6fV+SbouafYUMqbefg82M0M40OqHn8I3MFF+QuTIkLb0rPmS5sAjmCW5BxUQZ",
-	"9el7OUzCkQ9323TehiOsVtIGJ44AT51ICpkfC4vKLB4UEoFQeUW/GpjTCf0lXTI+Dctsun7CeWuBC0fr",
-	"CTOGLWKOHAGSsttPitbEJnGCT7UV2fObG9RuaRsrS1J1Gzqbegcfzy5eG7/w0kKmJLcDugiJkDswEyri",
-	"HCvFFWzY4W29zNR14P5o6wZqJtQqmV/WJs74WpfKpbbLqEHNFoT9x0sIFgzJjShLMgNiAGsjgZPZgqTa",
-	"KF5nmN62DyeHDTn6+4K4oPlI+XNaDH3a2sS6Uax7fl1yhl4+V6ZiSCfU/bGHogKajL2+L5ZB3iF5Fx4b",
-	"cAzCe9H8HpgN5HdnrDVkE9rfyp+a0MNELThtz1nd2NmdjJ1PaLB4YEY8rQs5V10aYRkOCg+tagRtlFv7",
-	"R+7+289U1VkyoZ9qBNLK6ei+eZRIJTKjLJhrkQE5vrg4I9OzE18zVnYnFAWWEN1GE3oNxgat7/cP9g/c",
-	"YUqDZFrQCf19/2D/PXVFEQsPYTpn18pjxaGEcN9WbTv0/4e0SlARR8B3loR9XneI5gnvF39sZZoZVgH6",
-	"JuvzLXV9C82UuhKwDExovfZCuzREEk0NyR3t0Zdhc7R4QnL3np0c3s+sbmGMG+ul/LeDg6c1f+sU+bf2",
-	"gXJwfnh23WCuwRAwRpmYfJq5B0tuBBbr+OeAY864WnwnT44AX44kY1hiDUe/Lu2bmZeJtVY2EsIp51ve",
-	"uSnnbxfudV+4JqFp3/fsFcvW/56kvOzF50ZVkdY8np/7ZuyjUdXp8ashztNaw22ah37lW45/Z6N82pjv",
-	"7yefe7093tWMP3rx3o3kL+QWgZ1y3pt/oV7RhX6rBNFK0I344uT4z4IhTuT4QPq5FJN8OZtyP3JAgg5b",
-	"/wrBaixAYmvqiEJhrDjCNX5tBiPJ9LQb4j0JgzVagLUsh0cOLzq4kvGEd6+fysYca5enw2nwcqC73d6V",
-	"6a837sOPDMUo39i6qpjrLQLiLr/cwIxp7TxNq25a0Gb5Uf6elmVojR+VYV5xnz6M3GjSuBRNMwwVtJeF",
-	"mKa3bQZrBtEd19CQ82cLcnIYq54bQr+qJ+jwCjwm7lV/iUiXSF/sJWo4Xt7VqxB6nwCckjAATzv9d9yH",
-	"Myf/udrCZVj+KiC7IgWwEgvSDZhcVMzge81DalQSvpkkq3WKaU06jaQQlctJdmERqtEd6D8UPaJQ9Xt3",
-	"sVbt8OXo4jYsFU3zfwAAAP//DqU5IU0dAAA=",
+	"H4sIAAAAAAAC/+xa3W/bNhD/VwhuQF+UKN3QFz/NW9okQIoFXfZUFAYtnS3WEsmSpwRGoP99IKkvW/RH",
+	"kiZzgrzJPvJ0H787/nj2HU1koaQAgYaO7mgGLAXtHsdJAsZcywUI+zGRAkGgfWRK5TxhyKWIvxvpxCbJ",
+	"oGD2CZcK6Iga1FzMaVVVVUS/wEyDyX6GsiqiGn6UYPBPmXJwpl7KOb+fXqWlAo31fsWMuZU6DbwxoqUB",
+	"LVgBIXO8LVxDSkdf25Wk1fctarbI6XdIkDr7UzCJ5sqaRkf0C/wgU5kuyUxqEufOFReyOTcI+hFuQcF4",
+	"HvTpqRwm/pX3d1s33vpXGCWF8U6cAV5akeBifs4NSr28V0g4QuEU/aphRkf0l7hDfOyXmXj9DV9qC2w4",
+	"ak+Y1mwZcuQMkOTNfpLVJlaRFXwuDU9+vrle7Z62sTwnRbOhsal18OHoSkvtFk4MJFKkpgcXLhDmNpkR",
+	"5WGM5XwBG3Y4WyeJvPHYH2zdAM2IGinmk1KHEV+qXNrWNgkaVO0B2L+dhGDGkNzyPCdTIBqw1AJSMl2S",
+	"WGmZlgnGd/XDxWlFzj5eExs0F6k6AVdazngOT1LYW+LalNiE4QPKfmd4rKc2BM41K67B6vrzpvIaeNYW",
+	"0iRl6OQzqQtrMbVfHCEvgEZD43eBxssbyG4D3gbAeuFO2D4FOHvye+Uoom37edWV2z+ReErr96xubOyO",
+	"hs5H1FvcMyN8fnExk03RsgR7hUiLEkFpadf+MbffHSeyaCwZ0c8lAqnldFA5Lkuk4ImWBvQNT4CcX19f",
+	"kfHVhTscV3ZHFDnmENxGI3oD2nit749Pjk/sy6QCwRSnI/r78cnxe2pPf8xcCuMZu5EuVynk4Ott1bZT",
+	"970/PwhKYgH4zhC/z+n20bxI28WfaplimhWAjk1+vaOWoNFEygWHLjCeYx55XtjPJOoSoi088FufBS4f",
+	"0UqdZxenu5HVLAxhY52z/HZy8jiWuw6Rf0oXKJvODz9dN+gb0AS0ljokHyf2wZBbjtl6/ueAQ8xY0rEV",
+	"J2eAzweSYVpCzKpdF7es7XliraQJhHCcpnvW3DhN3wruZRdcFdG45T1HWXfH2dGUu0vHTMsicAcJ9+eW",
+	"jH3Ssrg8fzHAeRw13Ic8tCvfevw7E8TTxn6/G3z2Hn9+qB1/MGE4jObPxR6BHadpa/61fEEF/XYSBE+C",
+	"ZpYZBse/BjSxIosH0g7gmEi7IZz9MAckaHPrrhCsxAwE1qYOIOTnp4O8hsumN3uNL5tp5aNysAYLMIbN",
+	"HzqGaNIVDUfZR+34OeRYvTzuj727yfV+e1fG3M64D/9nKAb9xpRFwSy38Bm3/eUWpkwp62lcNNOCussP",
+	"+vc4zz01flCHecE8vR+5wUi1E40T9CdoK/MxjXO+gD0IXXvwLoBIUWsJkzjn+qVV+yq6/etq6x+306w1",
+	"lrWa7HDXv7INfy942JVv4HgJ4Ojaw13tftVrvkOK7SnhdEkuTkPkekNnXtXjdTgFDgmKYdbhoMnCs81Y",
+	"+j+zHepJ2a9ZKaDX25XVv+W4vLLy13Vr7MLyVwbJgmTAcsxIM392Uel+3Roy13eGNPLdw8Nu5TC0regg",
+	"r5ONeU/eP3TvTwL3uS9E/of6aPXOwJQijUaS8cLyQ7M0CMUgB+2/Ex5waWj3HuK94YA7URO3Pm2vqv8C",
+	"AAD///Kqsq7CIwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
