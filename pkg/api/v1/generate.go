@@ -25,6 +25,29 @@ import (
 	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
 )
 
+// Favor defines model for Favor.
+type Favor struct {
+	DurationSeconds int     `json:"duration_seconds"`
+	Id              string  `json:"id"`
+	Likes           int     `json:"likes"`
+	MusicCover      *string `json:"music_cover,omitempty"`
+	Name            string  `json:"name"`
+	SongUrl         string  `json:"song_url"`
+	UploaderId      string  `json:"uploader_id"`
+}
+
+// LikedTrack defines model for LikedTrack.
+type LikedTrack struct {
+	MusicCover       *string `json:"music_cover,omitempty"`
+	MusicDuration    *int    `json:"music_duration,omitempty"`
+	MusicId          *string `json:"music_id,omitempty"`
+	MusicLikes       *int    `json:"music_likes,omitempty"`
+	MusicName        *string `json:"music_name,omitempty"`
+	SongUrl          *string `json:"song_url,omitempty"`
+	UploaderId       *string `json:"uploader_id,omitempty"`
+	UploaderUsername *string `json:"uploader_username,omitempty"`
+}
+
 // ListeningHistoryResponse defines model for ListeningHistoryResponse.
 type ListeningHistoryResponse struct {
 	ListeningDate    *time.Time `json:"listening_date,omitempty"`
@@ -49,11 +72,25 @@ type Music struct {
 	UploaderId      string  `json:"uploader_id"`
 }
 
+// MusicLikes defines model for MusicLikes.
+type MusicLikes struct {
+	MusicId *string `json:"music_id,omitempty"`
+}
+
+// GetFavor defines model for GetFavor.
+type GetFavor = []Favor
+
+// GetLikedTracks defines model for GetLikedTracks.
+type GetLikedTracks = []LikedTrack
+
 // GetListeningHistory defines model for GetListeningHistory.
 type GetListeningHistory = []ListeningHistoryResponse
 
 // GetMusic defines model for GetMusic.
-type GetMusic = []Music
+type GetMusic struct {
+	Music      []Music       `json:"music"`
+	MusicLikes *[]MusicLikes `json:"music_likes,omitempty"`
+}
 
 // GetMusicResponse defines model for GetMusicResponse.
 type GetMusicResponse struct {
@@ -68,10 +105,12 @@ type GetMusicResponse struct {
 
 // GetProfile defines model for GetProfile.
 type GetProfile struct {
-	Email      *string `json:"email,omitempty"`
-	Likes      *int    `json:"likes,omitempty"`
-	RegisterAt *string `json:"register_at,omitempty"`
-	Username   *string `json:"username,omitempty"`
+	Email          *string `json:"email,omitempty"`
+	FavorCount     *int    `json:"favor_count,omitempty"`
+	Likes          *int    `json:"likes,omitempty"`
+	ListeningCount *int    `json:"listening_count,omitempty"`
+	RegisterAt     *string `json:"register_at,omitempty"`
+	Username       *string `json:"username,omitempty"`
 }
 
 // Login defines model for Login.
@@ -112,6 +151,11 @@ type AddFavorParams struct {
 	AccessToken string `form:"Access-Token" json:"Access-Token"`
 }
 
+// GetLikesParams defines parameters for GetLikes.
+type GetLikesParams struct {
+	AccessToken string `form:"Access-Token" json:"Access-Token"`
+}
+
 // DeleteListeningFromLHJSONBody defines parameters for DeleteListeningFromLH.
 type DeleteListeningFromLHJSONBody struct {
 	ListeningDate *time.Time `json:"listening_date,omitempty"`
@@ -142,6 +186,12 @@ type AddListeningToLHParams struct {
 type LoginJSONBody struct {
 	Password *string `json:"password,omitempty"`
 	Username *string `json:"username,omitempty"`
+}
+
+// PostLogoutParams defines parameters for PostLogout.
+type PostLogoutParams struct {
+	AccessToken        string `form:"Access-Token" json:"Access-Token"`
+	RefreshTokenLogout string `form:"Refresh-Token-Logout" json:"Refresh-Token-Logout"`
 }
 
 // GetAllMusicParams defines parameters for GetAllMusic.
@@ -217,6 +267,9 @@ type ServerInterface interface {
 	// (POST /favor)
 	AddFavor(w http.ResponseWriter, r *http.Request, params AddFavorParams)
 
+	// (GET /likes)
+	GetLikes(w http.ResponseWriter, r *http.Request, params GetLikesParams)
+
 	// (DELETE /listening-history)
 	DeleteListeningFromLH(w http.ResponseWriter, r *http.Request, params DeleteListeningFromLHParams)
 
@@ -228,6 +281,9 @@ type ServerInterface interface {
 
 	// (POST /login)
 	Login(w http.ResponseWriter, r *http.Request)
+
+	// (POST /logout)
+	PostLogout(w http.ResponseWriter, r *http.Request, params PostLogoutParams)
 	// Get all music
 	// (GET /music)
 	GetAllMusic(w http.ResponseWriter, r *http.Request, params GetAllMusicParams)
@@ -371,6 +427,43 @@ func (siw *ServerInterfaceWrapper) AddFavor(w http.ResponseWriter, r *http.Reque
 	handler.ServeHTTP(w, r)
 }
 
+// GetLikes operation middleware
+func (siw *ServerInterfaceWrapper) GetLikes(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetLikesParams
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = value
+
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
+			return
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetLikes(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeleteListeningFromLH operation middleware
 func (siw *ServerInterfaceWrapper) DeleteListeningFromLH(w http.ResponseWriter, r *http.Request) {
 
@@ -487,6 +580,61 @@ func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Login(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostLogout operation middleware
+func (siw *ServerInterfaceWrapper) PostLogout(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostLogoutParams
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = value
+
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
+			return
+		}
+	}
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Refresh-Token-Logout"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Refresh-Token-Logout", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Refresh-Token-Logout", Err: err})
+				return
+			}
+			params.RefreshTokenLogout = value
+
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Refresh-Token-Logout"})
+			return
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostLogout(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -817,10 +965,12 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/favor", wrapper.DeleteFavor)
 	m.HandleFunc("GET "+options.BaseURL+"/favor", wrapper.GetFavor)
 	m.HandleFunc("POST "+options.BaseURL+"/favor", wrapper.AddFavor)
+	m.HandleFunc("GET "+options.BaseURL+"/likes", wrapper.GetLikes)
 	m.HandleFunc("DELETE "+options.BaseURL+"/listening-history", wrapper.DeleteListeningFromLH)
 	m.HandleFunc("GET "+options.BaseURL+"/listening-history", wrapper.GetLH)
 	m.HandleFunc("POST "+options.BaseURL+"/listening-history", wrapper.AddListeningToLH)
 	m.HandleFunc("POST "+options.BaseURL+"/login", wrapper.Login)
+	m.HandleFunc("POST "+options.BaseURL+"/logout", wrapper.PostLogout)
 	m.HandleFunc("GET "+options.BaseURL+"/music", wrapper.GetAllMusic)
 	m.HandleFunc("DELETE "+options.BaseURL+"/music/like", wrapper.DeleteMusicLike)
 	m.HandleFunc("POST "+options.BaseURL+"/music/like", wrapper.PostMusicLike)
@@ -832,9 +982,16 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	return m
 }
 
+type GetFavorJSONResponse []Favor
+
+type GetLikedTracksJSONResponse []LikedTrack
+
 type GetListeningHistoryJSONResponse []ListeningHistoryResponse
 
-type GetMusicJSONResponse []Music
+type GetMusicJSONResponse struct {
+	Music      []Music       `json:"music"`
+	MusicLikes *[]MusicLikes `json:"music_likes,omitempty"`
+}
 
 type GetMusicResponseJSONResponse struct {
 	DurationSeconds *int    `json:"duration_seconds,omitempty"`
@@ -847,10 +1004,12 @@ type GetMusicResponseJSONResponse struct {
 }
 
 type GetProfileJSONResponse struct {
-	Email      *string `json:"email,omitempty"`
-	Likes      *int    `json:"likes,omitempty"`
-	RegisterAt *string `json:"register_at,omitempty"`
-	Username   *string `json:"username,omitempty"`
+	Email          *string `json:"email,omitempty"`
+	FavorCount     *int    `json:"favor_count,omitempty"`
+	Likes          *int    `json:"likes,omitempty"`
+	ListeningCount *int    `json:"listening_count,omitempty"`
+	RegisterAt     *string `json:"register_at,omitempty"`
+	Username       *string `json:"username,omitempty"`
 }
 
 type DeleteFavorRequestObject struct {
@@ -888,7 +1047,7 @@ type GetFavorResponseObject interface {
 	VisitGetFavorResponse(w http.ResponseWriter) error
 }
 
-type GetFavor200JSONResponse struct{ GetMusicJSONResponse }
+type GetFavor200JSONResponse struct{ GetFavorJSONResponse }
 
 func (response GetFavor200JSONResponse) VisitGetFavorResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -927,6 +1086,32 @@ func (response AddFavor200JSONResponse) VisitAddFavorResponse(w http.ResponseWri
 type AddFavor500JSONResponse string
 
 func (response AddFavor500JSONResponse) VisitAddFavorResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetLikesRequestObject struct {
+	Params GetLikesParams
+}
+
+type GetLikesResponseObject interface {
+	VisitGetLikesResponse(w http.ResponseWriter) error
+}
+
+type GetLikes200JSONResponse struct{ GetLikedTracksJSONResponse }
+
+func (response GetLikes200JSONResponse) VisitGetLikesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetLikes500JSONResponse string
+
+func (response GetLikes500JSONResponse) VisitGetLikesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 
@@ -1050,7 +1235,7 @@ func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) e
 	http.SetCookie(w, &http.Cookie{
 		Name: "Access-Token",
 		Value: access.Sign,
-		Expires: time.Now().Add(time.Hour * 12),
+		Expires: time.Now().Add(time.Hour * 1),
 		Secure: true,
 		Path: "/",
 		HttpOnly: true,
@@ -1060,11 +1245,21 @@ func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) e
 	http.SetCookie(w, &http.Cookie{
 		Name: "Refresh-Token",
 		Value: refresh.Sign,
-		Expires: time.Now().Add(time.Hour * 48),
+		Expires: time.Now().Add(time.Hour * 24),
 		Secure: true,
 		HttpOnly: true,
 		Domain: "",
 		Path: "/refresh",
+		SameSite: http.SameSiteNoneMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name: "Refresh-Token-Logout",
+		Value: refresh.Sign,
+		Expires: time.Now().Add(time.Hour * 24),
+		Secure: true,
+		HttpOnly: true,
+		Domain: "",
+		Path: "/logout",
 		SameSite: http.SameSiteNoneMode,
 	})
 
@@ -1078,6 +1273,81 @@ type Login500JSONResponse struct {
 }
 
 func (response Login500JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostLogoutRequestObject struct {
+	Params PostLogoutParams
+}
+
+type PostLogoutResponseObject interface {
+	VisitPostLogoutResponse(w http.ResponseWriter) error
+}
+
+type PostLogout200ResponseHeaders struct {
+	AccessToken        interface{}
+	RefreshTokenLogout interface{}
+}
+
+type PostLogout200Response struct {
+	Headers PostLogout200ResponseHeaders
+}
+
+func (response PostLogout200Response) VisitPostLogoutResponse(w http.ResponseWriter) error {
+	slog.Info("Logout200Response")
+	access, ok := response.Headers.AccessToken.(models.JWTAccess)
+	if !ok {
+		slog.Error("not access")
+	}
+	slog.Info(access.Sign)
+	refresh, ok := response.Headers.RefreshTokenLogout.(models.JWTRefresh)
+	if !ok {
+		slog.Error("not refresh")
+	}
+	_ = refresh
+
+	http.SetCookie(w, &http.Cookie{
+		Name: "Access-Token",
+		Value: "",
+		Expires: time.Now().Add(time.Second * 5),
+		Secure: true,
+		Path: "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+		Domain: "",
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name: "Refresh-Token",
+		Value: "",
+		Expires: time.Now().Add(time.Second * 5),
+		Secure: true,
+		HttpOnly: true,
+		Domain: "",
+		Path: "/refresh",
+		SameSite: http.SameSiteNoneMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name: "Refresh-Token-Logout",
+		Value: "",
+		Expires: time.Now().Add(time.Second * 5),
+		Secure: true,
+		HttpOnly: true,
+		Domain: "",
+		Path: "/logout",
+		SameSite: http.SameSiteNoneMode,
+	})
+
+	w.WriteHeader(200)
+
+	return nil
+}
+
+type PostLogout500JSONResponse string
+
+func (response PostLogout500JSONResponse) VisitPostLogoutResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 
@@ -1285,6 +1555,9 @@ type StrictServerInterface interface {
 	// (POST /favor)
 	AddFavor(ctx context.Context, request AddFavorRequestObject) (AddFavorResponseObject, error)
 
+	// (GET /likes)
+	GetLikes(ctx context.Context, request GetLikesRequestObject) (GetLikesResponseObject, error)
+
 	// (DELETE /listening-history)
 	DeleteListeningFromLH(ctx context.Context, request DeleteListeningFromLHRequestObject) (DeleteListeningFromLHResponseObject, error)
 
@@ -1296,6 +1569,9 @@ type StrictServerInterface interface {
 
 	// (POST /login)
 	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
+
+	// (POST /logout)
+	PostLogout(ctx context.Context, request PostLogoutRequestObject) (PostLogoutResponseObject, error)
 	// Get all music
 	// (GET /music)
 	GetAllMusic(ctx context.Context, request GetAllMusicRequestObject) (GetAllMusicResponseObject, error)
@@ -1440,6 +1716,32 @@ func (sh *strictHandler) AddFavor(w http.ResponseWriter, r *http.Request, params
 	}
 }
 
+// GetLikes operation middleware
+func (sh *strictHandler) GetLikes(w http.ResponseWriter, r *http.Request, params GetLikesParams) {
+	var request GetLikesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetLikes(ctx, request.(GetLikesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetLikes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLikesResponseObject); ok {
+		if err := validResponse.VisitGetLikesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // DeleteListeningFromLH operation middleware
 func (sh *strictHandler) DeleteListeningFromLH(w http.ResponseWriter, r *http.Request, params DeleteListeningFromLHParams) {
 	var request DeleteListeningFromLHRequestObject
@@ -1556,6 +1858,32 @@ func (sh *strictHandler) Login(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(LoginResponseObject); ok {
 		if err := validResponse.VisitLoginResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostLogout operation middleware
+func (sh *strictHandler) PostLogout(w http.ResponseWriter, r *http.Request, params PostLogoutParams) {
+	var request PostLogoutRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostLogout(ctx, request.(PostLogoutRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostLogout")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostLogoutResponseObject); ok {
+		if err := validResponse.VisitPostLogoutResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1765,28 +2093,31 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xa3W/bNhD/VwhuQF+UKN3QFz/NW9okQIoFXfZUFAYtnS3WEsmSpwRGoP99IKkvW/RH",
-	"kiZzgrzJPvJ0H787/nj2HU1koaQAgYaO7mgGLAXtHsdJAsZcywUI+zGRAkGgfWRK5TxhyKWIvxvpxCbJ",
-	"oGD2CZcK6Iga1FzMaVVVVUS/wEyDyX6GsiqiGn6UYPBPmXJwpl7KOb+fXqWlAo31fsWMuZU6DbwxoqUB",
-	"LVgBIXO8LVxDSkdf25Wk1fctarbI6XdIkDr7UzCJ5sqaRkf0C/wgU5kuyUxqEufOFReyOTcI+hFuQcF4",
-	"HvTpqRwm/pX3d1s33vpXGCWF8U6cAV5akeBifs4NSr28V0g4QuEU/aphRkf0l7hDfOyXmXj9DV9qC2w4",
-	"ak+Y1mwZcuQMkOTNfpLVJlaRFXwuDU9+vrle7Z62sTwnRbOhsal18OHoSkvtFk4MJFKkpgcXLhDmNpkR",
-	"5WGM5XwBG3Y4WyeJvPHYH2zdAM2IGinmk1KHEV+qXNrWNgkaVO0B2L+dhGDGkNzyPCdTIBqw1AJSMl2S",
-	"WGmZlgnGd/XDxWlFzj5eExs0F6k6AVdazngOT1LYW+LalNiE4QPKfmd4rKc2BM41K67B6vrzpvIaeNYW",
-	"0iRl6OQzqQtrMbVfHCEvgEZD43eBxssbyG4D3gbAeuFO2D4FOHvye+Uoom37edWV2z+ReErr96xubOyO",
-	"hs5H1FvcMyN8fnExk03RsgR7hUiLEkFpadf+MbffHSeyaCwZ0c8lAqnldFA5Lkuk4ImWBvQNT4CcX19f",
-	"kfHVhTscV3ZHFDnmENxGI3oD2nit749Pjk/sy6QCwRSnI/r78cnxe2pPf8xcCuMZu5EuVynk4Ott1bZT",
-	"970/PwhKYgH4zhC/z+n20bxI28WfaplimhWAjk1+vaOWoNFEygWHLjCeYx55XtjPJOoSoi088FufBS4f",
-	"0UqdZxenu5HVLAxhY52z/HZy8jiWuw6Rf0oXKJvODz9dN+gb0AS0ljokHyf2wZBbjtl6/ueAQ8xY0rEV",
-	"J2eAzweSYVpCzKpdF7es7XliraQJhHCcpnvW3DhN3wruZRdcFdG45T1HWXfH2dGUu0vHTMsicAcJ9+eW",
-	"jH3Ssrg8fzHAeRw13Ic8tCvfevw7E8TTxn6/G3z2Hn9+qB1/MGE4jObPxR6BHadpa/61fEEF/XYSBE+C",
-	"ZpYZBse/BjSxIosH0g7gmEi7IZz9MAckaHPrrhCsxAwE1qYOIOTnp4O8hsumN3uNL5tp5aNysAYLMIbN",
-	"HzqGaNIVDUfZR+34OeRYvTzuj727yfV+e1fG3M64D/9nKAb9xpRFwSy38Bm3/eUWpkwp62lcNNOCussP",
-	"+vc4zz01flCHecE8vR+5wUi1E40T9CdoK/MxjXO+gD0IXXvwLoBIUWsJkzjn+qVV+yq6/etq6x+306w1",
-	"lrWa7HDXv7INfy942JVv4HgJ4Ojaw13tftVrvkOK7SnhdEkuTkPkekNnXtXjdTgFDgmKYdbhoMnCs81Y",
-	"+j+zHepJ2a9ZKaDX25XVv+W4vLLy13Vr7MLyVwbJgmTAcsxIM392Uel+3Roy13eGNPLdw8Nu5TC0regg",
-	"r5ONeU/eP3TvTwL3uS9E/of6aPXOwJQijUaS8cLyQ7M0CMUgB+2/Ex5waWj3HuK94YA7URO3Pm2vqv8C",
-	"AAD///Kqsq7CIwAA",
+	"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",
+	"//8JFpIEQCwAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

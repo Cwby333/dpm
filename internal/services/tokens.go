@@ -81,9 +81,7 @@ func (s UserService) CheckAccessToken(ctx context.Context, token string) (jwt.Ma
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	if t != nil {
-		slog.Info(t.Raw)
-	}else {
+	if t == nil {
 		slog.Info("T is nil")
 	}
 
@@ -98,15 +96,16 @@ func (s UserService) CheckAccessToken(ctx context.Context, token string) (jwt.Ma
 		return jwt.MapClaims{}, nil
 	}
 
-	for i := range claims {
-		slog.Info(i, claims[i])
-	}
+	// for i := range claims {
+	// 	slog.Info(i, claims[i])
+	// }
+	
 	sub, err := claims.GetSubject()
 	if err != nil {
 		slog.Info("haven't subject")
 		return claims, nil
 	}
-	slog.Info(sub)
+	_ = sub
 
 	return claims, nil
 }

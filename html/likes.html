@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mute - Мой профиль</title>
+    <title>Mute - Понравившиеся треки</title>
     <style>
         * {
             margin: 0;
@@ -129,14 +129,19 @@
         }
 
         .main-content {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 80px auto 0;
             padding: 2rem;
         }
 
         .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 2rem;
             color: white;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .page-header h1 {
@@ -144,14 +149,34 @@
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
-        .loading-container {
+        .refresh-btn {
+            padding: 0.75rem 1.5rem;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
             display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .refresh-btn:hover {
+            background: #f0f0f0;
+            transform: rotate(180deg);
+        }
+
+        .loading-container {
+            display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 4rem;
             background: white;
-            border-radius: 20px;
+            border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
 
@@ -170,157 +195,165 @@
             100% { transform: rotate(360deg); }
         }
 
-        .profile-card {
+        .likes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .like-card {
             background: white;
-            border-radius: 20px;
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
         }
 
-        .profile-header {
+        .like-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .like-cover {
+            height: 180px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 2rem;
-            text-align: center;
-            color: white;
-        }
-
-        .profile-avatar {
-            width: 100px;
-            height: 100px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 1rem;
-            font-size: 3rem;
-            border: 3px solid white;
+            color: white;
+            font-size: 4rem;
+            position: relative;
+            cursor: pointer;
         }
 
-        .profile-header h2 {
-            font-size: 1.5rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .profile-header p {
-            opacity: 0.9;
-            font-size: 0.9rem;
-        }
-
-        .profile-info {
-            padding: 2rem;
-        }
-
-        .info-item {
+        .like-cover .play-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
             display: flex;
             align-items: center;
-            padding: 1rem 0;
-            border-bottom: 1px solid #e2e8f0;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
-        .info-icon {
-            width: 50px;
-            font-size: 1.5rem;
-            text-align: center;
+        .like-card:hover .play-overlay {
+            opacity: 1;
         }
 
-        .info-content {
-            flex: 1;
-        }
-
-        .info-label {
-            font-size: 0.8rem;
-            color: #999;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .info-value {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #333;
-            margin-top: 0.25rem;
-        }
-
-        .info-value.email {
-            font-size: 0.95rem;
-            font-weight: normal;
-            word-break: break-all;
-        }
-
-        .stats-row {
+        .play-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
             display: flex;
-            justify-content: space-around;
-            padding: 1.5rem 0;
-            background: #f8f9fa;
-            border-radius: 12px;
-            margin-top: 1rem;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #667eea;
+            transition: transform 0.3s ease;
         }
 
-        .stat-item {
-            text-align: center;
-            flex: 1;
+        .play-button:hover {
+            transform: scale(1.1);
         }
 
-        .stat-number {
-            font-size: 1.8rem;
-            font-weight: 700;
+        .remove-like-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .remove-like-btn:hover {
+            background: #e53e3e;
+            transform: scale(1.1);
+        }
+
+        .like-info {
+            padding: 1.5rem;
+        }
+
+        .like-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+            cursor: pointer;
+        }
+
+        .like-name:hover {
             color: #667eea;
         }
 
-        .stat-label {
-            font-size: 0.8rem;
-            color: #666;
-            margin-top: 0.25rem;
+        .like-artist {
+            font-size: 0.9rem;
+            color: #667eea;
+            margin-bottom: 0.5rem;
         }
 
-        .action-buttons {
+        .like-meta {
             display: flex;
+            align-items: center;
             gap: 1rem;
-            margin-top: 2rem;
-            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            color: #666;
+            font-size: 0.85rem;
         }
 
-        .action-btn {
+        .like-likes {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #e53e3e;
+        }
+
+        .like-duration {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .like-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .music-btn {
             flex: 1;
             padding: 0.75rem;
-            border-radius: 8px;
+            border: none;
+            border-radius: 6px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
-            border: none;
-            font-size: 1rem;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
         }
 
-        .action-btn-primary {
+        .btn-play {
             background: #667eea;
             color: white;
         }
 
-        .action-btn-primary:hover {
+        .btn-play:hover {
             background: #5a67d8;
             transform: translateY(-2px);
-        }
-
-        .action-btn-secondary {
-            background: #4a5568;
-            color: white;
-        }
-
-        .action-btn-secondary:hover {
-            background: #2d3748;
-        }
-
-        .action-btn-logout {
-            background: #e53e3e;
-            color: white;
-        }
-
-        .action-btn-logout:hover {
-            background: #c53030;
         }
 
         .status-bar {
@@ -349,34 +382,11 @@
             background: #f56565;
         }
 
-        .error-container {
-            background: white;
-            border-radius: 20px;
-            padding: 3rem;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .error-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-
-        .error-container h3 {
-            color: #c53030;
-            margin-bottom: 0.5rem;
-        }
-
-        .error-container p {
-            color: #666;
-            margin-bottom: 1.5rem;
-        }
-
         .empty-state {
             text-align: center;
             padding: 4rem;
             background: white;
-            border-radius: 20px;
+            border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
 
@@ -392,6 +402,29 @@
         }
 
         .empty-state p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .error-container {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-container h3 {
+            color: #c53030;
+            margin-bottom: 0.5rem;
+        }
+
+        .error-container p {
             color: #666;
             margin-bottom: 1.5rem;
         }
@@ -493,21 +526,13 @@
                 justify-content: center;
             }
 
-            .main-content {
-                padding: 1rem;
-            }
-
-            .profile-info {
-                padding: 1rem;
-            }
-
-            .stats-row {
+            .page-header {
                 flex-direction: column;
-                gap: 1rem;
+                align-items: stretch;
             }
 
-            .action-buttons {
-                flex-direction: column;
+            .likes-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -516,7 +541,7 @@
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
-                <span class="logo-icon">👤</span>
+                <span class="logo-icon">❤️</span>
                 <span class="logo-text">Mute</span>
             </div>
             <div class="nav-links">
@@ -525,8 +550,7 @@
                 <a href="/music.html">Музыка</a>
                 <a href="/favor.html">Избранное</a>
                 <a href="/listening-history.html">История</a>
-                <a href="/likes.html">Лайки</a>
-                <a href="/profile.html" class="active">Профиль</a>
+                <a href="#" class="active">Лайки</a>
                 <div class="auth-buttons" id="authButtons">
                     <a href="/login" class="btn btn-outline">Войти</a>
                     <a href="/register" class="btn btn-primary">Регистрация</a>
@@ -537,22 +561,24 @@
 
     <div class="main-content">
         <div class="page-header">
-            <h1>👤 Мой профиль</h1>
+            <h1>❤️ Понравившиеся треки</h1>
+            <button class="refresh-btn" id="refreshBtn">🔄 Обновить</button>
         </div>
 
         <div class="status-bar" id="statusBar">
             <div class="status-info">
                 <span class="status-dot" id="statusDot"></span>
-                <span id="statusText">Загрузка профиля...</span>
+                <span id="statusText">Загрузка понравившихся треков...</span>
             </div>
+            <span id="likesCount">0 треков</span>
         </div>
 
-        <div id="profileContainer">
-            <div class="loading-container" id="loadingContainer">
-                <div class="loading-spinner"></div>
-                <p>Загрузка информации о профиле...</p>
-            </div>
+        <div class="loading-container" id="loadingContainer">
+            <div class="loading-spinner"></div>
+            <p>Загрузка понравившихся треков...</p>
         </div>
+
+        <div id="likesContainer"></div>
     </div>
 
     <footer class="footer">
@@ -569,8 +595,7 @@
                     <li><a href="/music.html">Музыка</a></li>
                     <li><a href="/favor.html">Избранное</a></li>
                     <li><a href="/listening-history.html">История</a></li>
-                    <li><a href="/likes.html">Лайки</a></li>
-                    <li><a href="/profile.html">Профиль</a></li>
+                    <li><a href="#">Лайки</a></li>
                 </ul>
             </div>
             <div class="footer-section">
@@ -589,69 +614,121 @@
     <script>
         // Конфигурация
         const apiBaseUrl = 'http://localhost:3003';
-        let profileData = null;
+        let likedTracks = [];
 
         // DOM элементы
-        const profileContainer = document.getElementById('profileContainer');
         const loadingContainer = document.getElementById('loadingContainer');
+        const likesContainer = document.getElementById('likesContainer');
+        const refreshBtn = document.getElementById('refreshBtn');
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
+        const likesCount = document.getElementById('likesCount');
 
-        // Выход из системы (POST /logout)
-        async function logout() {
-            if (!confirm('Вы уверены, что хотите выйти из системы?')) {
+        // Добавление в историю прослушиваний (POST /listening-history)
+        async function addToListeningHistory(musicId) {
+            try {
+                console.log(`Добавление трека ${musicId} в историю прослушиваний`);
+                
+                const response = await fetch(`${apiBaseUrl}/listening-history`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ musicID: musicId }),
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    console.log(`Трек ${musicId} успешно добавлен в историю`);
+                    return true;
+                } else if (response.status === 401 || response.status === 403) {
+                    console.log('Пользователь не авторизован, история не сохранена');
+                    return false;
+                } else {
+                    console.error('Ошибка добавления в историю:', response.status);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Ошибка при добавлении в историю:', error);
+                return false;
+            }
+        }
+
+        // Воспроизведение музыки
+        async function playMusic(musicId, musicName, artistName, songUrl) {
+            const added = await addToListeningHistory(musicId);
+            if (added) {
+                showNotification(`🎵 "${musicName}" добавлен в историю прослушиваний`, 'info');
+            } else {
+                console.log(`Трек "${musicName}" не добавлен в историю (возможно, пользователь не авторизован)`);
+            }
+            
+            showNotification(`🎵 Воспроизведение: ${musicName} - ${artistName || 'Неизвестный'} (демо-режим)`, 'info');
+        }
+
+        // Удаление лайка (DELETE /music/like)
+        async function removeLike(musicId, musicName) {
+            if (!confirm(`Удалить лайк с трека "${musicName}"?`)) {
                 return;
             }
 
             showLoading();
-            updateStatus('loading', 'Выход из системы...');
+            updateStatus('loading', 'Удаление лайка...');
 
             try {
-                const response = await fetch(`${apiBaseUrl}/logout`, {
-                    method: 'POST',
+                const response = await fetch(`${apiBaseUrl}/music/like`, {
+                    method: 'DELETE',
                     headers: {
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
                     },
+                    body: JSON.stringify({ musicID: musicId }),
                     credentials: 'include'
                 });
 
-                console.log('Статус ответа /logout:', response.status);
+                console.log('Статус ответа DELETE /music/like:', response.status);
 
-                if (response.ok) {
-                    showNotification('Вы успешно вышли из системы', 'info');
-                    // Перенаправляем на страницу входа
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 1000);
-                } else {
-                    throw new Error(`Ошибка при выходе: ${response.status}`);
+                if (response.status === 401 || response.status === 403) {
+                    showNotification('Сессия истекла, пожалуйста, войдите снова', 'error');
+                    renderUnauthorizedState();
+                    return;
                 }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ошибка! Статус: ${response.status}`);
+                }
+
+                showNotification(`❤️ Лайк с трека "${musicName}" удален`, 'info');
+                await loadLikes();
+
             } catch (error) {
-                console.error('Ошибка выхода:', error);
-                updateStatus('error', 'Ошибка выхода');
-                showNotification('Не удалось выйти из системы', 'error');
+                console.error('Ошибка удаления лайка:', error);
+                updateStatus('error', 'Ошибка удаления');
+                showNotification('Не удалось удалить лайк', 'error');
+            } finally {
                 hideLoading();
             }
         }
 
-        // Загрузка профиля (GET /profile)
-        async function loadProfile() {
+        // Загрузка понравившихся треков (GET /likes)
+        async function loadLikes() {
             showLoading();
-            updateStatus('loading', 'Загрузка профиля...');
+            updateStatus('loading', 'Загрузка понравившихся треков...');
 
             try {
-                const response = await fetch(`${apiBaseUrl}/profile`, {
+                const response = await fetch(`${apiBaseUrl}/likes`, {
                     method: 'GET',
                     headers: { 'Accept': 'application/json' },
                     credentials: 'include'
                 });
 
-                console.log('Статус ответа /profile:', response.status);
+                console.log('Статус ответа /likes:', response.status);
 
-                // Если 401 или 403 — пользователь не авторизован
                 if (response.status === 401 || response.status === 403) {
                     renderUnauthorizedState();
                     updateStatus('error', 'Не авторизован. Пожалуйста, войдите в систему.');
+                    likesCount.textContent = '0 треков';
                     return;
                 }
 
@@ -660,18 +737,23 @@
                 }
 
                 const data = await response.json();
-                console.log('Получены данные профиля:', data);
+                console.log('Получены данные понравившихся треков:', data);
 
-                // Обработка формата ответа согласно OpenAPI (GetProfile)
-                if (data && data.GetProfile) {
-                    profileData = data.GetProfile;
+                // Обработка формата ответа согласно OpenAPI (массив объектов LikedTrack)
+                if (Array.isArray(data)) {
+                    likedTracks = data;
+                } else if (data && data.GetLikedTracksJSONResponse && Array.isArray(data.GetLikedTracksJSONResponse)) {
+                    likedTracks = data.GetLikedTracksJSONResponse;
                 } else {
-                    profileData = data;
+                    likedTracks = [];
                 }
 
-                renderProfile();
+                console.log(`Загружено понравившихся треков: ${likedTracks.length}`);
 
-                updateStatus('success', 'Профиль загружен');
+                renderLikes();
+
+                updateStatus('success', 'Понравившиеся треки загружены');
+                likesCount.textContent = `${likedTracks.length} треков`;
 
             } catch (error) {
                 console.error('Ошибка загрузки:', error);
@@ -682,18 +764,11 @@
             }
         }
 
-        function formatDate(dateString) {
-            if (!dateString) return 'Дата не указана';
-            try {
-                const date = new Date(dateString);
-                return date.toLocaleDateString('ru-RU', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                });
-            } catch {
-                return dateString;
-            }
+        function formatDuration(seconds) {
+            if (!seconds) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
         }
 
         function escapeHtml(text) {
@@ -704,80 +779,64 @@
         }
 
         function renderUnauthorizedState() {
-            profileContainer.innerHTML = `
+            likesContainer.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">🔒</div>
                     <h3>Требуется авторизация</h3>
-                    <p>Войдите в систему, чтобы просмотреть профиль</p>
+                    <p>Войдите в систему, чтобы просмотреть понравившиеся треки</p>
                     <button class="btn btn-primary" onclick="window.location.href='/login'">Войти</button>
                     <button class="btn btn-outline" onclick="window.location.href='/register'" style="margin-left: 1rem;">Зарегистрироваться</button>
                 </div>
             `;
         }
 
-        function renderProfile() {
-            if (!profileData) {
-                renderUnauthorizedState();
+        function renderLikes() {
+            if (!likedTracks || likedTracks.length === 0) {
+                likesContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❤️</div>
+                        <h3>Нет понравившихся треков</h3>
+                        <p>Ставьте лайки трекам, чтобы они отображались здесь</p>
+                        <button class="btn btn-primary" onclick="window.location.href='/music.html'">Перейти к музыке</button>
+                    </div>
+                `;
                 return;
             }
 
-            const username = escapeHtml(profileData.username || 'Не указан');
-            const email = escapeHtml(profileData.email || 'Не указан');
-            const registerAt = formatDate(profileData.register_at);
-            
-            // Получаем данные из OpenAPI спецификации
-            const totalLikes = profileData.likes || 0;
-            const listeningCount = profileData.listening_count || 0;
-            const favorCount = profileData.favor_count || 0;
-
-            // Получаем первую букву username для аватара
-            const avatarLetter = username.charAt(0).toUpperCase() || '👤';
-
-            profileContainer.innerHTML = `
-                <div class="profile-card">
-                    <div class="profile-header">
-                        <div class="profile-avatar">
-                            ${avatarLetter}
-                        </div>
-                        <h2>${username}</h2>
-                        <p>Пользователь Mute</p>
-                    </div>
-                    <div class="profile-info">
-                        <div class="info-item">
-                            <div class="info-icon">📧</div>
-                            <div class="info-content">
-                                <div class="info-label">Email</div>
-                                <div class="info-value email">${email}</div>
+            likesContainer.innerHTML = `
+                <div class="likes-grid">
+                    ${likedTracks.map(track => {
+                        const musicId = track.music_id;
+                        const musicName = escapeHtml(track.music_name || 'Без названия');
+                        const artist = escapeHtml(track.uploader_username || track.uploader_id || 'Неизвестный исполнитель');
+                        const likes = track.music_likes || 0;
+                        const duration = track.music_duration || 0;
+                        const songUrl = track.song_url || '';
+                        const cover = track.music_cover;
+                        
+                        return `
+                            <div class="like-card">
+                                <div class="like-cover" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artist.replace(/'/g, "\\'")}', '${songUrl}')">
+                                    <span>🎵</span>
+                                    <div class="play-overlay">
+                                        <div class="play-button">▶️</div>
+                                    </div>
+                                    <button class="remove-like-btn" onclick="event.stopPropagation(); removeLike('${musicId}', '${musicName.replace(/'/g, "\\'")}')" title="Удалить лайк">❤️</button>
+                                </div>
+                                <div class="like-info">
+                                    <h3 class="like-name" onclick="window.location.href='music-id.html?id=${musicId}'">${musicName}</h3>
+                                    <div class="like-artist">${artist}</div>
+                                    <div class="like-meta">
+                                        <span class="like-likes">❤️ ${likes}</span>
+                                        <span class="like-duration">⏱️ ${formatDuration(duration)}</span>
+                                    </div>
+                                    <div class="like-actions">
+                                        <button class="music-btn btn-play" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artist.replace(/'/g, "\\'")}', '${songUrl}')">▶️ Слушать</button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-icon">📅</div>
-                            <div class="info-content">
-                                <div class="info-label">Дата регистрации</div>
-                                <div class="info-value">${registerAt}</div>
-                            </div>
-                        </div>
-                        <div class="stats-row">
-                            <div class="stat-item">
-                                <div class="stat-number">${totalLikes}</div>
-                                <div class="stat-label">Всего лайков</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-number">${listeningCount}</div>
-                                <div class="stat-label">Прослушано треков</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-number">${favorCount}</div>
-                                <div class="stat-label">В избранном</div>
-                            </div>
-                        </div>
-                        <div class="action-buttons">
-                            <a href="/music.html" class="action-btn action-btn-primary">🎵 Перейти к музыке</a>
-                            <a href="/favor.html" class="action-btn action-btn-secondary">⭐ Моё избранное</a>
-                            <a href="/likes.html" class="action-btn action-btn-secondary">❤️ Понравившиеся</a>
-                            <button class="action-btn action-btn-logout" onclick="logout()">🚪 Выйти</button>
-                        </div>
-                    </div>
+                        `;
+                    }).join('')}
                 </div>
             `;
         }
@@ -793,6 +852,16 @@
             }, 3000);
         }
 
+        function showLoading() {
+            loadingContainer.style.display = 'flex';
+            likesContainer.style.display = 'none';
+        }
+
+        function hideLoading() {
+            loadingContainer.style.display = 'none';
+            likesContainer.style.display = 'block';
+        }
+
         function updateStatus(type, message) {
             statusText.textContent = message;
             statusDot.className = 'status-dot';
@@ -805,19 +874,9 @@
             }
         }
 
-        function showLoading() {
-            profileContainer.innerHTML = `
-                <div class="loading-container">
-                    <div class="loading-spinner"></div>
-                    <p>Загрузка информации о профиле...</p>
-                </div>
-            `;
-        }
-
-        function hideLoading() {}
-
         function showError(message) {
-            profileContainer.innerHTML = `
+            likesContainer.style.display = 'block';
+            likesContainer.innerHTML = `
                 <div class="error-container">
                     <div class="error-icon">⚠️</div>
                     <h3>Ошибка загрузки</h3>
@@ -828,14 +887,17 @@
                         <li>✓ Настроены ли CORS заголовки</li>
                         <li>✓ Правильно ли настроены cookies</li>
                     </ul>
-                    <button class="btn btn-primary" onclick="loadProfile()">Повторить попытку</button>
+                    <button class="btn btn-primary" onclick="loadLikes()">Повторить попытку</button>
                 </div>
             `;
         }
 
-        // Инициализация
+        refreshBtn.addEventListener('click', () => {
+            loadLikes();
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
-            loadProfile();
+            loadLikes();
         });
     </script>
 </body>

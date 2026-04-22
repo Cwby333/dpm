@@ -623,7 +623,7 @@
         const statusText = document.getElementById('statusText');
         const favorCount = document.getElementById('favorCount');
 
-        // Добавление в историю прослушиваний (POST /listening-history) - как в music.html
+        // Добавление в историю прослушиваний (POST /listening-history)
         async function addToListeningHistory(musicId) {
             try {
                 console.log(`Добавление трека ${musicId} в историю прослушиваний`);
@@ -654,9 +654,8 @@
             }
         }
 
-        // Воспроизведение музыки (как в music.html)
+        // Воспроизведение музыки
         async function playMusic(musicId, musicName, artistName, songUrl) {
-            // Отправляем запрос на добавление в историю прослушиваний
             const added = await addToListeningHistory(musicId);
             if (added) {
                 showNotification(`🎵 "${musicName}" добавлен в историю прослушиваний`, 'info');
@@ -667,7 +666,7 @@
             showNotification(`🎵 Воспроизведение: ${musicName} - ${artistName || 'Неизвестный'} (демо-режим)`, 'info');
         }
 
-        // Загрузка избранного (GET /favor)
+        // Загрузка избранного (GET /favor) - исправлено для нового формата
         async function loadFavor() {
             showLoading();
             updateStatus('loading', 'Загрузка избранного...');
@@ -695,10 +694,11 @@
                 const data = await response.json();
                 console.log('Получены данные избранного:', data);
 
-                if (data && data.GetMusicJSONResponse && Array.isArray(data.GetMusicJSONResponse)) {
-                    favorItems = data.GetMusicJSONResponse;
-                } else if (Array.isArray(data)) {
+                // Исправленная обработка: согласно OpenAPI, GET /favor возвращает массив объектов Favor
+                if (Array.isArray(data)) {
                     favorItems = data;
+                } else if (data && data.GetFavorJSONResponse && Array.isArray(data.GetFavorJSONResponse)) {
+                    favorItems = data.GetFavorJSONResponse;
                 } else {
                     favorItems = [];
                 }
@@ -723,7 +723,7 @@
         // Загрузка детальной информации о треках
         async function loadMusicDetails() {
             for (const item of favorItems) {
-                const musicId = item.id || item.musicID;
+                const musicId = item.id;
                 if (musicId && !musicDetails.has(musicId)) {
                     try {
                         const response = await fetch(`${apiBaseUrl}/music/${musicId}`, {
@@ -838,7 +838,7 @@
             favorContainer.innerHTML = `
                 <div class="favor-grid">
                     ${favorItems.map(item => {
-                        const musicId = item.id || item.musicID;
+                        const musicId = item.id;
                         const music = musicDetails.get(musicId) || item;
                         const name = music.name || item.name || 'Без названия';
                         const artist = music.uploader_username || music.uploader_id || item.uploader_username || item.uploader_id || 'Неизвестный исполнитель';

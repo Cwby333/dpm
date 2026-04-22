@@ -662,6 +662,7 @@
                 <a href="#" class="active">Музыка</a>
                 <a href="/favor.html">Избранное</a>
                 <a href="/listening-history.html">История</a>
+                <a href="/likes.html">Лайки</a>
                 <div class="auth-buttons" id="authButtons">
                     <a href="/login" class="btn btn-outline">Войти</a>
                     <a href="/register" class="btn btn-primary">Регистрация</a>
@@ -714,6 +715,7 @@
                     <li><a href="#">Музыка</a></li>
                     <li><a href="/favor.html">Избранное</a></li>
                     <li><a href="/listening-history.html">История</a></li>
+                    <li><a href="/likes.html">Лайки</a></li>
                 </ul>
             </div>
             <div class="footer-section">
@@ -816,8 +818,14 @@
                     showNotification(`❤️ "${musicName}" — ${actionText}`, 'info');
                     renderMusic(); // Обновляем отображение
                 } else if (response.status === 401 || response.status === 403) {
-                    showNotification('Пожалуйста, войдите в систему, чтобы ставить лайки', 'error');
+                    showNotification('Пожалуйста, войдите в систему, чтобы ставить/убирать лайки', 'error');
+                } else if (response.status === 409) {
+                    showNotification(`❤️ Лайк "${musicName}" уже существует`, 'info');
+                    likeStatus.set(musicId, true);
+                    renderMusic();
                 } else {
+                    const errorText = await response.text();
+                    console.error('Ошибка сервера:', errorText);
                     throw new Error('Ошибка при выполнении операции');
                 }
             } catch (error) {
@@ -841,15 +849,17 @@
                     console.log('Избранное получено:', data);
                     
                     let favorItems = [];
-                    if (data && data.GetMusicJSONResponse && Array.isArray(data.GetMusicJSONResponse)) {
-                        favorItems = data.GetMusicJSONResponse;
+                    if (data && data.GetFavorJSONResponse && Array.isArray(data.GetFavorJSONResponse)) {
+                        favorItems = data.GetFavorJSONResponse;
                     } else if (Array.isArray(data)) {
                         favorItems = data;
+                    } else if (data && data.favor && Array.isArray(data.favor)) {
+                        favorItems = data.favor;
                     }
                     
                     favorStatus.clear();
                     favorItems.forEach(item => {
-                        const musicId = item.id || item.productID;
+                        const musicId = item.id || item.musicID || item.productID;
                         if (musicId) {
                             favorStatus.set(musicId, true);
                         }
@@ -870,8 +880,6 @@
         async function loadLikeStatus() {
             try {
                 console.log('Загрузка статуса лайков');
-                // Сначала получаем все треки, которые пользователь лайкнул
-                // Согласно OpenAPI, GET /music/like должен возвращать список лайкнутых треков
                 const response = await fetch(`${apiBaseUrl}/music/like`, {
                     method: 'GET',
                     headers: { 'Accept': 'application/json' },
@@ -883,10 +891,23 @@
                     console.log('Лайки получены:', data);
                     
                     likeStatus.clear();
-                    // Ожидаем массив ID треков или объект с лайками
+                    
+                    // Обработка различных форматов ответа
                     if (Array.isArray(data)) {
                         data.forEach(item => {
-                            const musicId = item.musicID || item.id;
+                            let musicId = null;
+                            if (typeof item === 'string') {
+                                musicId = item;
+                            } else if (item && typeof item === 'object') {
+                                musicId = item.music_id || item.musicID || item.id;
+                            }
+                            if (musicId) {
+                                likeStatus.set(musicId, true);
+                            }
+                        });
+                    } else if (data && data.music_likes && Array.isArray(data.music_likes)) {
+                        data.music_likes.forEach(item => {
+                            const musicId = item.music_id || item.musicID;
                             if (musicId) {
                                 likeStatus.set(musicId, true);
                             }
@@ -895,13 +916,22 @@
                         data.likes.forEach(musicId => {
                             likeStatus.set(musicId, true);
                         });
+                    } else if (data && typeof data === 'object') {
+                        for (const key in data) {
+                            if (data.hasOwnProperty(key) && (key.startsWith('music_') || key.length > 5)) {
+                                likeStatus.set(key, true);
+                            }
+                        }
                     }
                     
+                    console.log('Загружено лайков:', likeStatus.size);
                     renderMusic();
                 } else if (response.status === 401 || response.status === 403) {
                     console.log('Пользователь не авторизован, статус лайков не загружен');
                     likeStatus.clear();
                     renderMusic();
+                } else {
+                    console.warn('GET /music/like вернул статус:', response.status);
                 }
             } catch (error) {
                 console.error('Ошибка загрузки статуса лайков:', error);
@@ -947,7 +977,6 @@
 
         // Воспроизведение музыки (отправляет POST в историю)
         async function playMusic(musicId, musicName, artistName, songUrl) {
-            // Отправляем запрос на добавление в историю прослушиваний
             const added = await addToListeningHistory(musicId);
             if (added) {
                 showNotification(`🎵 "${musicName}" добавлен в историю прослушиваний`, 'info');
@@ -979,7 +1008,16 @@
                 const data = await response.json();
                 console.log('Получены данные:', data);
                 
-                if (data && data.GetMusicJSONResponse && Array.isArray(data.GetMusicJSONResponse)) {
+                if (data && data.music && Array.isArray(data.music)) {
+                    allMusic = data.music;
+                    if (data.music_likes && Array.isArray(data.music_likes)) {
+                        data.music_likes.forEach(like => {
+                            if (like.music_id) {
+                                likeStatus.set(like.music_id, true);
+                            }
+                        });
+                    }
+                } else if (data && data.GetMusicJSONResponse && Array.isArray(data.GetMusicJSONResponse)) {
                     allMusic = data.GetMusicJSONResponse;
                 } else if (Array.isArray(data)) {
                     allMusic = data;
@@ -994,7 +1032,6 @@
                 updateStatus('success', 'Музыка загружена');
                 musicCount.textContent = `${allMusic.length} треков`;
                 
-                // Загружаем статус избранного и лайков
                 await Promise.all([
                     loadFavorStatus(),
                     loadLikeStatus()

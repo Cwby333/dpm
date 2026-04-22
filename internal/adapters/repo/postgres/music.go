@@ -102,10 +102,10 @@ func (p *Postgres) GetAllMusic(ctx context.Context, u models.User) ([]models.Mus
 		return pSlice, nil, nil
 	}
 
-	q = "SELECT music_id FROM users_music_likes WHERE user_id = $1"
+	q = "SELECT user_id, music_id FROM users_music_likes WHERE user_id = $1"
 	rows, err = p.pool.Query(ctx, q, u.ID)
 	if err != nil {
-		slog.Error(err.Error())
+		slog.Error(fmt.Sprintf("%s: %w", "SELECT music_id FROM users_music_likes WHERE user_id = $1", err.Error()))
 		return pSlice, nil, nil
 	}	
 

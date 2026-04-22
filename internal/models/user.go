@@ -9,4 +9,6 @@ type User struct {
 	HashPsw    string
 	RegisterAt time.Time
 	Likes      int
+	ListeningCount int
+	FavorCount int
 }

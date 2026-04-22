@@ -19,6 +19,8 @@ type UserDB struct {
 	HashPsw    string `db:"hash_psw"`
 	RegisterAt time.Time `db:"register_at"`
 	Likes      int `db:"likes"`
+	ListeningCount int `db:"listening_count"`
+	FavorCount int `db:"favor_count"`
 }
 
 func UDBToUser(u UserDB) models.User {
@@ -29,6 +31,8 @@ func UDBToUser(u UserDB) models.User {
 		HashPsw: u.HashPsw,
 		RegisterAt: u.RegisterAt,
 		Likes: u.Likes,
+		ListeningCount: u.ListeningCount,
+		FavorCount: u.FavorCount,
 	}
 }
 
@@ -104,7 +108,7 @@ func (pg *Postgres) ReadPsw(ctx context.Context, user models.User) (string, erro
 func (pg *Postgres) ReadUser(ctx context.Context, user models.User) (models.User, error) {
 	const op = "./internal/adapters/repo/postgres/user.go.ReadUser()"
 
-	q := "SELECT id, username, email, register_at, hash_psw, likes FROM users WHERE id = $1"
+	q := "SELECT id, username, email, register_at, hash_psw, likes, listening_count, favor_count FROM users WHERE id = $1"
 	rows, err := pg.pool.Query(ctx, q, user.ID)
 	if err != nil {
 		return models.User{}, fmt.Errorf("%s: %w", op, err)

@@ -55,6 +55,12 @@ func (p *Postgres) CreateFavor(ctx context.Context, listeningHistoryItem models.
 		slog.Info("Rows affected by CreateListeningHistoryItem 0")
 	}
 
+	q = "UPDATE users SET favor_count = favor_count + 1 WHERE id = $1"
+	_, err = p.pool.Exec(ctx, q, listeningHistoryItem.UserID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
 	return nil
 }
 
@@ -69,6 +75,12 @@ func (p *Postgres) DeleteFavor(ctx context.Context, lhi models.ListeningHistory)
 
 	if tag.RowsAffected() == 0 {
 		slog.Info("Rows affected by DeletLHI 0")
+	}
+
+	q = "UPDATE users SET favor_count = favor_count - 1 WHERE id = $1"
+	_, err = p.pool.Exec(ctx, q, lhi.UserID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	return nil

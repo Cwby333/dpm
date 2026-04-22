@@ -10,6 +10,7 @@ type LikeRepo interface {
 	CreateLike(ctx context.Context, l models.Like) error
 	ReadLikes(ctx context.Context, l models.Like) ([]models.Like, error)
 	DeleteLike(ctx context.Context, l models.Like) (error)
+	ReadLikedTracks(ctx context.Context, u models.User) ([]models.LikedTrack, error)
 }
 
 type LikeService struct {
@@ -53,4 +54,15 @@ func (s *LikeService) DeleteLike(ctx context.Context, l models.Like) (error) {
 	}
 
 	return nil
+}
+
+func (s *LikeService) ReadLikedTracks(ctx context.Context, u models.User) ([]models.LikedTrack, error) {
+	const op = "./internal/services/likes.go.ReadLikedTracks"
+
+	l, err := s.repo.ReadLikedTracks(ctx, u)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return l, nil
 }

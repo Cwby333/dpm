@@ -138,6 +138,57 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
+	h.Mux.Handle("GET /likes", corsMiddleware(wrapGetLikedTracks(strict)))
+	h.Mux.Handle("OPTIONS /likes", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("POST /logout", corsMiddleware(wrapLogout(strict)))
+}
+
+func wrapLogout(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapLogout")
+			slog.Error(err.Error())
+			c = &http.Cookie{
+				Value: "",
+			}
+		}
+
+		c2, err := r.Cookie("Refresh-Token-Logout")
+		if err != nil {
+			slog.Info("wrapLogout refresh-token")
+			slog.Error(err.Error())
+			c2 = &http.Cookie{
+				Value: "",
+			}
+		}
+
+		strict.PostLogout(w, r, api.PostLogoutParams{AccessToken: c.Value, RefreshTokenLogout: c2.Value})
+	}
+}
+
+func wrapGetLikedTracks(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapGetLikedTracks")
+			slog.Error(err.Error())
+			c = &http.Cookie{
+				Value: "",
+			}
+		}else {
+			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
+		}
+
+		strict.GetLikes(w, r, api.GetLikesParams{AccessToken: c.Value})
+	}
 }
 
 func wrapDeleteLike(strict api.ServerInterface) http.HandlerFunc {
@@ -146,7 +197,8 @@ func wrapDeleteLike(strict api.ServerInterface) http.HandlerFunc {
 		if err != nil {
 			slog.Info("wrapDeleteLike")
 			slog.Error(err.Error())
-			return
+			c = &http.Cookie{
+			}
 		}else {
 			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
 		}
@@ -161,7 +213,8 @@ func wrapPostLike(strict api.ServerInterface) http.HandlerFunc {
 		if err != nil {
 			slog.Info("wrapPostLike")
 			slog.Error(err.Error())
-			return
+			c = &http.Cookie{
+			}
 		}else {
 			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
 		}
@@ -176,7 +229,8 @@ func wrapGetProfile(strict api.ServerInterface) http.HandlerFunc {
 		if err != nil {
 			slog.Info("wrapGetProfile")
 			slog.Error(err.Error())
-			return
+			c = &http.Cookie{
+			}
 		}else {
 			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
 		}
@@ -193,9 +247,6 @@ func wrapGetAllMusic(strict api.ServerInterface) http.HandlerFunc {
 			c = &http.Cookie{
 				Value: "",
 			}
-			// return
-		} else {
-			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
 		}
 		strict.GetAllMusic(w, r, api.GetAllMusicParams{AccessToken: &c.Value})
 	}
@@ -209,7 +260,6 @@ func wrapDeleteFavor(strict api.ServerInterface) http.HandlerFunc {
 			slog.Info(err.Error())
 			c = &http.Cookie{
 			}
-			return
 		} else {
 			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
 		}
@@ -225,7 +275,6 @@ func wrapGetFavor(strict api.ServerInterface) http.HandlerFunc {
 			slog.Info(err.Error())
 			c = &http.Cookie{
 			}
-			return
 		} else {
 			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
 		}
@@ -241,7 +290,6 @@ func wrapCreateFavor(strict api.ServerInterface) http.HandlerFunc {
 			slog.Info(err.Error())
 			c = &http.Cookie{
 			}
-			return
 		} else {
 			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
 		}
@@ -257,7 +305,6 @@ func wrapGetLH(strict api.ServerInterface) http.HandlerFunc {
 			slog.Info(err.Error())
 			c = &http.Cookie{
 			}
-			return
 		} else {
 			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
 		}
@@ -273,7 +320,6 @@ func wrapDeleteLFromLH(strict api.ServerInterface) http.HandlerFunc {
 			slog.Info(err.Error())
 			c = &http.Cookie{
 			}
-			return
 		} else {
 			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
 		}
@@ -366,9 +412,23 @@ func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequest
 		slog.Info(*request.Params.AccessToken)
 	}
 
+	t := request.Params.AccessToken
+	u := models.User{}
+
+	if t != nil && *t != "" {
+		slog.Info("Token not nil and not empty")
+
+		claims, err := h.uServices.CheckAccessToken(ctx, *t)
+		if err != nil {
+			slog.Error(err.Error())
+		}else {
+			u.ID = claims["sub"].(string)
+		}
+	}
+
 	slog.Info("Get request")
 
-	p, err := h.mService.GetAllMusic(ctx)
+	p, l, err := h.mService.GetAllMusic(ctx, u)
 	if err != nil {
 		return api.GetAllMusic500JSONResponse(err.Error()), err
 	}
@@ -386,10 +446,20 @@ func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequest
 		})
 	}
 
+	lResp := make([]api.MusicLikes, 0, len(p))
+	for i := range l {
+		lResp = append(lResp, api.MusicLikes{
+			MusicId: &l[i].MusicID,
+		})
+	}
+
 	slog.Info("Put response")
 
 	return api.GetAllMusic200JSONResponse{
-		GetMusicJSONResponse: pResp,
+		GetMusicJSONResponse: api.GetMusicJSONResponse{
+			Music: pResp,
+			MusicLikes: &lResp,
+		},
 	}, nil
 }
 
@@ -452,10 +522,10 @@ func (h Handler) GetLH(ctx context.Context, request api.GetLHRequestObject) (api
 	
 	t := request.Params.AccessToken
 
-	slog.Info("GetLH Token: ", t)
+	slog.Info("GetLH Token: " + t)
 
 	if t == "" {
-		slog.Info("DeleteFavor token empty")
+		slog.Info("GetLH token empty")
 		return api.GetLH500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
 	}
 
@@ -522,6 +592,7 @@ func (h Handler) DeleteListeningFromLH(ctx context.Context, request api.DeleteLi
 	}
 	err = h.lhService.DeleteListeningHistoryItem(ctx, lhi)
 	if err != nil {
+		slog.Error(err.Error())
 		return api.DeleteListeningFromLH500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -584,10 +655,10 @@ func (h Handler) GetFavor(ctx context.Context, request api.GetFavorRequestObject
 		return api.GetFavor500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
 	}
 
-	fAPI := make([]api.Music, 0, len(favor))
+	fAPI := make([]api.Favor, 0, len(favor))
 	
 	for i := range favor {
-		fAPI = append(fAPI, api.Music{
+		fAPI = append(fAPI, api.Favor{
 			Id: favor[i].MusicID,
 			Name: favor[i].MusicName,
 			MusicCover: &favor[i].MusicCover,
@@ -598,7 +669,7 @@ func (h Handler) GetFavor(ctx context.Context, request api.GetFavorRequestObject
 	}
 
 	return api.GetFavor200JSONResponse{
-		GetMusicJSONResponse: fAPI,
+		GetFavorJSONResponse: fAPI,
 	}, nil
 }
 
@@ -663,6 +734,8 @@ func (h Handler) GetProfile(ctx context.Context, request api.GetProfileRequestOb
 			Username: &us.Username,
 			RegisterAt: &sTime,
 			Likes: &us.Likes,
+			ListeningCount: &us.ListeningCount,
+			FavorCount: &us.FavorCount,
 		},
 	}, nil
 }
@@ -725,4 +798,71 @@ func (h Handler) DeleteMusicLike(ctx context.Context, request api.DeleteMusicLik
 	}
 
 	return api.DeleteMusicLike200JSONResponse("Success"), nil
+}
+
+func (h Handler) GetLikes(ctx context.Context, request api.GetLikesRequestObject) (api.GetLikesResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetLikes()"
+
+	t := request.Params.AccessToken
+
+	if t == "" {
+		slog.Info("Token empty")
+		return api.GetLikes500JSONResponse("Token empty"), fmt.Errorf("%s: %w", op, errors.New("Token empty"))
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.GetLikes500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	}
+
+	u := models.User{
+		ID: claims["sub"].(string),
+	}
+
+	l, err := h.likeService.ReadLikedTracks(ctx, u)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.GetLikes500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	}
+
+	lR := make([]api.LikedTrack, 0, len(l))
+
+	for i := range l {
+		lR = append(lR, api.LikedTrack{
+			MusicId: &l[i].MusicID,
+			UploaderId: &l[i].MusicUploaderID,
+			UploaderUsername: &l[i].UserUsername,
+			MusicName: &l[i].MusicName,
+			MusicDuration: &l[i].MusicDurationSeconds,
+			MusicLikes: &l[i].MusicLikes,
+			MusicCover: &l[i].MusicCover,
+			SongUrl: &l[i].MusicSongURL,
+		})
+	}
+
+	return api.GetLikes200JSONResponse{
+		GetLikedTracksJSONResponse: lR,
+	}, nil
+}
+
+func (h Handler) PostLogout(ctx context.Context, request api.PostLogoutRequestObject) (api.PostLogoutResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.PostLogout"
+
+	rtl := request.Params.RefreshTokenLogout
+	if rtl == "" {
+		return api.PostLogout500JSONResponse("Refresh-Token-Logout empty"), fmt.Errorf("%s: %w", op, errors.New("Refresh-Token-Logout empty"))
+	}
+
+	at := request.Params.AccessToken
+	if at == "" {
+		return api.PostLogout500JSONResponse("Access-Token empty"), fmt.Errorf("%s: %w", op, errors.New("Access-Token empty"))
+	}
+
+	return api.PostLogout200Response{
+		Headers: api.PostLogout200ResponseHeaders{
+			AccessToken: at,
+			RefreshTokenLogout: rtl,
+		},
+	}, nil
 }

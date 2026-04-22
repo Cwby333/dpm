@@ -13,7 +13,7 @@ func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) e
 	http.SetCookie(w, &http.Cookie{
 		Name: "Access-Token",
 		Value: access.Sign,
-		Expires: time.Now().Add(time.Hour * 12),
+		Expires: time.Now().Add(time.Hour * 1),
 		Secure: true,
 		Path: "/",
 		HttpOnly: true,
@@ -23,11 +23,21 @@ func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) e
 	http.SetCookie(w, &http.Cookie{
 		Name: "Refresh-Token",
 		Value: refresh.Sign,
-		Expires: time.Now().Add(time.Hour * 48),
+		Expires: time.Now().Add(time.Hour * 24),
 		Secure: true,
 		HttpOnly: true,
 		Domain: "",
 		Path: "/refresh",
+		SameSite: http.SameSiteNoneMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name: "Refresh-Token-Logout",
+		Value: refresh.Sign,
+		Expires: time.Now().Add(time.Hour * 24),
+		Secure: true,
+		HttpOnly: true,
+		Domain: "",
+		Path: "/logout",
 		SameSite: http.SameSiteNoneMode,
 	})
 
