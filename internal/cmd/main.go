@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"dpm/internal/adapters/http"
+	objectstorage "dpm/internal/adapters/repo/objectStorage"
 	"dpm/internal/adapters/repo/postgres"
 	"dpm/internal/config"
 	"dpm/internal/models"
@@ -72,6 +73,13 @@ func main() {
 	fService := services.NewFavorService(pg)
 
 	likeService := services.NewLikeService(pg)
+
+	s3, err := objectstorage.NewS3Client(context.Background(), cfg.S3)
+	if err != nil {
+		slog.Error(fmt.Sprintf("%s: %s", "Connect to s3: ", err.Error()))
+	}
+	_ = s3
+	slog.Info("Success connect to s3")
 
 	handler := http.NewHandler(uService, mService, lhService, fService, likeService)
 
