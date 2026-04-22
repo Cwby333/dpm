@@ -345,7 +345,14 @@ func wrapAddLToLH(strict api.ServerInterface) http.HandlerFunc {
 
 func wrapGetMusic(strict api.ServerInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		strict.GetMusic(w, r, r.PathValue("musicID"))
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info(err.Error())
+			c = &http.Cookie{
+				Value: "",
+			}
+		}
+		strict.GetMusic(w, r, r.PathValue("musicID"), api.GetMusicParams{AccessToken: &c.Value})
 	}
 }
 
@@ -466,7 +473,27 @@ func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequest
 func (h Handler) GetMusic(ctx context.Context, request api.GetMusicRequestObject) (api.GetMusicResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.GetMusic()"
 
-	product, err := h.mService.GetMusic(ctx, request.MusicID)
+	if request.Params.AccessToken != nil {
+		slog.Info(*request.Params.AccessToken)
+	}
+
+	t := request.Params.AccessToken
+	u := models.User{}
+
+	if t != nil && *t != "" {
+		slog.Info("Token not nil and not empty")
+
+		claims, err := h.uServices.CheckAccessToken(ctx, *t)
+		if err != nil {
+			slog.Error(err.Error())
+		}else {
+			u.ID = claims["sub"].(string)
+		}
+	}
+
+	slog.Info("GetMusic GET /music/{musicID} req")
+
+	product, like, err := h.mService.GetMusic(ctx, request.MusicID, u.ID)
 	if err != nil {
 		errMsg := err.Error()
 		return api.GetMusic500JSONResponse{
@@ -476,13 +503,18 @@ func (h Handler) GetMusic(ctx context.Context, request api.GetMusicRequestObject
 
 	return api.GetMusic200JSONResponse{
 		GetMusicResponseJSONResponse: api.GetMusicResponseJSONResponse{
-			Id:              &product.ID,
-			UploaderId:      &product.UploaderID,
-			Name:            &product.Name,
-			Likes:           &product.Likes,
-			DurationSeconds: &product.DurationSec,
-			MusicCover: &product.CoverURL,
-			SongUrl: &product.SongURL,
+			Music: api.Music{
+				Id:              product.ID,
+				UploaderId:      product.UploaderID,
+				Name:            product.Name,
+				Likes:           product.Likes,
+				DurationSeconds: product.DurationSec,
+				MusicCover: &product.CoverURL,
+				SongUrl: product.SongURL,
+			},
+			MusicFavor: &api.MusicLikes{
+				MusicId: &like.MusicID,
+			},
 		},
 	}, nil
 }

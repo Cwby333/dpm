@@ -360,6 +360,12 @@ paths:
           allowEmptyValue: false
           schema:
             type: string
+        - name: Access-Token
+          in: cookie
+          required: false
+          schema:
+            type: string
+
       responses:
         200:
           description: "Success"
@@ -647,21 +653,16 @@ components:
         application/json:
           schema:
             type: object
+            required: 
+              - music
             properties:
-              id:
-                type: string
-              name:
-                type: string
-              uploader_id:
-                type: string
-              likes:
-                type: integer
-              duration_seconds:
-                type: integer
-              music_cover:
-                type: string
-              song_url:
-                type: string
+              music:
+                type: object
+                $ref: "#/components/schemas/Music"
+              music_favor:
+                type: object
+                $ref: "#/components/schemas/MusicLikes"
+
   requestBodies:
     UploadSong:
       description: "Object that client must provide in upload song operation"

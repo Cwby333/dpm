@@ -58,25 +58,45 @@ func (p *Postgres) CreateMusic(ctx context.Context, product models.Music) error 
 	return nil
 }
 
-func (p *Postgres) GetMusic(ctx context.Context, id string) (models.Music, error) {
+func (p *Postgres) GetMusic(ctx context.Context, id string, userID string) (models.Music, models.Like, error) {
 	const op = "./internal/adapters/repo/postgres/music.go.GetMusic()"
 
 	q := "SELECT id, uploader_id, name, likes, duration_seconds, music_cover, song_url FROM music WHERE id = $1"
 	rows, err := p.pool.Query(ctx, q, id)
 	if err != nil {
-		return models.Music{}, fmt.Errorf("%s SELECT ... FROM products(): %w", op, err)
+		return models.Music{}, models.Like{}, fmt.Errorf("%s SELECT ... FROM products(): %w", op, err)
 	}
 
-	if !rows.Next() {
-		return models.Music{}, fmt.Errorf("%s !rows.Next(): %w", op, errors.New("not found by id "+id))
-	}
+	// if !rows.Next() {
+	// 	return models.Music{}, models.Like{}, fmt.Errorf("%s !rows.Next(): %w", op, errors.New("not found by id "+id))
+	// }
+	errors.New("")
 
-	product, err := pgx.RowToStructByName[Music](rows)
+	product, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Music])
 	if err != nil {
-		return models.Music{}, fmt.Errorf("%s RowToStructByName(): %w", op, err)
+		return models.Music{}, models.Like{}, fmt.Errorf("%s RowToStructByName(): %w", op, err)
 	}
 
-	return MusicPgToMusic(product), nil
+	if userID == "" {
+		return MusicPgToMusic(product), models.Like{}, nil
+	}
+
+	q = "SELECT user_id, music_id FROM favor WHERE user_id = $1 AND music_id = $2"
+	rows, err = p.pool.Query(ctx, q, userID, id)
+	if err != nil {
+		slog.Error(fmt.Sprintf("%s: %v", "SELECT count(*) FROM favor WHERE user_id = $1 AND music_id = $2", err.Error()))
+		return MusicPgToMusic(product), models.Like{}, nil
+	}	
+
+	l, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[LikeDB])
+	if err != nil {
+		slog.Error(fmt.Sprintf("GetMusic CollectRows: %v", err.Error()))
+		return MusicPgToMusic(product), models.Like{}, nil
+	}
+
+	like := LDBToLike(l)
+
+	return MusicPgToMusic(product), like, nil
 }
 
 func (p *Postgres) GetAllMusic(ctx context.Context, u models.User) ([]models.Music, []models.Like, error) {

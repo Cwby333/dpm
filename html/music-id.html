@@ -484,6 +484,7 @@
                 <a href="/music.html">Музыка</a>
                 <a href="/favor.html">Избранное</a>
                 <a href="/listening-history.html">История</a>
+                <a href="/likes.html">Лайки</a>
                 <div class="auth-buttons" id="authButtons">
                     <a href="/login" class="btn btn-outline">Войти</a>
                     <a href="/register" class="btn btn-primary">Регистрация</a>
@@ -515,6 +516,7 @@
                     <li><a href="/music.html">Музыка</a></li>
                     <li><a href="/favor.html">Избранное</a></li>
                     <li><a href="/listening-history.html">История</a></li>
+                    <li><a href="/likes.html">Лайки</a></li>
                 </ul>
             </div>
             <div class="footer-section">
@@ -545,7 +547,7 @@
             return urlParams.get('id');
         }
 
-        // Добавление в историю прослушиваний (POST /listening-history) - как в music.html
+        // Добавление в историю прослушиваний (POST /listening-history)
         async function addToListeningHistory(musicId) {
             try {
                 console.log(`Добавление трека ${musicId} в историю прослушиваний`);
@@ -576,37 +578,7 @@
             }
         }
 
-        // Загрузка статуса избранного (GET /favor)
-        async function loadFavorStatus(musicId) {
-            try {
-                const response = await fetch(`${apiBaseUrl}/favor`, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' },
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    let favorItems = [];
-                    if (data && data.GetMusicJSONResponse && Array.isArray(data.GetMusicJSONResponse)) {
-                        favorItems = data.GetMusicJSONResponse;
-                    } else if (Array.isArray(data)) {
-                        favorItems = data;
-                    }
-                    
-                    favorStatus = favorItems.some(item => {
-                        const itemId = item.id || item.productID;
-                        return itemId === musicId;
-                    });
-                    
-                    updateFavorButton();
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки избранного:', error);
-            }
-        }
-
-        // Добавление/удаление из избранного
+        // Добавление/удаление из избранного (POST/DELETE /favor)
         async function toggleFavor(musicId, musicName) {
             const method = favorStatus ? 'DELETE' : 'POST';
             const actionText = favorStatus ? 'удален из' : 'добавлен в';
@@ -651,9 +623,8 @@
             }
         }
 
-        // Воспроизведение музыки (как в music.html)
+        // Воспроизведение музыки
         async function playMusic(musicId, musicName, artistName, songUrl) {
-            // Отправляем запрос на добавление в историю прослушиваний
             const added = await addToListeningHistory(musicId);
             if (added) {
                 showNotification(`🎵 "${musicName}" добавлен в историю прослушиваний`, 'info');
@@ -696,15 +667,31 @@
                 const data = await response.json();
                 console.log('Получены данные трека:', data);
                 
-                // Обработка формата ответа согласно OpenAPI (GetMusicResponse)
-                if (data && data.GetMusicResponse) {
-                    musicData = data.GetMusicResponse;
+                // Обработка формата ответа согласно новому OpenAPI
+                // Ответ содержит: { music: { ... }, music_favor: { music_id: ... } или null }
+                let music = null;
+                let musicFavor = null;
+                
+                if (data && data.music) {
+                    music = data.music;
+                    musicFavor = data.music_favor;
+                } else if (data && data.GetMusicResponse) {
+                    music = data.GetMusicResponse;
                 } else {
-                    musicData = data;
+                    music = data;
                 }
                 
-                // Загружаем статус избранного
-                await loadFavorStatus(musicData.id);
+                musicData = music;
+                
+                // Определяем статус избранного:
+                // Если music_favor существует и содержит music_id (не пустой), значит трек в избранном
+                if (musicFavor && musicFavor.music_id) {
+                    favorStatus = true;
+                    console.log('Трек в избранном:', musicFavor);
+                } else {
+                    favorStatus = false;
+                    console.log('Трек не в избранном');
+                }
                 
                 renderMusicDetail();
                 

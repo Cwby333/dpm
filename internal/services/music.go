@@ -9,7 +9,7 @@ import (
 
 type RepoMusic interface {
 	CreateMusic(ctx context.Context, product models.Music) error
-	GetMusic(ctx context.Context, id string) (models.Music, error)
+	GetMusic(ctx context.Context, id string, userID string) (models.Music, models.Like, error)
 	GetAllMusic(ctx context.Context, u models.User) ([]models.Music, []models.Like, error)
 }
 
@@ -34,16 +34,16 @@ func (s *MusicService) CreateMusic(ctx context.Context, product models.Music) er
 	return nil
 }
 
-func (s *MusicService) GetMusic(ctx context.Context, id string) (models.Music, error) {
+func (s *MusicService) GetMusic(ctx context.Context, id string, userID string) (models.Music, models.Like, error) {
 	const op = "./internal/services/music.go.GetMusic()"
 
-	product, err := s.repo.GetMusic(ctx, id)
+	product, like, err := s.repo.GetMusic(ctx, id, userID)
 	if err != nil {
 		slog.Info(err.Error())
-		return models.Music{}, fmt.Errorf("%s: %w", op, err)
+		return models.Music{}, models.Like{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return product, nil
+	return product, like, nil
 }
 
 func (s *MusicService) GetAllMusic(ctx context.Context, u models.User) ([]models.Music, []models.Like, error) {

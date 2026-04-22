@@ -988,63 +988,66 @@
         }
 
         // Загрузка музыки (GET /music)
-        async function fetchMusic() {
-            if (isLoading) return;
-            
-            showLoading();
-            updateStatus('loading', 'Загрузка музыки...');
-            
-            try {
-                const response = await fetch(`${apiBaseUrl}/music`, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' },
-                    credentials: 'include'
-                });
+        // Загрузка музыки (GET /music)
+async function fetchMusic() {
+    if (isLoading) return;
+    
+    showLoading();
+    updateStatus('loading', 'Загрузка музыки...');
+    
+    try {
+        const response = await fetch(`${apiBaseUrl}/music`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            credentials: 'include'
+        });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP ошибка! Статус: ${response.status}`);
-                }
-
-                const data = await response.json();
-                console.log('Получены данные:', data);
-                
-                if (data && data.music && Array.isArray(data.music)) {
-                    allMusic = data.music;
-                    if (data.music_likes && Array.isArray(data.music_likes)) {
-                        data.music_likes.forEach(like => {
-                            if (like.music_id) {
-                                likeStatus.set(like.music_id, true);
-                            }
-                        });
-                    }
-                } else if (data && data.GetMusicJSONResponse && Array.isArray(data.GetMusicJSONResponse)) {
-                    allMusic = data.GetMusicJSONResponse;
-                } else if (Array.isArray(data)) {
-                    allMusic = data;
-                } else {
-                    allMusic = [];
-                }
-                
-                console.log(`Загружено треков: ${allMusic.length}`);
-                
-                filterMusic();
-                
-                updateStatus('success', 'Музыка загружена');
-                musicCount.textContent = `${allMusic.length} треков`;
-                
-                await Promise.all([
-                    loadFavorStatus(),
-                    loadLikeStatus()
-                ]);
-                
-            } catch (error) {
-                console.error('Ошибка загрузки:', error);
-                updateStatus('error', 'Ошибка загрузки');
-                showError(error.message);
-            } finally {
-                hideLoading();
-            }
+        if (!response.ok) {
+            throw new Error(`HTTP ошибка! Статус: ${response.status}`);
         }
+
+        const data = await response.json();
+        console.log('Получены данные:', data);
+        
+        if (data && data.music && Array.isArray(data.music)) {
+            allMusic = data.music;
+            
+            // Загружаем статус лайков из data.music_likes (не делаем отдельный запрос)
+            likeStatus.clear();
+            if (data.music_likes && Array.isArray(data.music_likes)) {
+                data.music_likes.forEach(like => {
+                    if (like.music_id) {
+                        likeStatus.set(like.music_id, true);
+                    }
+                });
+            }
+            console.log('Загружено лайков из music_likes:', likeStatus.size);
+        } else if (data && data.GetMusicJSONResponse && Array.isArray(data.GetMusicJSONResponse)) {
+            allMusic = data.GetMusicJSONResponse;
+        } else if (Array.isArray(data)) {
+            allMusic = data;
+        } else {
+            allMusic = [];
+        }
+        
+        console.log(`Загружено треков: ${allMusic.length}`);
+        
+        filterMusic();
+        
+        updateStatus('success', 'Музыка загружена');
+        musicCount.textContent = `${allMusic.length} треков`;
+        
+        // Загружаем только статус избранного (лайки уже есть)
+        await loadFavorStatus();
+        
+    } catch (error) {
+        console.error('Ошибка загрузки:', error);
+        updateStatus('error', 'Ошибка загрузки');
+        showError(error.message);
+    } finally {
+        hideLoading();
+    }
+}
 
         function filterMusic() {
             const searchTerm = searchInput.value.toLowerCase().trim();

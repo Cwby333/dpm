@@ -45,3 +45,52 @@ func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) e
 
 	return nil
 }
+
+func (response PostLogout200Response) VisitPostLogoutResponse(w http.ResponseWriter) error {
+	slog.Info("Logout200Response")
+	access, ok := response.Headers.AccessToken.(models.JWTAccess)
+	if !ok {
+		slog.Error("not access")
+	}
+	slog.Info(access.Sign)
+	refresh, ok := response.Headers.RefreshTokenLogout.(models.JWTRefresh)
+	if !ok {
+		slog.Error("not refresh")
+	}
+	_ = refresh
+
+	http.SetCookie(w, &http.Cookie{
+		Name: "Access-Token",
+		Value: "",
+		Expires: time.Now().Add(time.Second * 5),
+		Secure: true,
+		Path: "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+		Domain: "",
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name: "Refresh-Token",
+		Value: "",
+		Expires: time.Now().Add(time.Second * 5),
+		Secure: true,
+		HttpOnly: true,
+		Domain: "",
+		Path: "/refresh",
+		SameSite: http.SameSiteNoneMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name: "Refresh-Token-Logout",
+		Value: "",
+		Expires: time.Now().Add(time.Second * 5),
+		Secure: true,
+		HttpOnly: true,
+		Domain: "",
+		Path: "/logout",
+		SameSite: http.SameSiteNoneMode,
+	})
+
+	w.WriteHeader(200)
+
+	return nil
+}

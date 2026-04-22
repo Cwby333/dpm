@@ -85,7 +85,7 @@ func main() {
 		}
 	}()
 
-	script(mService)
+	// script(mService)
 
 	slog.Info("server start")
 
