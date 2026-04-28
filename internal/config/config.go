@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log/slog"
 	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -11,7 +10,7 @@ import (
 type Config struct {
 	Postgres `yaml:"postgres"`
 	JWT      `yaml:"jwt"`
-	S3 `yaml:"s3"`
+	S3       `yaml:"s3"`
 }
 
 type Postgres struct {
@@ -29,9 +28,9 @@ type JWT struct {
 type S3 struct {
 	AccessKey string `yaml:"access_key"`
 	SecretKey string `yaml:"secret_key"`
-	Region string `yaml:"region"`
-	Endpoint string `yaml:"endpoint"`
-	Bucket string `yaml:"bucket"`
+	Region    string `yaml:"region"`
+	Endpoint  string `yaml:"endpoint"`
+	Bucket    string `yaml:"bucket"`
 }
 
 func MuslLoad() Config {
@@ -45,12 +44,6 @@ func MuslLoad() Config {
 	if err != nil {
 		panic(err)
 	}
-
-	slog.Info(cfg.S3.AccessKey)
-	slog.Info(cfg.S3.SecretKey)
-	slog.Info(cfg.S3.Endpoint)
-	slog.Info(cfg.S3.Bucket)
-	slog.Info(cfg.S3.Region)
 
 	return cfg
 }

@@ -13,13 +13,13 @@ import (
 )
 
 type Music struct {
-	ID              string `db:"id"`
-	Name            string `db:"name"`
-	UploaderID      string `db:"uploader_id"`
-	Likes           int    `db:"likes"`
-	DurationSeconds int    `db:"duration_seconds"`
-	Cover *string `db:"music_cover"`
-	SongURL *string `db:"song_url"`
+	ID              string  `db:"id"`
+	Name            string  `db:"name"`
+	UploaderID      string  `db:"uploader_id"`
+	Likes           int     `db:"likes"`
+	DurationSeconds int     `db:"duration_seconds"`
+	Cover           *string `db:"music_cover"`
+	SongURL         *string `db:"song_url"`
 }
 
 func MusicPgToMusic(pdb Music) models.Music {
@@ -38,8 +38,8 @@ func MusicPgToMusic(pdb Music) models.Music {
 		Likes:       pdb.Likes,
 		DurationSec: pdb.DurationSeconds,
 		UploaderID:  pdb.UploaderID,
-		CoverURL: *pdb.Cover,
-		SongURL: *pdb.SongURL,
+		CoverURL:    *pdb.Cover,
+		SongURL:     *pdb.SongURL,
 	}
 
 	return p
@@ -86,7 +86,7 @@ func (p *Postgres) GetMusic(ctx context.Context, id string, userID string) (mode
 	if err != nil {
 		slog.Error(fmt.Sprintf("%s: %v", "SELECT count(*) FROM favor WHERE user_id = $1 AND music_id = $2", err.Error()))
 		return MusicPgToMusic(product), models.Like{}, nil
-	}	
+	}
 
 	l, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[LikeDB])
 	if err != nil {
@@ -127,7 +127,7 @@ func (p *Postgres) GetAllMusic(ctx context.Context, u models.User) ([]models.Mus
 	if err != nil {
 		slog.Error(fmt.Sprintf("%s: %w", "SELECT music_id FROM users_music_likes WHERE user_id = $1", err.Error()))
 		return pSlice, nil, nil
-	}	
+	}
 
 	l, err := pgx.CollectRows(rows, pgx.RowToStructByName[LikeDB])
 	if err != nil {

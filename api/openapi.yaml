@@ -265,6 +265,18 @@ paths:
             application/json:
               schema:
                 type: string
+  /music/upload:
+    description: "Upload music"
+    post:
+      description: "Upload song"
+      operationId: "musicUpload"
+      requestBody:
+        $ref: "#/components/requestBodies/UploadSong"
+      responses:
+        200:
+          description: "Succcess"
+        500:
+          description: "Error"
   /music/like:
     description: "Action with user's like on music"
     delete:
@@ -672,14 +684,10 @@ components:
             type: object
             description: "Object that must provide in upload song operation"
             required: 
-              - title
-                song
-                song_cover
-                author_cover
+              - name
+                music
             properties:
-              title:
-                type: string
-              author_name: 
+              name:
                 type: string
               music:
                 type: string
@@ -688,7 +696,7 @@ components:
               music_cover:
                 type: string
                 format: binary
-                description: "File with cover of song, image/jpg"
+                description: "File with song's cover"
 
     Register:
       description: 'Req body for /register'

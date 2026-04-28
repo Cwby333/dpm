@@ -3,12 +3,12 @@ package models
 import "time"
 
 type User struct {
-	ID         string
-	Username   string
-	Email      string
-	HashPsw    string
-	RegisterAt time.Time
-	Likes      int
+	ID             string
+	Username       string
+	Email          string
+	HashPsw        string
+	RegisterAt     time.Time
+	Likes          int
 	ListeningCount int
-	FavorCount int
+	FavorCount     int
 }

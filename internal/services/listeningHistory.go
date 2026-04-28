@@ -8,8 +8,8 @@ import (
 
 type ListeningHistoryRepo interface {
 	ReadListeningHistory(ctx context.Context, lhi models.ListeningHistory) ([]models.ListeningHistoryResponse, error)
-	CreateListeningHistoryItem(ctx context.Context, lhi models.ListeningHistory) (error)
-	DeleteListeningHistoryItem(ctx context.Context, lhi models.ListeningHistory) (error)
+	CreateListeningHistoryItem(ctx context.Context, lhi models.ListeningHistory) error
+	DeleteListeningHistoryItem(ctx context.Context, lhi models.ListeningHistory) error
 }
 
 type ListeningHistoryService struct {

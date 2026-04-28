@@ -13,26 +13,26 @@ import (
 )
 
 type UserDB struct {
-	ID         string `db:"id"`
-	Username   string `db:"username"`
-	Email      string `db:"email"`
-	HashPsw    string `db:"hash_psw"`
-	RegisterAt time.Time `db:"register_at"`
-	Likes      int `db:"likes"`
-	ListeningCount int `db:"listening_count"`
-	FavorCount int `db:"favor_count"`
+	ID             string    `db:"id"`
+	Username       string    `db:"username"`
+	Email          string    `db:"email"`
+	HashPsw        string    `db:"hash_psw"`
+	RegisterAt     time.Time `db:"register_at"`
+	Likes          int       `db:"likes"`
+	ListeningCount int       `db:"listening_count"`
+	FavorCount     int       `db:"favor_count"`
 }
 
 func UDBToUser(u UserDB) models.User {
 	return models.User{
-		ID: u.ID,
-		Username: u.Username,
-		Email: u.Email,
-		HashPsw: u.HashPsw,
-		RegisterAt: u.RegisterAt,
-		Likes: u.Likes,
+		ID:             u.ID,
+		Username:       u.Username,
+		Email:          u.Email,
+		HashPsw:        u.HashPsw,
+		RegisterAt:     u.RegisterAt,
+		Likes:          u.Likes,
 		ListeningCount: u.ListeningCount,
-		FavorCount: u.FavorCount,
+		FavorCount:     u.FavorCount,
 	}
 }
 
@@ -119,5 +119,5 @@ func (pg *Postgres) ReadUser(ctx context.Context, user models.User) (models.User
 		return models.User{}, fmt.Errorf("%s: RowToStruct: %w", op, err)
 	}
 
-	return UDBToUser(u), nil	
+	return UDBToUser(u), nil
 }

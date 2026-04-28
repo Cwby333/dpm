@@ -10,14 +10,14 @@ import (
 )
 
 type FavorResponseDB struct {
-	MusicID string 	`db:"music_id"`
-	MusicName string `db:"music_name"`
-	MusicCover *string `db:"music_cover"`
-	MusicSongURL *string `db:"song_url"`
-	MusicUploaderID string `db:"uploader_id"`
-	UserUsername string `db:"username"`
-	MusicLikes int `db:"likes"`
-	MusicDurationSeconds int `db:"dur_sec"`
+	MusicID              string  `db:"music_id"`
+	MusicName            string  `db:"music_name"`
+	MusicCover           *string `db:"music_cover"`
+	MusicSongURL         *string `db:"song_url"`
+	MusicUploaderID      string  `db:"uploader_id"`
+	UserUsername         string  `db:"username"`
+	MusicLikes           int     `db:"likes"`
+	MusicDurationSeconds int     `db:"dur_sec"`
 }
 
 func FavorDBToModel(lhdb FavorResponseDB) models.ListeningHistoryResponse {
@@ -28,16 +28,16 @@ func FavorDBToModel(lhdb FavorResponseDB) models.ListeningHistoryResponse {
 	if lhdb.MusicSongURL == nil {
 		s := ""
 		lhdb.MusicSongURL = &s
-	} 
+	}
 
 	return models.ListeningHistoryResponse{
-		MusicID: lhdb.MusicID,
-		MusicName: lhdb.MusicName,
-		MusicCover: *lhdb.MusicCover,
-		MusicSongURL: *lhdb.MusicSongURL,
-		MusicUploaderID: lhdb.MusicUploaderID,
-		UserUsername: lhdb.UserUsername,
-		MusicLikes: lhdb.MusicLikes,
+		MusicID:              lhdb.MusicID,
+		MusicName:            lhdb.MusicName,
+		MusicCover:           *lhdb.MusicCover,
+		MusicSongURL:         *lhdb.MusicSongURL,
+		MusicUploaderID:      lhdb.MusicUploaderID,
+		UserUsername:         lhdb.UserUsername,
+		MusicLikes:           lhdb.MusicLikes,
 		MusicDurationSeconds: lhdb.MusicDurationSeconds,
 	}
 }

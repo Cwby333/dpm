@@ -9,7 +9,7 @@ import (
 type LikeRepo interface {
 	CreateLike(ctx context.Context, l models.Like) error
 	ReadLikes(ctx context.Context, l models.Like) ([]models.Like, error)
-	DeleteLike(ctx context.Context, l models.Like) (error)
+	DeleteLike(ctx context.Context, l models.Like) error
 	ReadLikedTracks(ctx context.Context, u models.User) ([]models.LikedTrack, error)
 }
 
@@ -23,7 +23,7 @@ func NewLikeService(r LikeRepo) *LikeService {
 	}
 }
 
-func (s *LikeService) CreateLike(ctx context.Context, l models.Like) (error) {
+func (s *LikeService) CreateLike(ctx context.Context, l models.Like) error {
 	const op = "./internal/services/likes.go.CreateLike()"
 
 	err := s.repo.CreateLike(ctx, l)
@@ -45,7 +45,7 @@ func (s *LikeService) ReadLikes(ctx context.Context, l models.Like) ([]models.Li
 	return li, nil
 }
 
-func (s *LikeService) DeleteLike(ctx context.Context, l models.Like) (error) {
+func (s *LikeService) DeleteLike(ctx context.Context, l models.Like) error {
 	const op = "./internal/services/likes.go.DeleteLike()"
 
 	err := s.repo.DeleteLike(ctx, l)

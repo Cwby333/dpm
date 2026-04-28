@@ -10,13 +10,13 @@ type ListeningHistory struct {
 }
 
 type ListeningHistoryResponse struct {
-	MusicID string 	
-	MusicName string 
-	MusicCover string 
-	MusicSongURL string 
-	MusicUploaderID string 
-	UserUsername string 
-	MusicLikes int 
-	MusicDurationSeconds int 
-	ListeningDate time.Time 
+	MusicID              string
+	MusicName            string
+	MusicCover           string
+	MusicSongURL         string
+	MusicUploaderID      string
+	UserUsername         string
+	MusicLikes           int
+	MusicDurationSeconds int
+	ListeningDate        time.Time
 }

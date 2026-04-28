@@ -9,11 +9,9 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"dpm/internal/models"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"path"
@@ -1234,51 +1232,12 @@ type Login200JSONResponse struct {
 }
 
 func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
-	slog.Info("Login200Response")
-	access, ok := response.Headers.AccessToken.(models.JWTAccess)
-	if !ok {
-		slog.Error("not access")
-	}
-	slog.Info(access.Sign)
-	refresh, ok := response.Headers.RefreshToken.(models.JWTRefresh)
-	if !ok {
-		slog.Error("not refresh")
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name: "Access-Token",
-		Value: access.Sign,
-		Expires: time.Now().Add(time.Hour * 1),
-		Secure: true,
-		Path: "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
-		Domain: "",
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name: "Refresh-Token",
-		Value: refresh.Sign,
-		Expires: time.Now().Add(time.Hour * 24),
-		Secure: true,
-		HttpOnly: true,
-		Domain: "",
-		Path: "/refresh",
-		SameSite: http.SameSiteNoneMode,
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name: "Refresh-Token-Logout",
-		Value: refresh.Sign,
-		Expires: time.Now().Add(time.Hour * 24),
-		Secure: true,
-		HttpOnly: true,
-		Domain: "",
-		Path: "/logout",
-		SameSite: http.SameSiteNoneMode,
-	})
-
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Token", fmt.Sprint(response.Headers.AccessToken))
+	w.Header().Set("Refresh-Token", fmt.Sprint(response.Headers.RefreshToken))
 	w.WriteHeader(200)
 
-	return nil
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 type Login500JSONResponse struct {
@@ -1310,51 +1269,9 @@ type PostLogout200Response struct {
 }
 
 func (response PostLogout200Response) VisitPostLogoutResponse(w http.ResponseWriter) error {
-	slog.Info("Logout200Response")
-	access, ok := response.Headers.AccessToken.(models.JWTAccess)
-	if !ok {
-		slog.Error("not access")
-	}
-	slog.Info(access.Sign)
-	refresh, ok := response.Headers.RefreshTokenLogout.(models.JWTRefresh)
-	if !ok {
-		slog.Error("not refresh")
-	}
-	_ = refresh
-
-	http.SetCookie(w, &http.Cookie{
-		Name: "Access-Token",
-		Value: "",
-		Expires: time.Now().Add(time.Second * 5),
-		Secure: true,
-		Path: "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
-		Domain: "",
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name: "Refresh-Token",
-		Value: "",
-		Expires: time.Now().Add(time.Second * 5),
-		Secure: true,
-		HttpOnly: true,
-		Domain: "",
-		Path: "/refresh",
-		SameSite: http.SameSiteNoneMode,
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name: "Refresh-Token-Logout",
-		Value: "",
-		Expires: time.Now().Add(time.Second * 5),
-		Secure: true,
-		HttpOnly: true,
-		Domain: "",
-		Path: "/logout",
-		SameSite: http.SameSiteNoneMode,
-	})
-
+	w.Header().Set("Access-Token", fmt.Sprint(response.Headers.AccessToken))
+	w.Header().Set("Refresh-Token-Logout", fmt.Sprint(response.Headers.RefreshTokenLogout))
 	w.WriteHeader(200)
-
 	return nil
 }
 
@@ -2109,30 +2026,30 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 var swaggerSpec = []string{
 
 	"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",
-	"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",
-	"kcWtOS0ul/8FAAD//499/z8vLAAA",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

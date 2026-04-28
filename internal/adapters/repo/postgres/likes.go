@@ -15,14 +15,14 @@ type LikeDB struct {
 }
 
 type LikedTrack struct {
-	MusicID string 	`db:"music_id"`
-	MusicName string `db:"music_name"`
-	MusicCover *string `db:"music_cover"`
-	MusicSongURL *string `db:"song_url"`
-	MusicUploaderID string `db:"uploader_id"`
-	UserUsername string `db:"username"`
-	MusicLikes int `db:"likes"`
-	MusicDurationSeconds int `db:"dur_sec"`
+	MusicID              string  `db:"music_id"`
+	MusicName            string  `db:"music_name"`
+	MusicCover           *string `db:"music_cover"`
+	MusicSongURL         *string `db:"song_url"`
+	MusicUploaderID      string  `db:"uploader_id"`
+	UserUsername         string  `db:"username"`
+	MusicLikes           int     `db:"likes"`
+	MusicDurationSeconds int     `db:"dur_sec"`
 }
 
 func LikedTrackDBToLT(lhdb LikedTrack) models.LikedTrack {
@@ -33,28 +33,28 @@ func LikedTrackDBToLT(lhdb LikedTrack) models.LikedTrack {
 	if lhdb.MusicSongURL == nil {
 		s := ""
 		lhdb.MusicSongURL = &s
-	} 
+	}
 
 	return models.LikedTrack{
-		MusicID: lhdb.MusicID,
-		MusicName: lhdb.MusicName,
-		MusicCover: *lhdb.MusicCover,
-		MusicSongURL: *lhdb.MusicSongURL,
-		MusicUploaderID: lhdb.MusicUploaderID,
-		UserUsername: lhdb.UserUsername,
-		MusicLikes: lhdb.MusicLikes,
+		MusicID:              lhdb.MusicID,
+		MusicName:            lhdb.MusicName,
+		MusicCover:           *lhdb.MusicCover,
+		MusicSongURL:         *lhdb.MusicSongURL,
+		MusicUploaderID:      lhdb.MusicUploaderID,
+		UserUsername:         lhdb.UserUsername,
+		MusicLikes:           lhdb.MusicLikes,
 		MusicDurationSeconds: lhdb.MusicDurationSeconds,
 	}
 }
 
 func LDBToLike(l LikeDB) models.Like {
 	return models.Like{
-		UserID: l.UserID,
+		UserID:  l.UserID,
 		MusicID: l.MusicID,
 	}
 }
 
-func (pg *Postgres) CreateLike(ctx context.Context, l models.Like) (error) {
+func (pg *Postgres) CreateLike(ctx context.Context, l models.Like) error {
 	const op = "./internal/adapters/repo/postgres/likes.go.CreateLike()"
 
 	q := "INSERT INTO users_music_likes(user_id, music_id) VALUES ($1, $2)"
@@ -102,9 +102,9 @@ func (pg *Postgres) ReadLikes(ctx context.Context, l models.Like) ([]models.Like
 	}
 
 	return likes, nil
-} 
+}
 
-func (pg *Postgres) DeleteLike(ctx context.Context, l models.Like) (error) {
+func (pg *Postgres) DeleteLike(ctx context.Context, l models.Like) error {
 	const op = "./adapters/repo/postgres/likes.go/DeleteLike()"
 
 	q := "DELETE FROM users_music_likes WHERE user_id = $1 AND music_id = $2"

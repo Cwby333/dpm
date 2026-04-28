@@ -7,26 +7,28 @@ import (
 	"dpm/pkg/api/v1"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	_ "mime/multipart"
 	"net/http"
 )
 
 type Handler struct {
-	Mux       *http.ServeMux
-	uServices *services.UserService
-	mService  *services.MusicService
-	lhService *services.ListeningHistoryService
-	fService *services.FavorService
+	Mux         *http.ServeMux
+	uServices   *services.UserService
+	mService    *services.MusicService
+	lhService   *services.ListeningHistoryService
+	fService    *services.FavorService
 	likeService services.LikeService
 }
 
 func NewHandler(uService *services.UserService, mService *services.MusicService, lhService *services.ListeningHistoryService, fService *services.FavorService, likeService *services.LikeService) Handler {
 	return Handler{
-		Mux:       http.NewServeMux(),
-		uServices: uService,
-		mService:  mService,
-		lhService: lhService,
-		fService: fService,
+		Mux:         http.NewServeMux(),
+		uServices:   uService,
+		mService:    mService,
+		lhService:   lhService,
+		fService:    fService,
 		likeService: *likeService,
 	}
 }
@@ -49,7 +51,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 func recoveryMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func ()  {
+		defer func() {
 			if err := recover(); err != nil {
 				slog.Error(fmt.Sprintf("Recover middleware: %v", err))
 			}
@@ -64,8 +66,8 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	h.Mux.Handle("OPTIONS /ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -73,8 +75,8 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	h.Mux.Handle("OPTIONS /login", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -82,8 +84,8 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	h.Mux.Handle("OPTIONS /register", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -92,8 +94,8 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	h.Mux.Handle("OPTIONS /music", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -103,8 +105,8 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	h.Mux.Handle("OPTIONS /listening-history", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -114,8 +116,8 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	h.Mux.Handle("OPTIONS /favor", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -123,8 +125,8 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	h.Mux.Handle("OPTIONS /profile", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -133,8 +135,8 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	h.Mux.Handle("OPTIONS /music/like", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -142,12 +144,29 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	h.Mux.Handle("OPTIONS /likes", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-        w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-        w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
 	h.Mux.Handle("POST /logout", corsMiddleware(wrapLogout(strict)))
+	h.Mux.Handle("OPTIONS /logout", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("POST /music/upload", corsMiddleware(http.HandlerFunc(h.MusicUpload)))
+	h.Mux.Handle("OPTIONS /music/upload", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
 }
 
 func wrapLogout(strict api.ServerInterface) http.HandlerFunc {
@@ -183,7 +202,7 @@ func wrapGetLikedTracks(strict api.ServerInterface) http.HandlerFunc {
 			c = &http.Cookie{
 				Value: "",
 			}
-		}else {
+		} else {
 			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
 		}
 
@@ -197,9 +216,8 @@ func wrapDeleteLike(strict api.ServerInterface) http.HandlerFunc {
 		if err != nil {
 			slog.Info("wrapDeleteLike")
 			slog.Error(err.Error())
-			c = &http.Cookie{
-			}
-		}else {
+			c = &http.Cookie{}
+		} else {
 			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
 		}
 
@@ -213,9 +231,8 @@ func wrapPostLike(strict api.ServerInterface) http.HandlerFunc {
 		if err != nil {
 			slog.Info("wrapPostLike")
 			slog.Error(err.Error())
-			c = &http.Cookie{
-			}
-		}else {
+			c = &http.Cookie{}
+		} else {
 			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
 		}
 
@@ -229,9 +246,8 @@ func wrapGetProfile(strict api.ServerInterface) http.HandlerFunc {
 		if err != nil {
 			slog.Info("wrapGetProfile")
 			slog.Error(err.Error())
-			c = &http.Cookie{
-			}
-		}else {
+			c = &http.Cookie{}
+		} else {
 			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
 		}
 
@@ -258,8 +274,7 @@ func wrapDeleteFavor(strict api.ServerInterface) http.HandlerFunc {
 		if err != nil {
 			slog.Info("wrapDeleteFavor error")
 			slog.Info(err.Error())
-			c = &http.Cookie{
-			}
+			c = &http.Cookie{}
 		} else {
 			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
 		}
@@ -273,12 +288,11 @@ func wrapGetFavor(strict api.ServerInterface) http.HandlerFunc {
 		if err != nil {
 			slog.Info("wrapGetFavor error")
 			slog.Info(err.Error())
-			c = &http.Cookie{
-			}
+			c = &http.Cookie{}
 		} else {
 			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
 		}
-		strict.GetFavor(w, r, api.GetFavorParams{AccessToken: c.Value})	
+		strict.GetFavor(w, r, api.GetFavorParams{AccessToken: c.Value})
 	}
 }
 
@@ -288,8 +302,7 @@ func wrapCreateFavor(strict api.ServerInterface) http.HandlerFunc {
 		if err != nil {
 			slog.Info("wrapCreateFavor error")
 			slog.Info(err.Error())
-			c = &http.Cookie{
-			}
+			c = &http.Cookie{}
 		} else {
 			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
 		}
@@ -303,8 +316,7 @@ func wrapGetLH(strict api.ServerInterface) http.HandlerFunc {
 		if err != nil {
 			slog.Info("wrapGetLH error")
 			slog.Info(err.Error())
-			c = &http.Cookie{
-			}
+			c = &http.Cookie{}
 		} else {
 			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
 		}
@@ -318,8 +330,7 @@ func wrapDeleteLFromLH(strict api.ServerInterface) http.HandlerFunc {
 		if err != nil {
 			slog.Info("wrapDelLFromLH error")
 			slog.Info(err.Error())
-			c = &http.Cookie{
-			}
+			c = &http.Cookie{}
 		} else {
 			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
 		}
@@ -333,8 +344,7 @@ func wrapAddLToLH(strict api.ServerInterface) http.HandlerFunc {
 		if err != nil {
 			slog.Info("wrapAddLToLH error")
 			slog.Info(err.Error())
-			c = &http.Cookie{
-			}
+			c = &http.Cookie{}
 			return
 		} else {
 			slog.Info(fmt.Sprint(c.Name, " :", c.Value))
@@ -404,9 +414,11 @@ func (h Handler) Login(ctx context.Context, request api.LoginRequestObject) (api
 	msg := "Success"
 
 	return api.Login200JSONResponse{
-		Body: struct{Message *string "json:\"message,omitempty\""}{&msg},
+		Body: struct {
+			Message *string "json:\"message,omitempty\""
+		}{&msg},
 		Headers: api.Login200ResponseHeaders{
-			AccessToken: access,
+			AccessToken:  access,
 			RefreshToken: refresh,
 		},
 	}, nil
@@ -428,7 +440,7 @@ func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequest
 		claims, err := h.uServices.CheckAccessToken(ctx, *t)
 		if err != nil {
 			slog.Error(err.Error())
-		}else {
+		} else {
 			u.ID = claims["sub"].(string)
 		}
 	}
@@ -448,8 +460,8 @@ func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequest
 			UploaderId:      p[i].UploaderID,
 			Likes:           p[i].Likes,
 			DurationSeconds: p[i].DurationSec,
-			MusicCover: &p[i].CoverURL,
-			SongUrl: p[i].SongURL,
+			MusicCover:      &p[i].CoverURL,
+			SongUrl:         p[i].SongURL,
 		})
 	}
 
@@ -464,7 +476,7 @@ func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequest
 
 	return api.GetAllMusic200JSONResponse{
 		GetMusicJSONResponse: api.GetMusicJSONResponse{
-			Music: pResp,
+			Music:      pResp,
 			MusicLikes: &lResp,
 		},
 	}, nil
@@ -486,7 +498,7 @@ func (h Handler) GetMusic(ctx context.Context, request api.GetMusicRequestObject
 		claims, err := h.uServices.CheckAccessToken(ctx, *t)
 		if err != nil {
 			slog.Error(err.Error())
-		}else {
+		} else {
 			u.ID = claims["sub"].(string)
 		}
 	}
@@ -509,8 +521,8 @@ func (h Handler) GetMusic(ctx context.Context, request api.GetMusicRequestObject
 				Name:            product.Name,
 				Likes:           product.Likes,
 				DurationSeconds: product.DurationSec,
-				MusicCover: &product.CoverURL,
-				SongUrl: product.SongURL,
+				MusicCover:      &product.CoverURL,
+				SongUrl:         product.SongURL,
 			},
 			MusicFavor: &api.MusicLikes{
 				MusicId: &like.MusicID,
@@ -536,7 +548,7 @@ func (h Handler) AddListeningToLH(ctx context.Context, request api.AddListeningT
 	}
 
 	lhi := models.ListeningHistory{
-		UserID: claims["sub"].(string),
+		UserID:  claims["sub"].(string),
 		MusicID: request.Body.MusicID,
 	}
 	slog.Info(fmt.Sprintf("%+v", lhi))
@@ -551,7 +563,7 @@ func (h Handler) AddListeningToLH(ctx context.Context, request api.AddListeningT
 
 func (h Handler) GetLH(ctx context.Context, request api.GetLHRequestObject) (api.GetLHResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.GetLH()"
-	
+
 	t := request.Params.AccessToken
 
 	slog.Info("GetLH Token: " + t)
@@ -582,24 +594,24 @@ func (h Handler) GetLH(ctx context.Context, request api.GetLHRequestObject) (api
 
 	for i := range lh {
 		lhr = append(lhr, api.ListeningHistoryResponse{
-			MusicId: &lh[i].MusicID,
-			MusicName: &lh[i].MusicName,
-			MusicCover: &lh[i].MusicCover,
-			SongUrl: &lh[i].MusicSongURL,
-			MusicDuration: &lh[i].MusicDurationSeconds,
-			MusicLikes: &lh[i].MusicLikes,
-			UploaderId: &lh[i].MusicUploaderID,
+			MusicId:          &lh[i].MusicID,
+			MusicName:        &lh[i].MusicName,
+			MusicCover:       &lh[i].MusicCover,
+			SongUrl:          &lh[i].MusicSongURL,
+			MusicDuration:    &lh[i].MusicDurationSeconds,
+			MusicLikes:       &lh[i].MusicLikes,
+			UploaderId:       &lh[i].MusicUploaderID,
 			UploaderUsername: &lh[i].UserUsername,
-			ListeningDate: &lh[i].ListeningDate,
+			ListeningDate:    &lh[i].ListeningDate,
 		})
 	}
 
 	return api.GetLH200JSONResponse{
 		GetListeningHistoryJSONResponse: lhr,
 	}, nil
-}	
+}
 
-func (h Handler) DeleteListeningFromLH(ctx context.Context, request api.DeleteListeningFromLHRequestObject) (api.DeleteListeningFromLHResponseObject, error) {	
+func (h Handler) DeleteListeningFromLH(ctx context.Context, request api.DeleteListeningFromLHRequestObject) (api.DeleteListeningFromLHResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.DeleteListingFromLH()"
 
 	t := request.Params.AccessToken
@@ -609,7 +621,7 @@ func (h Handler) DeleteListeningFromLH(ctx context.Context, request api.DeleteLi
 		return api.DeleteListeningFromLH500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
 	}
 
-	claims, err := h.uServices.CheckAccessToken(ctx, t)	
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error(err.Error())
 		return api.DeleteListeningFromLH500JSONResponse(err.Error()), nil
@@ -618,8 +630,8 @@ func (h Handler) DeleteListeningFromLH(ctx context.Context, request api.DeleteLi
 	slog.Info(t)
 	slog.Info(request.Body.MusicId)
 	lhi := models.ListeningHistory{
-		UserID: claims["sub"].(string),
-		MusicID: request.Body.MusicId,
+		UserID:        claims["sub"].(string),
+		MusicID:       request.Body.MusicId,
 		ListeningDate: *request.Body.ListeningDate,
 	}
 	err = h.lhService.DeleteListeningHistoryItem(ctx, lhi)
@@ -648,7 +660,7 @@ func (h Handler) AddFavor(ctx context.Context, request api.AddFavorRequestObject
 	}
 
 	f := models.ListeningHistory{
-		UserID: claims["sub"].(string),
+		UserID:  claims["sub"].(string),
 		MusicID: request.Body.MusicID,
 	}
 	slog.Info(fmt.Sprintf("%+v", f))
@@ -688,15 +700,15 @@ func (h Handler) GetFavor(ctx context.Context, request api.GetFavorRequestObject
 	}
 
 	fAPI := make([]api.Favor, 0, len(favor))
-	
+
 	for i := range favor {
 		fAPI = append(fAPI, api.Favor{
-			Id: favor[i].MusicID,
-			Name: favor[i].MusicName,
+			Id:         favor[i].MusicID,
+			Name:       favor[i].MusicName,
 			MusicCover: &favor[i].MusicCover,
-			SongUrl: favor[i].MusicSongURL,
+			SongUrl:    favor[i].MusicSongURL,
 			UploaderId: favor[i].MusicUploaderID,
-			Likes: favor[i].MusicLikes,
+			Likes:      favor[i].MusicLikes,
 		})
 	}
 
@@ -722,7 +734,7 @@ func (h Handler) DeleteFavor(ctx context.Context, request api.DeleteFavorRequest
 	}
 
 	lhi := models.ListeningHistory{
-		UserID: claims["sub"].(string),
+		UserID:  claims["sub"].(string),
 		MusicID: request.Body.MusicID,
 	}
 	err = h.fService.DeleteFavor(ctx, lhi)
@@ -762,12 +774,12 @@ func (h Handler) GetProfile(ctx context.Context, request api.GetProfileRequestOb
 	sTime := fmt.Sprint(us.RegisterAt)
 	return api.GetProfile200JSONResponse{
 		GetProfileJSONResponse: api.GetProfileJSONResponse{
-			Email: &us.Email,
-			Username: &us.Username,
-			RegisterAt: &sTime,
-			Likes: &us.Likes,
+			Email:          &us.Email,
+			Username:       &us.Username,
+			RegisterAt:     &sTime,
+			Likes:          &us.Likes,
 			ListeningCount: &us.ListeningCount,
-			FavorCount: &us.FavorCount,
+			FavorCount:     &us.FavorCount,
 		},
 	}, nil
 }
@@ -789,7 +801,7 @@ func (h Handler) PostMusicLike(ctx context.Context, request api.PostMusicLikeReq
 	}
 
 	l := models.Like{
-		UserID: claims["sub"].(string),
+		UserID:  claims["sub"].(string),
 		MusicID: *request.Body.MusicID,
 	}
 
@@ -819,7 +831,7 @@ func (h Handler) DeleteMusicLike(ctx context.Context, request api.DeleteMusicLik
 	}
 
 	l := models.Like{
-		UserID: claims["sub"].(string),
+		UserID:  claims["sub"].(string),
 		MusicID: *request.Body.MusicID,
 	}
 
@@ -862,14 +874,14 @@ func (h Handler) GetLikes(ctx context.Context, request api.GetLikesRequestObject
 
 	for i := range l {
 		lR = append(lR, api.LikedTrack{
-			MusicId: &l[i].MusicID,
-			UploaderId: &l[i].MusicUploaderID,
+			MusicId:          &l[i].MusicID,
+			UploaderId:       &l[i].MusicUploaderID,
 			UploaderUsername: &l[i].UserUsername,
-			MusicName: &l[i].MusicName,
-			MusicDuration: &l[i].MusicDurationSeconds,
-			MusicLikes: &l[i].MusicLikes,
-			MusicCover: &l[i].MusicCover,
-			SongUrl: &l[i].MusicSongURL,
+			MusicName:        &l[i].MusicName,
+			MusicDuration:    &l[i].MusicDurationSeconds,
+			MusicLikes:       &l[i].MusicLikes,
+			MusicCover:       &l[i].MusicCover,
+			SongUrl:          &l[i].MusicSongURL,
 		})
 	}
 
@@ -893,8 +905,72 @@ func (h Handler) PostLogout(ctx context.Context, request api.PostLogoutRequestOb
 
 	return api.PostLogout200Response{
 		Headers: api.PostLogout200ResponseHeaders{
-			AccessToken: at,
+			AccessToken:        at,
 			RefreshTokenLogout: rtl,
 		},
 	}, nil
+}
+
+func (h Handler) MusicUpload(w http.ResponseWriter, r *http.Request) {
+	const op = "./internal/adapters/http/handler.go.MusicUpload()"
+
+	r.Body = http.MaxBytesReader(w, r.Body, 50<<20)
+
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		slog.Error(fmt.Sprint(op, err.Error()))
+		http.Error(w, "Failed to parse form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	name := r.FormValue("name")
+	if name == "" {
+		slog.Warn("Name field empty, please")
+		http.Error(w, "Name field on form empty", http.StatusBadRequest)
+		return
+	}
+
+	file, header, err := r.FormFile("music")
+	if err != nil {
+		slog.Error(fmt.Sprint(op, err.Error()))
+		http.Error(w, "Failed to get file: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	slog.Info("File:", slog.String("filename", header.Filename), slog.Int64("size", header.Size), slog.String("CT", header.Header.Get("Content-Type")))
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		slog.Error(fmt.Sprint(op, err.Error()))
+		http.Error(w, "Failed to read song file", http.StatusInternalServerError)
+		return
+	}
+
+	slog.Info("First 100 file's ch", slog.String("value", string(data[:100])))
+
+	musicCoverUploaded := true
+	musicCover, header, err := r.FormFile("music_cover")
+	if err != nil && errors.Is(err, http.ErrMissingFile) {
+		slog.Info(fmt.Sprint(op, "Missing song's cover file"))
+		musicCoverUploaded = false
+	} else {
+		musicCoverUploaded = false
+		slog.Error(op + " " + err.Error())
+		http.Error(w, "Failed to get song's cover file", http.StatusBadRequest)
+		return
+	}
+
+	songCoverData := make([]byte, 0)
+	if musicCoverUploaded {
+		slog.Info("Song' cover file:", slog.String("filename", header.Filename), slog.Int64("size", header.Size), slog.String("CT", header.Header.Get("Content-Type")))
+
+		songCoverData, err = io.ReadAll(musicCover)
+		if err != nil {
+			slog.Error(fmt.Sprint(op, err.Error()))
+			http.Error(w, "Failed to read song's cover file", http.StatusInternalServerError)
+			return
+		}
+
+		slog.Info("First 100 symbols song's cover file", slog.String("value", string(songCoverData[:100])))
+	}
 }

@@ -82,6 +82,8 @@ func NewS3Client(ctx context.Context, c config.S3) (S3Client, error) {
 		d.PartBodyMaxRetries = 10
 	})
 
+	slog.Info("Return s3")
+
 	return S3Client{
 		client:     client,
 		bucketName: os.Getenv("AWS_BUCKET"),

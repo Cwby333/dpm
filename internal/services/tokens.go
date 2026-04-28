@@ -99,7 +99,7 @@ func (s UserService) CheckAccessToken(ctx context.Context, token string) (jwt.Ma
 	// for i := range claims {
 	// 	slog.Info(i, claims[i])
 	// }
-	
+
 	sub, err := claims.GetSubject()
 	if err != nil {
 		slog.Info("haven't subject")

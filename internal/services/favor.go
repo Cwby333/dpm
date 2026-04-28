@@ -41,7 +41,7 @@ func (s FavorService) ReadFavor(ctx context.Context, lh models.ListeningHistory)
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return slice, nil 
+	return slice, nil
 }
 
 func (s FavorService) DeleteFavor(ctx context.Context, lhi models.ListeningHistory) error {
