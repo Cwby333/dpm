@@ -22,7 +22,7 @@ type Handler struct {
 	likeService services.LikeService
 }
 
-func NewHandler(uService *services.UserService, mService *services.MusicService, lhService *services.ListeningHistoryService, fService *services.FavorService, likeService *services.LikeService) Handler {
+func NewHandler(uService *services.UserService, mService *services.MusicService, lhService *services.ListeningHistoryService, fService *services.FavorService, likeService *services.LikeService, ) Handler {
 	return Handler{
 		Mux:         http.NewServeMux(),
 		uServices:   uService,
@@ -922,6 +922,8 @@ func (h Handler) MusicUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	m := make(map[string]models.DataAndCT)
+
 	name := r.FormValue("name")
 	if name == "" {
 		slog.Warn("Name field empty, please")
@@ -939,14 +941,20 @@ func (h Handler) MusicUpload(w http.ResponseWriter, r *http.Request) {
 
 	slog.Info("File:", slog.String("filename", header.Filename), slog.Int64("size", header.Size), slog.String("CT", header.Header.Get("Content-Type")))
 
-	data, err := io.ReadAll(file)
+	songData, err := io.ReadAll(file)
 	if err != nil {
 		slog.Error(fmt.Sprint(op, err.Error()))
 		http.Error(w, "Failed to read song file", http.StatusInternalServerError)
 		return
 	}
 
-	slog.Info("First 100 file's ch", slog.String("value", string(data[:100])))
+	slog.Info("First 100 file's ch", slog.String("value", string(songData[:100])))
+
+	m["songData"] = models.DataAndCT{
+		Name: "songData",
+		Data: songData,
+		ContentType: header.Header.Get("Content-Type"),	
+	}
 
 	musicCoverUploaded := true
 	musicCover, header, err := r.FormFile("music_cover")
@@ -973,4 +981,26 @@ func (h Handler) MusicUpload(w http.ResponseWriter, r *http.Request) {
 
 		slog.Info("First 100 symbols song's cover file", slog.String("value", string(songCoverData[:100])))
 	}
+
+	if len(songCoverData) != 0 {
+		m["coverData"] = models.DataAndCT{
+			Name: "coverData",
+			Data: songCoverData,
+			ContentType: header.Header.Get("Content-Type"),
+		}
+	}
+
+	music := models.Music{
+		Name: name,
+	}
+
+	err = h.mService.UploadMusic(r.Context(), m, music)
+	if err != nil {
+		slog.Error(fmt.Sprint(op, err.Error()))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write([]byte("Success"))
 }

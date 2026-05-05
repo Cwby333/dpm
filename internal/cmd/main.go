@@ -10,24 +10,24 @@ import (
 	"dpm/internal/services"
 	"fmt"
 	"log/slog"
-	"math/rand"
-	"time"
+	// "math/rand"
+	// "time"
 )
 
-func script(ms *services.MusicService) {
-	rand.NewSource(time.Now().Unix())
-	for range 5 {
-		err := ms.CreateMusic(context.Background(), models.Music{
-			Name:        "SomeMusic",
-			UploaderID:  "75e14016-ba7f-45bd-835b-b13dcac46de7",
-			Likes:       rand.Intn(101) + 1,
-			DurationSec: rand.Intn(101) + 60,
-		})
-		if err != nil {
-			slog.Error(err.Error())
-		}
-	}
-}
+// func script(ms *services.MusicService) {
+// 	rand.NewSource(time.Now().Unix())
+// 	for range 5 {
+// 		err := ms.CreateMusic(context.Background(), models.Music{
+// 			Name:        "SomeMusic",
+// 			UploaderID:  "75e14016-ba7f-45bd-835b-b13dcac46de7",
+// 			Likes:       rand.Intn(101) + 1,
+// 			DurationSec: rand.Intn(101) + 60,
+// 		})
+// 		if err != nil {
+// 			slog.Error(err.Error())
+// 		}
+// 	}
+// }
 
 func main() {
 	cfg := config.MuslLoad()
@@ -66,14 +66,13 @@ func main() {
 	// }
 	// slog.Info(token)
 
-	mService := services.NewMusicService(pg)
-
+	
 	lhService := services.NewListeningHistoryService(pg)
-
+	
 	fService := services.NewFavorService(pg)
-
+	
 	likeService := services.NewLikeService(pg)
-
+	
 	s3, err := objectstorage.NewS3Client(context.Background(), cfg.S3)
 	if err != nil {
 		slog.Error(fmt.Sprintf("%s: %s", "Connect to s3: ", err.Error()))
@@ -81,6 +80,8 @@ func main() {
 	_ = s3
 	slog.Info("Success connect to s3")
 
+	mService := services.NewMusicService(pg, s3)
+	
 	handler := http.NewHandler(uService, mService, lhService, fService, likeService)
 
 	server := http.NewServer(handler)

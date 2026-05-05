@@ -3,8 +3,17 @@ package services
 import (
 	"context"
 	"dpm/internal/models"
+	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+
+	"github.com/google/uuid"
+)
+
+const (
+	songPostfix        = "-song"
+	songImagePostfix   = "-songImage"
 )
 
 type RepoMusic interface {
@@ -13,17 +22,25 @@ type RepoMusic interface {
 	GetAllMusic(ctx context.Context, u models.User) ([]models.Music, []models.Like, error)
 }
 
-type MusicService struct {
-	repo RepoMusic
+type S3 interface {
+	UploadObject(ctx context.Context, key string, data []byte, contentType string) error
+	GetObject(ctx context.Context, key string, w io.WriterAt) error
+	DeleteObject(ctx context.Context, key string) error
 }
 
-func NewMusicService(repo RepoMusic) *MusicService {
+type MusicService struct {
+	repo RepoMusic
+	s3 S3
+}
+
+func NewMusicService(repo RepoMusic, s3 S3) *MusicService {
 	return &MusicService{
 		repo: repo,
+		s3: s3,
 	}
 }
 
-func (s *MusicService) CreateMusic(ctx context.Context, product models.Music) error {
+func (s *MusicService) CreateMusic(ctx context.Context, songID string, product models.Music) error {
 	const op = "./internal/services/music.go.CreateMusic()"
 
 	err := s.repo.CreateMusic(ctx, product)
@@ -55,4 +72,61 @@ func (s *MusicService) GetAllMusic(ctx context.Context, u models.User) ([]models
 	}
 
 	return p, l, nil
+}
+
+// func (s *MusicService) UploadSong(ctx context.Context, data []byte, contentType string) (string, error) {
+// 	const op = "./internal/services/music.go.UploadMusic()"
+
+// 	songID := uuid.NewString()
+
+// 	err := s.s3.UploadObject(ctx, songID, data, contentType)
+// 	if err != nil {
+// 		return "", fmt.Errorf("%s: %w", op, err)
+// 	}
+
+// 	return songID, nil
+// }
+
+// func (s *MusicService) UploadMusicCover(ctx context.Context, key string, data []byte, contentType string) error {
+// 	const op = "./internal/services/music.go.UploadMusicCover()"
+
+// 	err := s.s3.UploadObject(ctx, key, data, contentType)
+// 	if err != nil {
+// 		return fmt.Errorf("%s: %w", op, err)
+// 	}
+
+// 	return nil
+// }
+
+func (s *MusicService) UploadMusic(ctx context.Context, musicData map[string]models.DataAndCT, music models.Music) (error) {
+	const op = "./internal/services/music.go.UploadSong()"
+
+	musicID := uuid.NewString()
+
+	songData, ok := musicData["songData"]
+	if !ok {
+		return fmt.Errorf("%s: %w", op, errors.New("Missing songData, upload is unreally"))
+	}
+	slog.Info(fmt.Sprint("UploadSong: songData:", fmt.Sprintf("%v, %v, %v", songData.Name, songData.ContentType, songData.Data[:100])))
+
+	songID := musicID + songPostfix
+	err := s.s3.UploadObject(ctx, songID, songData.Data, songData.ContentType)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	coverID := musicID + songImagePostfix
+	err = s.s3.UploadObject(ctx, coverID, songData.Data, songData.ContentType)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	music.SongURL =	songID
+	music.CoverURL = coverID
+	err = s.repo.CreateMusic(ctx, music)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }

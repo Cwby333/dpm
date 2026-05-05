@@ -9,9 +9,11 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"dpm/internal/models"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"path"
@@ -1232,12 +1234,51 @@ type Login200JSONResponse struct {
 }
 
 func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Token", fmt.Sprint(response.Headers.AccessToken))
-	w.Header().Set("Refresh-Token", fmt.Sprint(response.Headers.RefreshToken))
+	slog.Info("Login200Response")
+	access, ok := response.Headers.AccessToken.(models.JWTAccess)
+	if !ok {
+		slog.Error("not access")
+	}
+	slog.Info(access.Sign)
+	refresh, ok := response.Headers.RefreshToken.(models.JWTRefresh)
+	if !ok {
+		slog.Error("not refresh")
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name: "Access-Token",
+		Value: access.Sign,
+		Expires: time.Now().Add(time.Hour * 1),
+		Secure: true,
+		Path: "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+		Domain: "",
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name: "Refresh-Token",
+		Value: refresh.Sign,
+		Expires: time.Now().Add(time.Hour * 24),
+		Secure: true,
+		HttpOnly: true,
+		Domain: "",
+		Path: "/refresh",
+		SameSite: http.SameSiteNoneMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name: "Refresh-Token-Logout",
+		Value: refresh.Sign,
+		Expires: time.Now().Add(time.Hour * 24),
+		Secure: true,
+		HttpOnly: true,
+		Domain: "",
+		Path: "/logout",
+		SameSite: http.SameSiteNoneMode,
+	})
+
 	w.WriteHeader(200)
 
-	return json.NewEncoder(w).Encode(response.Body)
+	return nil
 }
 
 type Login500JSONResponse struct {
