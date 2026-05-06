@@ -15,13 +15,14 @@ import (
 	aws_cfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
-	"github.com/joho/godotenv"
 
 	// "github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 const (
+	expired = time.Hour * 24
+
 	maxBackoff  = time.Second * 12
 	maxAttempts = 5
 )
@@ -35,15 +36,14 @@ type S3Client struct {
 func NewS3Client(ctx context.Context, c config.S3) (S3Client, error) {
 	const op = "./internal/adapters/repository/objectStorage/init.go.NewS3Client()"
 
-	if err := godotenv.Load(); err != nil {
-		slog.Error(err.Error())
-	}
+	slog.Info(os.Getenv("AWS_BUCKET"))
 
 	accessKeyID := c.AccessKey
 	accessSecretKey := c.SecretKey
 	endpoint := c.Endpoint
 	region := c.Region
 	slog.Info("REGION: " + region)
+	slog.Info(fmt.Sprintf("%+v", c))
 	cfg, err := aws_cfg.LoadDefaultConfig(ctx,
 		aws_cfg.WithRegion(region),
 		aws_cfg.WithBaseEndpoint(endpoint),
@@ -52,6 +52,7 @@ func NewS3Client(ctx context.Context, c config.S3) (S3Client, error) {
 	if err != nil {
 		return S3Client{}, fmt.Errorf("%s: %w", op, err)
 	}
+
 
 	client := s3.NewFromConfig(cfg,
 		func(o *s3.Options) {
@@ -66,6 +67,7 @@ func NewS3Client(ctx context.Context, c config.S3) (S3Client, error) {
 					}
 				},
 			)
+			o.UsePathStyle = true
 		},
 	)
 
@@ -94,6 +96,8 @@ func NewS3Client(ctx context.Context, c config.S3) (S3Client, error) {
 func (s3Client S3Client) UploadObject(ctx context.Context, key string, data []byte, contentType string) error {
 	const op = "./internal/adapters/repository/objectStorage/init.go.UploadObject()"
 
+	slog.Info(key)
+	slog.Info(contentType)
 	_, err := s3Client.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:      &s3Client.bucketName,
 		Key:         &key,
@@ -134,4 +138,22 @@ func (s3Client S3Client) DeleteObject(ctx context.Context, key string) error {
 	}
 
 	return nil
+}
+
+func (s3Client S3Client) GetPresignURL(ctx context.Context, id string) (string, error) {
+	const op = "./internal/adapters/repo/objectStorage/init.go.GetPresignURL()"
+
+	presignClient := s3.NewPresignClient(s3Client.client)
+
+	req := s3.GetObjectInput{
+		Bucket: &s3Client.bucketName,
+		Key: &id,
+	}
+
+	resp, err := presignClient.PresignGetObject(ctx, &req, s3.WithPresignExpires(expired))
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+	
+	return resp.URL, nil
 }

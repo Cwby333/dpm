@@ -914,6 +914,26 @@ func (h Handler) PostLogout(ctx context.Context, request api.PostLogoutRequestOb
 func (h Handler) MusicUpload(w http.ResponseWriter, r *http.Request) {
 	const op = "./internal/adapters/http/handler.go.MusicUpload()"
 
+	t, err := r.Cookie("Access-Token")
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if t.Value == "" {
+		slog.Info("Token empty")
+		http.Error(w, "Empty token", http.StatusBadRequest)
+		return 
+	}
+
+	claims, err := h.uServices.CheckAccessToken(r.Context(), t.Value)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	r.Body = http.MaxBytesReader(w, r.Body, 50<<20)
 
 	if err := r.ParseMultipartForm(32 << 20); err != nil {
@@ -992,6 +1012,7 @@ func (h Handler) MusicUpload(w http.ResponseWriter, r *http.Request) {
 
 	music := models.Music{
 		Name: name,
+		UploaderID: claims["sub"].(string),
 	}
 
 	err = h.mService.UploadMusic(r.Context(), m, music)
@@ -1003,4 +1024,18 @@ func (h Handler) MusicUpload(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(200)
 	w.Write([]byte("Success"))
+}
+
+func (h Handler) PostMusicPlay(ctx context.Context, request api.PostMusicPlayRequestObject) (api.PostMusicPlayResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.PlayMusic()"
+
+	url, err := h.mService.GetPresignURLSong(ctx, *request.Body.MusicId)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.PostMusicPlay500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	}
+
+	return api.PostMusicPlay200JSONResponse{
+		PresignUrl: &url,
+	}, nil
 }

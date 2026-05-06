@@ -48,12 +48,13 @@ func MusicPgToMusic(pdb Music) models.Music {
 func (p *Postgres) CreateMusic(ctx context.Context, product models.Music) error {
 	const op = "./internal/adapters/repo/postgres/music.go.CreateMusic()"
 
-	q := "INSERT INTO music(id, name, uploader_id, likes, duration_seconds, music_cover, song_url) VALUES ($1, $2, $3, $4, $5, $6)"
-	rows, err := p.pool.Query(ctx, q, product.ID, product.Name, product.UploaderID, product.Likes, product.DurationSec, product.CoverURL, product.SongURL)
+	slog.Info("Get req CreateMusic Postgres")
+
+	q := "INSERT INTO music(id, name, uploader_id, likes, duration_seconds, music_cover, song_url) VALUES ($1, $2, $3, $4, $5, $6, $7)"
+	_, err := p.pool.Exec(ctx, q, product.ID, product.Name, product.UploaderID, product.Likes, product.DurationSec, product.CoverURL, product.SongURL)
 	if err != nil {
 		return fmt.Errorf("%s INSERT INTO music(): %w", op, err)
 	}
-	defer rows.Close()
 
 	return nil
 }

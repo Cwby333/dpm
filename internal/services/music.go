@@ -26,6 +26,7 @@ type S3 interface {
 	UploadObject(ctx context.Context, key string, data []byte, contentType string) error
 	GetObject(ctx context.Context, key string, w io.WriterAt) error
 	DeleteObject(ctx context.Context, key string) error
+	GetPresignURL(ctx context.Context, id string) (string, error)
 }
 
 type MusicService struct {
@@ -42,6 +43,8 @@ func NewMusicService(repo RepoMusic, s3 S3) *MusicService {
 
 func (s *MusicService) CreateMusic(ctx context.Context, songID string, product models.Music) error {
 	const op = "./internal/services/music.go.CreateMusic()"
+
+	slog.Info(fmt.Sprintf("%+v", product))
 
 	err := s.repo.CreateMusic(ctx, product)
 	if err != nil {
@@ -108,25 +111,45 @@ func (s *MusicService) UploadMusic(ctx context.Context, musicData map[string]mod
 		return fmt.Errorf("%s: %w", op, errors.New("Missing songData, upload is unreally"))
 	}
 	slog.Info(fmt.Sprint("UploadSong: songData:", fmt.Sprintf("%v, %v, %v", songData.Name, songData.ContentType, songData.Data[:100])))
+	slog.Info("songDataSize", slog.Int("size", len(songData.Data)))
 
 	songID := musicID + songPostfix
-	err := s.s3.UploadObject(ctx, songID, songData.Data, songData.ContentType)
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
+	// err := s.s3.UploadObject(ctx, songID, songData.Data, songData.ContentType)
+	// if err != nil {
+	// 	return fmt.Errorf("%s: %w", op, err)
+	// }
 
+	coverData := musicData["coverData"]
+	slog.Info(fmt.Sprintf("cover data size: %v", len(coverData.Data)))
 	coverID := musicID + songImagePostfix
-	err = s.s3.UploadObject(ctx, coverID, songData.Data, songData.ContentType)
-	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
-	}
+	// err = s.s3.UploadObject(ctx, coverID, songData.Data, songData.ContentType)
+	// if err != nil {
+	// 	return fmt.Errorf("%s: %w", op, err)
+	// }
 
 	music.SongURL =	songID
 	music.CoverURL = coverID
-	err = s.repo.CreateMusic(ctx, music)
+	music.ID = musicID
+	slog.Info(fmt.Sprintf("coverURL, songURL: %v, %v", music.CoverURL, music.SongURL))
+	err := s.CreateMusic(ctx, "", music)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	return nil
+}
+
+func (s *MusicService) GetPresignURLSong(ctx context.Context, id string) (string, error) {
+	const op = "./internal/services/music.go.GetPresignURL()"
+
+	slog.Info("Get req presingURL")
+
+	url, err := s.s3.GetPresignURL(ctx, id + songPostfix)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	slog.Info(fmt.Sprintf("GET PRESING URL: %v", url))
+
+	return url, nil
 }
