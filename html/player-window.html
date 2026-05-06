@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mute - Музыкальный плеер</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .player-container {
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            margin: 1rem;
+        }
+        .album-art { font-size: 4rem; margin-bottom: 1rem; }
+        .track-name { font-size: 1.3rem; margin-bottom: 0.5rem; font-weight: bold; }
+        .track-artist { font-size: 0.9rem; opacity: 0.8; margin-bottom: 1.5rem; }
+        .controls { display: flex; justify-content: center; gap: 1rem; margin: 1.5rem 0; }
+        button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        button:hover { background: rgba(255,255,255,0.4); transform: scale(1.05); }
+        button:active { transform: scale(0.95); }
+        .progress-container { margin: 1rem 0; }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #667eea;
+            border-radius: 3px;
+            transition: width 0.1s linear;
+        }
+        .time-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+        .volume-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .volume-slider { width: 100px; height: 4px; cursor: pointer; }
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            margin-top: 1rem;
+            background: rgba(0,0,0,0.3);
+        }
+        .close-btn {
+            background: #e53e3e;
+            margin-top: 1rem;
+            width: auto;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+        .close-btn:hover { background: #c53030; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .playing { animation: pulse 2s infinite; }
+    </style>
+</head>
+<body>
+    <div class="player-container">
+        <div class="album-art">🎵</div>
+        <div class="track-name" id="globalTrackName">—</div>
+        <div class="track-artist" id="globalTrackArtist">—</div>
+        <div class="controls">
+            <button id="prevBtn" title="Предыдущий">⏮️</button>
+            <button id="playPauseBtn">▶️</button>
+            <button id="nextBtn" title="Следующий">⏭️</button>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="time-info">
+                <span id="currentTime">0:00</span>
+                <span id="duration">0:00</span>
+            </div>
+        </div>
+        <div class="volume-control">
+            <span>🔊</span>
+            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.01" value="1">
+        </div>
+        <div class="status-badge" id="statusBadge">● Ожидание</div>
+        <button class="close-btn" id="closeBtn">Закрыть плеер</button>
+    </div>
+    <script>
+        let parentWindow = null;
+        let syncInterval = null;
+        let isPlaying = false;
+        let currentVolume = 1;
+
+        // Добавьте эту функцию в player-window.html
+function setTrackInfo(musicId, musicName, artistName, currentTime, duration, isPlaying, volume) {
+    // Принудительно обновляем название трека
+    var trackNameSpan = document.getElementById('globalTrackName');
+    var trackArtistSpan = document.getElementById('globalTrackArtist');
+    
+    if (trackNameSpan) trackNameSpan.textContent = musicName || '—';
+    if (trackArtistSpan) trackArtistSpan.textContent = artistName || '—';
+    
+    // Обновляем статус
+    var statusBadge = document.getElementById('statusBadge');
+    if (statusBadge) {
+        statusBadge.textContent = isPlaying ? '● Сейчас играет' : '● Пауза';
+    }
+    
+    var playPauseBtn = document.getElementById('playPauseBtn');
+    if (playPauseBtn) {
+        playPauseBtn.textContent = isPlaying ? '⏸️' : '▶️';
+    }
+    
+    if (!isNaN(duration) && duration > 0) {
+        var percent = (currentTime / duration) * 100;
+        var progressFill = document.getElementById('progressFill');
+        if (progressFill) {
+            progressFill.style.width = percent + '%';
+        }
+    }
+    
+    var currentTimeSpan = document.getElementById('currentTime');
+    var durationSpan = document.getElementById('duration');
+    if (currentTimeSpan) currentTimeSpan.textContent = formatTime(currentTime);
+    if (durationSpan) durationSpan.textContent = formatTime(duration);
+    
+    var volumeSlider = document.getElementById('volumeSlider');
+    if (volumeSlider && volume !== undefined) {
+        volumeSlider.value = volume;
+    }
+}
+// Добавьте эту функцию в player-window.html
+function forceRefresh() {
+    if (parentWindow && !parentWindow.closed) {
+        var parentAudio = parentWindow.audioElement;
+        var musicName = parentWindow.currentMusicName || '—';
+        var artistName = parentWindow.currentArtistName || '—';
+        var isPlaying = parentAudio ? !parentAudio.paused : false;
+        var currentTime = parentAudio ? parentAudio.currentTime : 0;
+        var duration = parentAudio ? parentAudio.duration : 0;
+        var volume = parentAudio ? parentAudio.volume : 1;
+        
+        setTrackInfo(null, musicName, artistName, currentTime, duration, isPlaying, volume);
+    }
+}
+
+// Добавьте функцию для полного сброса и обновления
+function refreshTrackInfo() {
+    if (parentWindow && !parentWindow.closed) {
+        var musicName = parentWindow.currentMusicName || '—';
+        var artistName = parentWindow.currentArtistName || '—';
+        var parentAudio = parentWindow.audioElement;
+        
+        var isPlaying = parentAudio ? !parentAudio.paused : false;
+        var currentTime = parentAudio ? parentAudio.currentTime : 0;
+        var duration = parentAudio ? parentAudio.duration : 0;
+        var volume = parentAudio ? parentAudio.volume : 1;
+        
+        setTrackInfo(null, musicName, artistName, currentTime, duration, isPlaying, volume);
+    }
+}
+        
+        function initPlayer(parent, musicId, musicName, artistName, currentTime, duration, isPlaying, volume) {
+    parentWindow = parent;
+    
+    // Устанавливаем информацию о треке
+    document.getElementById('globalTrackName').textContent = musicName || '—';
+    document.getElementById('globalTrackArtist').textContent = artistName || '—';
+    
+    var playPauseBtn = document.getElementById('playPauseBtn');
+    if (playPauseBtn) {
+        playPauseBtn.textContent = isPlaying ? '⏸️' : '▶️';
+    }
+    
+    var statusBadge = document.getElementById('statusBadge');
+    if (statusBadge) {
+        statusBadge.textContent = isPlaying ? '● Сейчас играет' : '● Пауза';
+    }
+    
+    if (!isNaN(duration) && duration > 0) {
+        var percent = (currentTime / duration) * 100;
+        var progressFill = document.getElementById('progressFill');
+        if (progressFill) {
+            progressFill.style.width = percent + '%';
+        }
+    }
+    
+    var currentTimeSpan = document.getElementById('currentTime');
+    var durationSpan = document.getElementById('duration');
+    if (currentTimeSpan) currentTimeSpan.textContent = formatTime(currentTime);
+    if (durationSpan) durationSpan.textContent = formatTime(duration);
+    
+    var volumeSlider = document.getElementById('volumeSlider');
+    if (volumeSlider) {
+    volumeSlider.oninput = function(e) {
+        var newVolume = parseFloat(e.target.value);
+        if (parentWindow && parentWindow.audioElement) {
+            parentWindow.audioElement.volume = newVolume;
+        }
+        // Добавляем синхронизацию UI в родительском окне
+        if (parentWindow && parentWindow.syncVolumeFromGlobal) {
+            parentWindow.syncVolumeFromGlobal(newVolume);
+        }
+    };
+}
+    
+    // Запускаем синхронизацию
+    if (syncInterval) clearInterval(syncInterval);
+    syncInterval = setInterval(function() {
+        syncWithParent();
+    }, 200);
+}
+        
+        function updateTrackInfo(musicId, musicName, artistName) {
+            document.getElementById('globalTrackName').textContent = musicName || '—';
+            document.getElementById('globalTrackArtist').textContent = artistName || '—';
+        }
+        
+        function syncWithParent() {
+    if (!parentWindow || parentWindow.closed) return;
+    
+    var parentAudio = parentWindow.audioElement;
+    if (!parentAudio) return;
+    
+    // Получаем актуальные данные
+    var musicName = parentWindow.currentMusicName || '—';
+    var artistName = parentWindow.currentArtistName || '—';
+    var nowPlaying = !parentAudio.paused;
+    var currentTime = parentAudio.currentTime || 0;
+    var duration = parentAudio.duration || 0;
+    var volume = parentAudio.volume || 1;
+    
+    // Принудительно обновляем название, даже если оно не изменилось
+    var trackNameSpan = document.getElementById('globalTrackName');
+    var trackArtistSpan = document.getElementById('globalTrackArtist');
+    if (trackNameSpan) trackNameSpan.textContent = musicName;
+    if (trackArtistSpan) trackArtistSpan.textContent = artistName;
+    
+    // Остальная синхронизация...
+    var playPauseBtn = document.getElementById('playPauseBtn');
+    if (playPauseBtn) {
+        playPauseBtn.textContent = nowPlaying ? '⏸️' : '▶️';
+    }
+    
+    var statusBadge = document.getElementById('statusBadge');
+    if (statusBadge) {
+        statusBadge.textContent = nowPlaying ? '● Сейчас играет' : '● Пауза';
+    }
+    
+    if (!isNaN(duration) && duration > 0) {
+        var percent = (currentTime / duration) * 100;
+        var progressFill = document.getElementById('progressFill');
+        if (progressFill) progressFill.style.width = percent + '%';
+    }
+    
+    var currentTimeSpan = document.getElementById('currentTime');
+    var durationSpan = document.getElementById('duration');
+    if (currentTimeSpan) currentTimeSpan.textContent = formatTime(currentTime);
+    if (durationSpan) durationSpan.textContent = formatTime(duration);
+    
+    var volumeSlider = document.getElementById('volumeSlider');
+    if (volumeSlider && Math.abs(volumeSlider.value - volume) > 0.01) {
+        volumeSlider.value = volume;
+    }
+}
+        
+        function formatTime(seconds) {
+            if (isNaN(seconds) || seconds === Infinity) return '0:00';
+            var mins = Math.floor(seconds / 60);
+            var secs = Math.floor(seconds % 60);
+            return mins + ':' + (secs < 10 ? '0' : '') + secs;
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            var playPauseBtn = document.getElementById('playPauseBtn');
+            var prevBtn = document.getElementById('prevBtn');
+            var nextBtn = document.getElementById('nextBtn');
+            var progressBar = document.getElementById('progressBar');
+            var volumeSlider = document.getElementById('volumeSlider');
+            var closeBtn = document.getElementById('closeBtn');
+            
+            // Play/Pause
+            if (playPauseBtn) {
+                playPauseBtn.onclick = function() {
+                    if (parentWindow && parentWindow.audioElement) {
+                        if (parentWindow.audioElement.paused) {
+                            parentWindow.audioElement.play();
+                        } else {
+                            parentWindow.audioElement.pause();
+                        }
+                    }
+                };
+            }
+            
+            // Previous track
+            if (prevBtn) {
+                prevBtn.onclick = function() {
+                    if (parentWindow && parentWindow.prevTrack) {
+                        parentWindow.prevTrack();
+                    }
+                };
+            }
+            
+            // Next track
+            if (nextBtn) {
+                nextBtn.onclick = function() {
+                    if (parentWindow && parentWindow.nextTrack) {
+                        parentWindow.nextTrack();
+                    }
+                };
+            }
+            
+            // Progress bar click
+            if (progressBar) {
+                progressBar.onclick = function(e) {
+                    if (parentWindow && parentWindow.audioElement && parentWindow.audioElement.duration) {
+                        var rect = progressBar.getBoundingClientRect();
+                        var percent = (e.clientX - rect.left) / rect.width;
+                        parentWindow.audioElement.currentTime = percent * parentWindow.audioElement.duration;
+                    }
+                };
+            }
+            
+            // Volume slider
+            if (volumeSlider) {
+                volumeSlider.oninput = function(e) {
+                    var newVolume = parseFloat(e.target.value);
+                    if (parentWindow && parentWindow.audioElement) {
+                        parentWindow.audioElement.volume = newVolume;
+                    }
+                    currentVolume = newVolume;
+                };
+            }
+            
+            // Close button
+            if (closeBtn) {
+                closeBtn.onclick = function() {
+                    window.close();
+                };
+            }
+        });
+        
+        window.addEventListener('beforeunload', function() {
+            if (syncInterval) clearInterval(syncInterval);
+        });
+    </script>
+</body>
+</html>

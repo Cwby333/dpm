@@ -337,22 +337,105 @@
             background: #2d3748;
         }
 
-        .audio-player-section {
-            background: #f8f9fa;
+        /* Кастомный плеер */
+        .custom-player {
+            background: #1a1a2e;
             border-radius: 12px;
-            padding: 1rem;
-            margin-top: 1rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
         }
 
-        .audio-player-section h3 {
-            font-size: 1rem;
-            margin-bottom: 0.75rem;
-            color: #555;
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
         }
 
-        audio {
+        .player-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .player-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+
+        .player-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-container {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .progress-bar {
             width: 100%;
-            border-radius: 8px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #667eea;
+            border-radius: 3px;
+            transition: width 0.1s linear;
+        }
+
+        .time-info {
+            display: flex;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #999;
+            font-family: monospace;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .volume-slider {
+            width: 80px;
+            height: 4px;
+            cursor: pointer;
+        }
+
+        .track-info {
+            display: flex;
+            flex-direction: column;
+            margin-right: 1rem;
+            min-width: 150px;
+        }
+
+        .track-name-player {
+            font-weight: 600;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .track-artist-player {
+            font-size: 0.75rem;
+            color: #999;
         }
 
         .notification {
@@ -468,6 +551,25 @@
             .action-buttons {
                 flex-direction: column;
             }
+
+            .player-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .track-info {
+                text-align: center;
+                margin-right: 0;
+                margin-bottom: 0.5rem;
+            }
+
+            .time-info {
+                justify-content: center;
+            }
+
+            .volume-control {
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -537,9 +639,233 @@
         const apiBaseUrl = 'http://localhost:3003';
         let musicData = null;
         let favorStatus = false;
+        let audioElement = null;
+        let currentPresignedUrl = null;
+        let isPlaying = false;
+        let repeatEnabled = false; // Состояние автоповтора
+        let currentAudioElement = null;
+
+        // DOM элементы для плеера
+        let playPauseBtn, prevBtn, nextBtn, progressBar, progressFill, currentTimeSpan, durationSpan, volumeSlider;
 
         // DOM элементы
         const contentContainer = document.getElementById('contentContainer');
+
+        let globalPlayerWindow = null;
+let currentMusicId = null;
+let currentMusicName = '';
+let currentArtistName = '';
+
+window.audioElement = null;
+window.currentMusicId = null;
+window.currentMusicName = '';
+window.currentArtistName = '';
+window.playMusic = playMusic;
+window.togglePlayPause = togglePlayPause;
+window.seek = seek;
+window.changeVolume = changeVolume;
+window.syncVolumeFromGlobal = function(volume) {
+    if (volumeSlider) {
+        volumeSlider.value = volume;
+    }
+    if (audioElement) {
+        audioElement.volume = volume;
+    }
+};
+
+// Добавьте эту функцию
+function initVolumeSync() {
+    if (audioElement && volumeSlider) {
+        // При изменении громкости в родительском окне обновляем UI
+        audioElement.addEventListener('volumechange', function() {
+            if (volumeSlider) {
+                volumeSlider.value = audioElement.volume;
+            }
+            // Синхронизируем с дочерним окном
+            if (globalPlayerWindow && !globalPlayerWindow.closed && globalPlayerWindow.syncWithParent) {
+                globalPlayerWindow.syncWithParent();
+            }
+        });
+    }
+}
+
+// Функция открытия/обновления глобального плеера
+function openGlobalPlayer() {
+    if (globalPlayerWindow && !globalPlayerWindow.closed) {
+        // Если уже открыт — обновляем информацию о текущем треке
+        globalPlayerWindow.updateTrackInfo(currentMusicId, currentMusicName, currentArtistName);
+        globalPlayerWindow.focus();
+        return;
+    }
+    
+    // Открываем новое окно с плеером
+    globalPlayerWindow = window.open('', 'MusicPlayer', 'width=450,height=400,resizable=yes');
+    
+    if (globalPlayerWindow) {
+        globalPlayerWindow.document.write(getGlobalPlayerHTML());
+        globalPlayerWindow.document.close();
+        
+        // Передаем текущий трек в новое окно после загрузки
+        setTimeout(() => {
+            if (globalPlayerWindow && !globalPlayerWindow.closed) {
+                globalPlayerWindow.initPlayer(window, currentMusicId, currentMusicName, currentArtistName);
+            }
+        }, 100);
+    }
+}
+
+// Функция обновления информации о треке в глобальном плеере
+function updateGlobalPlayerTrack(musicId, musicName, artistName) {
+    if (globalPlayerWindow && !globalPlayerWindow.closed) {
+        globalPlayerWindow.updateTrackInfo(musicId, musicName, artistName);
+    }
+}
+
+// Функция синхронизации состояния воспроизведения с глобальным плеером
+function syncWithGlobalPlayer() {
+    if (globalPlayerWindow && !globalPlayerWindow.closed && audioElement) {
+        globalPlayerWindow.syncPlaybackState(
+            !audioElement.paused,
+            audioElement.currentTime,
+            audioElement.duration,
+            audioElement.volume
+        );
+    }
+}
+
+// Периодическая синхронизация (каждую секунду)
+setInterval(() => {
+    syncWithGlobalPlayer();
+}, 1000);
+
+        // Кеширование аудио через Cache API
+// Сохранение аудио в кеш
+// Кеширование аудио через Cache API (исправленная версия)
+// Кеширование аудио по musicId (а не по presigned URL)
+const CACHE_NAME = 'audio-cache-v2';
+
+// Сохранение аудио в кеш по musicId
+async function cacheAudioById(musicId, audioBlob) {
+    try {
+        const cache = await caches.open(CACHE_NAME);
+        const cacheKey = `/audio/${musicId}`; // Статический ключ
+        
+        const response = new Response(audioBlob, {
+            status: 200,
+            statusText: 'OK',
+            headers: {
+                'Content-Type': 'audio/mpeg',
+                'Content-Length': audioBlob.size.toString(),
+                'Cache-Control': 'max-age=31536000',
+                'X-Music-Id': musicId
+            }
+        });
+        
+        await cache.put(cacheKey, response);
+        console.log(`Аудио закешировано по ID: ${musicId}, размер: ${audioBlob.size} bytes`);
+        return true;
+    } catch (error) {
+        console.error('Ошибка кеширования:', error);
+        return false;
+    }
+}
+
+// Получение аудио из кеша по musicId
+async function getCachedAudioById(musicId) {
+    try {
+        const cache = await caches.open(CACHE_NAME);
+        const cacheKey = `/audio/${musicId}`;
+        const cachedResponse = await cache.match(cacheKey);
+        
+        if (cachedResponse && cachedResponse.ok) {
+            const blob = await cachedResponse.blob();
+            if (blob && blob.size > 0) {
+                console.log(`Аудио загружено из кеша по ID: ${musicId}, размер: ${blob.size} bytes`);
+                return blob;
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error('Ошибка чтения кеша:', error);
+        return null;
+    }
+}
+
+// Загрузка аудио с кешированием по ID
+async function loadAudioWithCache(musicId, presignedUrl) {
+    // 1. Пробуем получить из кеша по musicId
+    const cachedBlob = await getCachedAudioById(musicId);
+    
+    if (cachedBlob && cachedBlob.size > 0) {
+        // Создаем локальный URL из закешированного blob
+        const blobUrl = URL.createObjectURL(cachedBlob);
+        return blobUrl;
+    }
+    
+    // 2. Если в кеше нет — загружаем из сети
+    console.log(`Загрузка аудио из сети для ID: ${musicId}`);
+    
+    const response = await fetch(presignedUrl);
+    if (!response.ok) {
+        throw new Error(`Ошибка загрузки: ${response.status}`);
+    }
+    
+    // Получаем полный blob
+    const audioBlob = await response.blob();
+    
+    if (!audioBlob || audioBlob.size === 0) {
+        throw new Error('Получен пустой файл');
+    }
+    
+    console.log(`Загружен файл из сети: ${audioBlob.size} bytes, тип: ${audioBlob.type}`);
+    
+    // 3. Сохраняем в кеш по musicId
+    await cacheAudioById(musicId, audioBlob);
+    
+    // 4. Создаем локальный URL
+    const blobUrl = URL.createObjectURL(audioBlob);
+    return blobUrl;
+}
+
+// Очистка кеша по ID (если нужно обновить файл)
+async function clearAudioCacheById(musicId) {
+    try {
+        const cache = await caches.open(CACHE_NAME);
+        const cacheKey = `/audio/${musicId}`;
+        await cache.delete(cacheKey);
+        console.log(`Кеш очищен для ID: ${musicId}`);
+    } catch (error) {
+        console.error('Ошибка очистки кеша:', error);
+    }
+}
+
+// Просмотр кеша (для отладки)
+async function inspectCache() {
+    const cache = await caches.open(CACHE_NAME);
+    const keys = await cache.keys();
+    
+    console.log(`В кеше ${keys.length} записей:`);
+    for (const request of keys) {
+        const response = await cache.match(request);
+        const blob = await response.clone().blob();
+        console.log(`  - ${request.url} -> размер: ${blob.size} bytes`);
+    }
+    return keys.length;
+}
+
+async function inspectCache() {
+    const cache = await caches.open(CACHE_NAME);
+    const keys = await cache.keys();
+    
+    console.log(`В кеше ${keys.length} записей:`);
+    for (const request of keys) {
+        const response = await cache.match(request);
+        const blob = await response.clone().blob();
+        console.log(`  - ${request.url.substring(0, 80)}... размер: ${blob.size} bytes`);
+    }
+    
+    return keys.length;
+}
 
         // Получение musicID из URL
         function getMusicIdFromUrl() {
@@ -577,6 +903,298 @@
                 return false;
             }
         }
+
+        // Получение presigned URL для воспроизведения (POST /music/play)
+        async function getPresignedUrl(musicId) {
+            try {
+                console.log(`Запрос presigned URL для трека ${musicId}`);
+                
+                const response = await fetch(`${apiBaseUrl}/music/play`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ music_id: musicId }),
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ошибка! Статус: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Presigned URL получен:', data);
+                
+                return data.presign_url || data.presigned_url || data.url;
+            } catch (error) {
+                console.error('Ошибка получения presigned URL:', error);
+                throw error;
+            }
+        }
+
+        // Инициализация элементов управления плеером
+        function initPlayerControls() {
+            playPauseBtn = document.getElementById('playPauseBtn');
+            prevBtn = document.getElementById('prevBtn');
+            nextBtn = document.getElementById('nextBtn');
+            progressBar = document.getElementById('progressBar');
+            progressFill = document.getElementById('progressFill');
+            currentTimeSpan = document.getElementById('currentTime');
+            durationSpan = document.getElementById('duration');
+            volumeSlider = document.getElementById('volumeSlider');
+        }
+
+        // Обновление времени в плеере
+        function updateTime() {
+            if (audioElement) {
+                const current = formatTime(audioElement.currentTime);
+                const duration = formatTime(audioElement.duration);
+                currentTimeSpan.textContent = current;
+                durationSpan.textContent = duration;
+                
+                const percent = (audioElement.currentTime / audioElement.duration) * 100;
+                progressFill.style.width = `${percent}%`;
+            }
+        }
+
+        // Форматирование времени (секунды -> MM:SS)
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Настройка обработчиков плеера
+        function setupPlayerEventListeners() {
+    if (!audioElement) return;
+    
+    audioElement.addEventListener('timeupdate', updateTime);
+    audioElement.addEventListener('loadedmetadata', updateTime);
+    audioElement.addEventListener('play', () => {
+        isPlaying = true;
+        if (playPauseBtn) playPauseBtn.textContent = '⏸️';
+    });
+    audioElement.addEventListener('pause', () => {
+        isPlaying = false;
+        if (playPauseBtn) playPauseBtn.textContent = '▶️';
+    });
+    
+    // ОБНОВЛЕННЫЙ обработчик окончания трека с автоповтором
+    audioElement.addEventListener('ended', () => {
+        if (repeatEnabled) {
+            // Автоповтор: перематываем на начало и играем снова
+            audioElement.currentTime = 0;
+            audioElement.play();
+            showNotification('🔄 Автоповтор', 'info');
+        } else {
+            // Автоповтор выключен - просто останавливаемся
+            isPlaying = false;
+            if (playPauseBtn) playPauseBtn.textContent = '▶️';
+            progressFill.style.width = '0%';
+            currentTimeSpan.textContent = '0:00';
+        }
+    });
+}
+
+
+        // Управление воспроизведением
+        function togglePlayPause() {
+            if (!audioElement) return;
+            if (isPlaying) {
+                audioElement.pause();
+            } else {
+                audioElement.play();
+            }
+        }
+
+        function seek(e) {
+            if (!audioElement || !progressBar) return;
+            const rect = progressBar.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            audioElement.currentTime = percent * audioElement.duration;
+        }
+
+        function changeVolume() {
+            if (!audioElement || !volumeSlider) return;
+            audioElement.volume = volumeSlider.value;
+        }
+
+// Добавьте эти функции, если их нет
+function togglePlayPause() {
+    if (audioElement) {
+        if (audioElement.paused) {
+            audioElement.play();
+        } else {
+            audioElement.pause();
+        }
+    }
+}
+
+function seek(event) {
+    if (!audioElement || !progressBar) return;
+    const rect = progressBar.getBoundingClientRect();
+    const percent = (event.clientX - rect.left) / rect.width;
+    audioElement.currentTime = percent * audioElement.duration;
+}
+
+function changeVolume() {
+    if (!audioElement || !volumeSlider) return;
+    audioElement.volume = parseFloat(volumeSlider.value);
+}
+
+        // Воспроизведение музыки через presigned URL
+        // Хранилище для текущего проигрываемого аудио
+let currentPlayingAudio = null;
+
+async function playMusic(musicId, musicName, artistName, seekTime = 0) {
+    try {
+        // === Останавливаем старый трек ===
+        if (currentPlayingAudio) {
+            console.log('Останавливаем старый трек');
+            currentPlayingAudio.pause();
+            currentPlayingAudio = null;
+        }
+        
+        if (audioElement) {
+            audioElement.pause();
+            audioElement = null;
+        }
+        
+        showNotification(`🎵 Загрузка "${musicName}"...`, 'info');
+        
+        const added = await addToListeningHistory(musicId);
+        if (added) {
+            showNotification(`🎵 "${musicName}" добавлен в историю прослушиваний`, 'info');
+        }
+        
+        const presignedUrl = await getPresignedUrl(musicId);
+        
+        if (!presignedUrl) {
+            throw new Error('Presigned URL не получен от сервера');
+        }
+        
+        // === ЗАГРУЗКА С КЕШИРОВАНИЕМ ===
+        // Пробуем получить из кеша по musicId
+        let blobUrl = null;
+        const cachedBlob = await getCachedAudioById(musicId);
+        
+        if (cachedBlob && cachedBlob.size > 0) {
+            // Используем закешированный blob
+            blobUrl = URL.createObjectURL(cachedBlob);
+            console.log(`Используем кеш для трека ${musicId}`);
+        } else {
+            // Загружаем из сети
+            console.log(`Загружаем из сети трек ${musicId}`);
+            const response = await fetch(presignedUrl);
+            if (!response.ok) {
+                throw new Error(`Ошибка загрузки: ${response.status}`);
+            }
+            const audioBlob = await response.blob();
+            if (!audioBlob || audioBlob.size === 0) {
+                throw new Error('Получен пустой файл');
+            }
+            // Сохраняем в кеш
+            await cacheAudioById(musicId, audioBlob);
+            blobUrl = URL.createObjectURL(audioBlob);
+        }
+        // === КОНЕЦ БЛОКА КЕШИРОВАНИЯ ===
+        
+        // Создаём новый аудио элемент
+        const newAudio = new Audio(blobUrl);
+        audioElement = newAudio;
+        currentPlayingAudio = newAudio;
+        currentPresignedUrl = blobUrl;
+        
+        // Сохраняем глобальные переменные
+        window.currentMusicId = musicId;
+        window.currentMusicName = musicName;
+        window.currentArtistName = artistName;
+        window.audioElement = newAudio;
+        
+        // Обновляем UI на основной странице
+        const trackNameElem = document.getElementById('trackNamePlayer');
+        const trackArtistElem = document.getElementById('trackArtistPlayer');
+        if (trackNameElem) trackNameElem.textContent = musicName;
+        if (trackArtistElem) trackArtistElem.textContent = artistName || 'Неизвестный исполнитель';
+        
+        // Настройка обработчиков
+        setupPlayerEventListeners();
+        initVolumeSync();
+        
+        // Синхронизация с глобальным плеером
+        newAudio.addEventListener('play', () => {
+            if (globalPlayerWindow && !globalPlayerWindow.closed) {
+                globalPlayerWindow.syncWithParent();
+            }
+        });
+        
+        newAudio.addEventListener('pause', () => {
+            if (globalPlayerWindow && !globalPlayerWindow.closed) {
+                globalPlayerWindow.syncWithParent();
+            }
+        });
+        
+        newAudio.addEventListener('timeupdate', () => {
+            if (globalPlayerWindow && !globalPlayerWindow.closed) {
+                globalPlayerWindow.syncWithParent();
+            }
+        });
+        
+        newAudio.addEventListener('ended', () => {
+            if (repeatEnabled) {
+                newAudio.currentTime = 0;
+                newAudio.play();
+            } else {
+                currentPlayingAudio = null;
+            }
+            if (globalPlayerWindow && !globalPlayerWindow.closed) {
+                globalPlayerWindow.syncWithParent();
+            }
+        });
+        
+        if (seekTime > 0) {
+            newAudio.currentTime = seekTime;
+        }
+        
+        await newAudio.load();
+        await newAudio.play();
+        
+        // Принудительно обновляем информацию в глобальном плеере
+        setTimeout(() => {
+            if (globalPlayerWindow && !globalPlayerWindow.closed) {
+                updateGlobalPlayerInfo();
+            }
+        }, 100);
+        
+        showNotification(`🎵 Воспроизведение: ${musicName}`, 'info');
+        
+    } catch (error) {
+        console.error('Ошибка воспроизведения:', error);
+        showNotification(`Не удалось воспроизвести "${musicName}": ${error.message}`, 'error');
+        currentPlayingAudio = null;
+    }
+}
+// Функция для остановки любого текущего воспроизведения
+function stopAllTracks() {
+    if (currentPlayingAudio) {
+        currentPlayingAudio.pause();
+        currentPlayingAudio = null;
+    }
+    if (audioElement) {
+        audioElement.pause();
+        audioElement = null;
+    }
+    if (window.audioElement) {
+        window.audioElement.pause();
+        window.audioElement = null;
+    }
+    if (currentPresignedUrl && currentPresignedUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(currentPresignedUrl);
+        currentPresignedUrl = null;
+    }
+}
 
         // Добавление/удаление из избранного (POST/DELETE /favor)
         async function toggleFavor(musicId, musicName) {
@@ -623,18 +1241,6 @@
             }
         }
 
-        // Воспроизведение музыки
-        async function playMusic(musicId, musicName, artistName, songUrl) {
-            const added = await addToListeningHistory(musicId);
-            if (added) {
-                showNotification(`🎵 "${musicName}" добавлен в историю прослушиваний`, 'info');
-            } else {
-                console.log(`Трек "${musicName}" не добавлен в историю (возможно, пользователь не авторизован)`);
-            }
-            
-            showNotification(`🎵 Воспроизведение: ${musicName} - ${artistName || 'Неизвестный'} (демо-режим)`, 'info');
-        }
-
         // Загрузка данных о музыке (GET /music/{musicID})
         async function loadMusicDetail() {
             const musicId = getMusicIdFromUrl();
@@ -667,8 +1273,6 @@
                 const data = await response.json();
                 console.log('Получены данные трека:', data);
                 
-                // Обработка формата ответа согласно новому OpenAPI
-                // Ответ содержит: { music: { ... }, music_favor: { music_id: ... } или null }
                 let music = null;
                 let musicFavor = null;
                 
@@ -683,8 +1287,6 @@
                 
                 musicData = music;
                 
-                // Определяем статус избранного:
-                // Если music_favor существует и содержит music_id (не пустой), значит трек в избранном
                 if (musicFavor && musicFavor.music_id) {
                     favorStatus = true;
                     console.log('Трек в избранном:', musicFavor);
@@ -717,6 +1319,114 @@
             return div.innerHTML;
         }
 
+        function toggleRepeat() {
+    const repeatBtn = document.getElementById('repeatBtn');
+    repeatEnabled = !repeatEnabled;
+    
+    if (repeatEnabled) {
+        repeatBtn.style.opacity = '1';
+        repeatBtn.style.color = '#667eea';
+        showNotification('🔁 Автоповтор включен', 'info');
+    } else {
+        repeatBtn.style.opacity = '0.6';
+        repeatBtn.style.color = 'white';
+        showNotification('🔁 Автоповтор выключен', 'info');
+    }
+}
+
+async function nextTrack() {
+    // Здесь логика получения следующего трека
+    // Например, из текущего плейлиста или случайный трек
+    showNotification('Следующий трек (функция в разработке)', 'info');
+}
+
+async function prevTrack() {
+    // Здесь логика получения предыдущего трека
+    showNotification('Предыдущий трек (функция в разработке)', 'info');
+}
+
+// Экспортируем функции в глобальную область для доступа из дочернего окна
+window.nextTrack = nextTrack;
+window.prevTrack = prevTrack;
+window.audioElement = audioElement;
+
+// Добавьте эту функцию
+function updateGlobalPlayerInfo() {
+    if (globalPlayerWindow && !globalPlayerWindow.closed && globalPlayerWindow.setTrackInfo) {
+        const currentTime = audioElement ? audioElement.currentTime : 0;
+        const duration = audioElement ? audioElement.duration : 0;
+        const isPlaying = audioElement ? !audioElement.paused : false;
+        const volume = audioElement ? audioElement.volume : 1;
+        
+        globalPlayerWindow.setTrackInfo(
+            window.currentMusicId || '',
+            window.currentMusicName || '—',
+            window.currentArtistName || '—',
+            currentTime,
+            duration,
+            isPlaying,
+            volume
+        );
+    }
+}
+
+function openGlobalPlayer() {
+    if (globalPlayerWindow && !globalPlayerWindow.closed) {
+        globalPlayerWindow.focus();
+        // Принудительно обновляем информацию
+        if (globalPlayerWindow.setTrackInfo) {
+            var currentTime = audioElement ? audioElement.currentTime : 0;
+            var duration = audioElement ? audioElement.duration : 0;
+            var isPlaying = audioElement ? !audioElement.paused : false;
+            var volume = audioElement ? audioElement.volume : 1;
+            
+            globalPlayerWindow.setTrackInfo(
+                currentMusicId,
+                currentMusicName,
+                currentArtistName,
+                currentTime,
+                duration,
+                isPlaying,
+                volume
+            );
+        }
+        return;
+    }
+    
+    globalPlayerWindow = window.open('player-window.html', 'MusicPlayer', 'width=450,height=420,resizable=yes');
+    
+    if (globalPlayerWindow) {
+        // Ждем полной загрузки окна
+        var checkReady = setInterval(function() {
+            if (globalPlayerWindow && globalPlayerWindow.initPlayer) {
+                clearInterval(checkReady);
+                
+                // Передаем все данные при инициализации
+                var currentTime = audioElement ? audioElement.currentTime : 0;
+                var duration = audioElement ? audioElement.duration : 0;
+                var isPlaying = audioElement ? !audioElement.paused : false;
+                var volume = audioElement ? audioElement.volume : 1;
+                
+                globalPlayerWindow.initPlayer(
+                    window,
+                    currentMusicId,
+                    currentMusicName,
+                    currentArtistName,
+                    currentTime,
+                    duration,
+                    isPlaying,
+                    volume
+                );
+            }
+        }, 100);
+        
+        setTimeout(function() {
+            clearInterval(checkReady);
+        }, 5000);
+    }
+}
+
+
         function renderMusicDetail() {
             if (!musicData) return;
             
@@ -724,13 +1434,12 @@
             const musicId = musicData.id;
             const musicName = escapeHtml(musicData.name || 'Без названия');
             const artistName = escapeHtml(musicData.uploader_username || musicData.uploader_id || 'Неизвестный исполнитель');
-            const songUrl = musicData.song_url || '';
             
             contentContainer.innerHTML = `
                 <div class="music-detail-card">
                     <div class="music-cover-large">
                         <span>🎵</span>
-                        <div class="play-overlay" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}', '${songUrl}')">
+                        <div class="play-overlay" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}')">
                             <div class="play-button-large">▶️</div>
                         </div>
                     </div>
@@ -753,7 +1462,10 @@
                             </div>
                         </div>
                         <div class="action-buttons">
-                            <button class="action-btn action-btn-play" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}', '${songUrl}')">
+                            <button class="action-btn action-btn-secondary" onclick="openGlobalPlayer()">
+    🎵 Открыть отдельный плеер
+</button>
+                            <button class="action-btn action-btn-play" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}')">
                                 ▶️ Слушать
                             </button>
                             <button class="action-btn action-btn-favor" id="favorBtn" onclick="toggleFavor('${musicData.id}', '${musicName.replace(/'/g, "\\'")}')">
@@ -763,18 +1475,44 @@
                                 ← Назад к списку
                             </button>
                         </div>
-                        ${songUrl ? `
-                            <div class="audio-player-section">
-                                <h3>🎧 Аудиоплеер</h3>
-                                <audio id="audioPlayer" controls preload="metadata">
-                                    <source src="${songUrl}" type="audio/mpeg">
-                                    Ваш браузер не поддерживает аудио элемент.
-                                </audio>
-                            </div>
-                        ` : ''}
+                        
+                        <!-- Кастомный плеер -->
+                        <div class="custom-player">
+                           <div class="player-controls">
+    <div class="track-info">
+        <div class="track-name-player" id="trackNamePlayer">Не выбран</div>
+        <div class="track-artist-player" id="trackArtistPlayer">—</div>
+    </div>
+    <button class="player-btn" id="repeatBtn" onclick="toggleRepeat()" style="opacity: 0.6;">🔁</button>
+    <button class="player-btn" id="playPauseBtn" onclick="togglePlayPause()">▶️</button>
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar" onclick="seek(event)">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="time-info">
+            <span id="currentTime">0:00</span>
+            <span>/</span>
+            <span id="duration">0:00</span>
+        </div>
+    </div>
+    <div class="volume-control">
+        <span>🔊</span>
+        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.01" value="1" onchange="changeVolume()">
+    </div>
+</div>
+                        </div>
                     </div>
                 </div>
             `;
+            
+            // Инициализируем элементы управления плеером после рендера
+            initPlayerControls();
+            if (volumeSlider) {
+                volumeSlider.addEventListener('input', changeVolume);
+            }
+            if (progressBar) {
+                progressBar.addEventListener('click', seek);
+            }
         }
 
         function showNotification(message, type = 'success') {

@@ -90,6 +90,14 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	h.Mux.Handle("GET /music/{musicID}", corsMiddleware(wrapGetMusic(strict)))
+	h.Mux.Handle("OPTIONS /music/{musicID}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
 	h.Mux.Handle("GET /music", corsMiddleware(wrapGetAllMusic(strict)))
 	h.Mux.Handle("OPTIONS /music", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
@@ -160,6 +168,15 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	}))
 	h.Mux.Handle("POST /music/upload", corsMiddleware(http.HandlerFunc(h.MusicUpload)))
 	h.Mux.Handle("OPTIONS /music/upload", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("POST /music/play", corsMiddleware(http.HandlerFunc(strict.PostMusicPlay)))
+	h.Mux.Handle("OPTIONS /music/play", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")

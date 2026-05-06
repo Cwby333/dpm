@@ -114,24 +114,24 @@ func (s *MusicService) UploadMusic(ctx context.Context, musicData map[string]mod
 	slog.Info("songDataSize", slog.Int("size", len(songData.Data)))
 
 	songID := musicID + songPostfix
-	// err := s.s3.UploadObject(ctx, songID, songData.Data, songData.ContentType)
-	// if err != nil {
-	// 	return fmt.Errorf("%s: %w", op, err)
-	// }
+	err := s.s3.UploadObject(ctx, songID, songData.Data, songData.ContentType)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
 	coverData := musicData["coverData"]
 	slog.Info(fmt.Sprintf("cover data size: %v", len(coverData.Data)))
 	coverID := musicID + songImagePostfix
-	// err = s.s3.UploadObject(ctx, coverID, songData.Data, songData.ContentType)
-	// if err != nil {
-	// 	return fmt.Errorf("%s: %w", op, err)
-	// }
+	err = s.s3.UploadObject(ctx, coverID, coverData.Data, songData.ContentType)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
 	music.SongURL =	songID
 	music.CoverURL = coverID
 	music.ID = musicID
 	slog.Info(fmt.Sprintf("coverURL, songURL: %v, %v", music.CoverURL, music.SongURL))
-	err := s.CreateMusic(ctx, "", music)
+	err = s.CreateMusic(ctx, "", music)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
