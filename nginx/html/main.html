@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mute - Бесплатная музыка от пользователей</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* Навигация */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #555;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+        }
+
+        .nav-links a:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .nav-links .active {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-outline {
+            border: 2px solid #667eea;
+            color: #667eea;
+            background: transparent;
+        }
+
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Основной контент */
+        .main-content {
+            max-width: 1200px;
+            margin: 80px auto 0;
+            padding: 2rem;
+        }
+
+        /* Герой секция */
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+            opacity: 0.9;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .hero .btn {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+        }
+
+        .hero .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+
+        .hero .btn-outline {
+            border-color: white;
+            color: white;
+        }
+
+        .hero .btn-outline:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        /* Секция особенностей */
+        .features {
+            background: white;
+            border-radius: 20px;
+            padding: 4rem 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #333;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Статистика */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin: 4rem 0;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-item {
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Популярные треки */
+        .popular-tracks {
+            background: white;
+            border-radius: 20px;
+            padding: 4rem 2rem;
+            margin: 2rem 0;
+        }
+
+        .tracks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .track-card {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .track-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .track-cover {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .track-info {
+            flex: 1;
+        }
+
+        .track-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .track-artist {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .track-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .track-btn {
+            padding: 0.5rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #667eea;
+            transition: transform 0.2s ease;
+        }
+
+        .track-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* О проекте */
+        .about {
+            background: white;
+            border-radius: 20px;
+            padding: 4rem 2rem;
+            margin: 2rem 0;
+        }
+
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .about-text h3 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: #667eea;
+        }
+
+        .about-text p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .about-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+
+        .about-stat {
+            text-align: center;
+        }
+
+        .about-stat .number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .about-stat .label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .about-image {
+            text-align: center;
+        }
+
+        .about-image img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .placeholder-image {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 5rem;
+        }
+
+        /* Как это работает */
+        .how-it-works {
+            background: white;
+            border-radius: 20px;
+            padding: 4rem 2rem;
+            margin: 2rem 0;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 auto 1rem;
+        }
+
+        .step h4 {
+            margin-bottom: 0.5rem;
+            color: #667eea;
+        }
+
+        .step p {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Футер */
+        .footer {
+            background: #1a1a2e;
+            color: white;
+            padding: 3rem 2rem 1rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+        }
+
+        .footer-section h4 {
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-section a {
+            color: #999;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section a:hover {
+            color: #667eea;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .social-links a {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            background: #667eea;
+            transform: translateY(-3px);
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 2rem auto 0;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .auth-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .about-content {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .hero-buttons .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">🎵</span>
+                <span class="logo-text">Mute</span>
+            </div>
+            <div class="nav-links">
+                <a href="main.html" class="active">Главная</a>
+                <a href="#">Треки</a>
+                <a href="#">Исполнители</a>
+                <a href="#">Плейлисты</a>
+                <a href="#">Загрузить</a>
+                <div class="auth-buttons">
+                    <a href="login.html" class="btn btn-outline">Войти</a>
+                    <a href="register.html" class="btn btn-primary">Регистрация</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <div class="main-content">
+        <!-- Герой секция -->
+        <section class="hero">
+            <h1>Добро пожаловать в Mute</h1>
+            <p>Бесплатная музыка от пользователей со всего мира. Слушайте, загружайте и делитесь своими треками.</p>
+            <div class="hero-buttons">
+                <a href="#" class="btn btn-primary">Начать слушать</a>
+                <a href="#" class="btn btn-outline">Загрузить трек</a>
+            </div>
+        </section>
+
+        <!-- Статистика -->
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number">50,000+</div>
+                <div class="stat-label">Треков</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">10,000+</div>
+                <div class="stat-label">Исполнителей</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">1M+</div>
+                <div class="stat-label">Прослушиваний</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Бесплатно</div>
+            </div>
+        </div>
+
+        <!-- Особенности -->
+        <section class="features">
+            <h2 class="section-title">Почему выбирают Mute?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎵</div>
+                    <h3>Бесплатно навсегда</h3>
+                    <p>Никаких платежей и скрытых комиссий. Вся музыка абсолютно бесплатна.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Загрузка треков</h3>
+                    <p>Загружайте свою музыку и делитесь ей с миллионами слушателей.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💿</div>
+                    <h3>Высокое качество</h3>
+                    <p>Слушайте музыку в высоком качестве без потерь.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <h3>Сообщество</h3>
+                    <p>Общайтесь с другими музыкантами и находите новых друзей.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Популярные треки -->
+        <section class="popular-tracks">
+            <h2 class="section-title">Популярные треки</h2>
+            <div class="tracks-grid">
+                <div class="track-card">
+                    <div class="track-cover">🎸</div>
+                    <div class="track-info">
+                        <div class="track-title">Летний вечер</div>
+                        <div class="track-artist">Анна Петрова</div>
+                    </div>
+                    <div class="track-actions">
+                        <button class="track-btn">▶️</button>
+                        <button class="track-btn">💾</button>
+                        <button class="track-btn">❤️</button>
+                    </div>
+                </div>
+                <div class="track-card">
+                    <div class="track-cover">🎹</div>
+                    <div class="track-info">
+                        <div class="track-title">Ночной город</div>
+                        <div class="track-artist">Дмитрий Волков</div>
+                    </div>
+                    <div class="track-actions">
+                        <button class="track-btn">▶️</button>
+                        <button class="track-btn">💾</button>
+                        <button class="track-btn">❤️</button>
+                    </div>
+                </div>
+                <div class="track-card">
+                    <div class="track-cover">🥁</div>
+                    <div class="track-info">
+                        <div class="track-title">Ритмы сердца</div>
+                        <div class="track-artist">Елена Соколова</div>
+                    </div>
+                    <div class="track-actions">
+                        <button class="track-btn">▶️</button>
+                        <button class="track-btn">💾</button>
+                        <button class="track-btn">❤️</button>
+                    </div>
+                </div>
+                <div class="track-card">
+                    <div class="track-cover">🎻</div>
+                    <div class="track-info">
+                        <div class="track-title">Осенний джаз</div>
+                        <div class="track-artist">Михаил Иванов</div>
+                    </div>
+                    <div class="track-actions">
+                        <button class="track-btn">▶️</button>
+                        <button class="track-btn">💾</button>
+                        <button class="track-btn">❤️</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- О проекте -->
+        <section class="about">
+            <h2 class="section-title">О проекте Mute</h2>
+            <div class="about-content">
+                <div class="about-text">
+                    <h3>Платформа для независимых музыкантов</h3>
+                    <p>Mute - это уникальная платформа, созданная для того, чтобы дать возможность каждому музыканту поделиться своим творчеством с миром. Мы верим, что музыка должна быть доступна каждому, независимо от его финансовых возможностей.</p>
+                    <p>Наша миссия - создать сообщество, где талантливые музыканты могут найти свою аудиторию, а слушатели - открыть для себя новую, уникальную музыку абсолютно бесплатно.</p>
+                    <div class="about-stats">
+                        <div class="about-stat">
+                            <div class="number">5 лет</div>
+                            <div class="label">на рынке</div>
+                        </div>
+                        <div class="about-stat">
+                            <div class="number">150+</div>
+                            <div class="label">стран</div>
+                        </div>
+                        <div class="about-stat">
+                            <div class="number">50K+</div>
+                            <div class="label">треков</div>
+                        </div>
+                        <div class="about-stat">
+                            <div class="number">10K+</div>
+                            <div class="label">музыкантов</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-image">
+                    <div class="placeholder-image">🎵</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Как это работает -->
+        <section class="how-it-works">
+            <h2 class="section-title">Как это работает</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h4>Регистрация</h4>
+                    <p>Создайте аккаунт бесплатно за 1 минуту</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h4>Загрузка музыки</h4>
+                    <p>Загрузите свои треки в удобном формате</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h4>Делитесь</h4>
+                    <p>Поделитесь музыкой с друзьями и слушателями</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h4>Слушайте</h4>
+                    <p>Наслаждайтесь музыкой и находите новых исполнителей</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Футер -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Mute</h4>
+                <p>Бесплатная музыка для всех</p>
+                <div class="social-links">
+                    <a href="#">📘</a>
+                    <a href="#">📷</a>
+                    <a href="#">🐦</a>
+                    <a href="#">🎵</a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h4>Навигация</h4>
+                <ul>
+                    <li><a href="#">Главная</a></li>
+                    <li><a href="#">Треки</a></li>
+                    <li><a href="#">Исполнители</a></li>
+                    <li><a href="#">Плейлисты</a></li>
+                    <li><a href="#">Загрузить</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Пользователям</h4>
+                <ul>
+                    <li><a href="http://localhost:3003/register">Регистрация</a></li>
+                    <li><a href="http://localhost:3003/login">Вход</a></li>
+                    <li><a href="#">Помощь</a></li>
+                    <li><a href="#">Правила</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Контакты</h4>
+                <ul>
+                    <li>📧 support@mute.com</li>
+                    <li>📱 +7 (999) 123-45-67</li>
+                    <li>📍 Москва, Россия</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Mute. Все права защищены. Бесплатная музыка для всех.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Подсветка активной ссылки в навигации
+        const navLinks = document.querySelectorAll('.nav-links a');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (!this.href.includes('localhost')) {
+                    e.preventDefault();
+                }
+                navLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Анимация появления элементов при скролле
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.feature-card, .track-card, .step, .stat-item').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'all 0.6s ease';
+            observer.observe(el);
+        });
+
+        // Плейсхолдер для кнопок воспроизведения
+        document.querySelectorAll('.track-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const track = this.closest('.track-card');
+                const title = track.querySelector('.track-title').textContent;
+                const artist = track.querySelector('.track-artist').textContent;
+                alert(`Сейчас играет: ${title} - ${artist}\n(Демо-режим)`);
+            });
+        });
+    </script>
+</body>
+</html>

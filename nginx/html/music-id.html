@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mute - Детали трека</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-icon { font-size: 2rem; line-height: 1; }
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .nav-links { display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; }
+        .nav-links a {
+            text-decoration: none;
+            color: #555;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+        }
+        .nav-links a:hover { color: #667eea; background: rgba(102, 126, 234, 0.1); }
+        .nav-links .active { color: #667eea; background: rgba(102, 126, 234, 0.1); }
+        .auth-buttons { display: flex; gap: 1rem; }
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
+        .btn-outline { border: 2px solid #667eea; color: #667eea; background: transparent; }
+        .btn-outline:hover { background: #667eea; color: white; }
+        .btn-secondary { background: #4a5568; color: white; }
+        .btn-secondary:hover { background: #2d3748; }
+        .main-content { max-width: 1000px; margin: 80px auto 0; padding: 2rem; }
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .music-detail-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        .music-cover-large {
+            height: 300px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 6rem;
+            position: relative;
+            cursor: pointer;
+        }
+        .music-info { padding: 2rem; }
+        .music-title { font-size: 2rem; font-weight: 700; color: #333; margin-bottom: 0.5rem; }
+        .music-artist { font-size: 1.2rem; color: #667eea; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .music-stats { display: flex; gap: 2rem; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0; }
+        .stat { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; color: #666; }
+        .stat-icon { font-size: 1.2rem; }
+        .stat-value { font-weight: 600; color: #333; }
+        .action-buttons { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
+        .action-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .action-btn-play { background: #667eea; color: white; }
+        .action-btn-play:hover { background: #5a67d8; transform: translateY(-2px); }
+        .action-btn-favor { background: #f0f0f0; color: #666; }
+        .action-btn-favor.active { background: #ffc107; color: #333; }
+        .action-btn-back { background: #4a5568; color: white; }
+        .action-btn-back:hover { background: #2d3748; }
+        .footer {
+            background: #1a1a2e;
+            color: white;
+            padding: 3rem 2rem 1rem;
+            margin-top: 4rem;
+        }
+        .action-btn-play {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 50px;  /* скруглённые края */
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+}
+
+.action-btn-play:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46a0 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.action-btn-play:active {
+    transform: translateY(0);
+}
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+        }
+        .footer-section h4 { margin-bottom: 1rem; color: #667eea; }
+        .footer-section ul { list-style: none; }
+        .footer-section ul li { margin-bottom: 0.5rem; }
+        .footer-section a { color: #999; text-decoration: none; transition: color 0.3s ease; }
+        .footer-section a:hover { color: #667eea; }
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 2rem auto 0;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            color: #999;
+            font-size: 0.9rem;
+        }
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #48bb78;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 3000;
+            animation: slideIn 0.3s ease;
+        }
+        .notification.error { background: #e53e3e; }
+        .notification.info { background: #fbbf24; color: #333; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @media (max-width: 768px) {
+            .nav-container { flex-direction: column; gap: 1rem; }
+            .nav-links { flex-direction: column; width: 100%; }
+            .auth-buttons { width: 100%; justify-content: center; }
+            .main-content { padding: 1rem; }
+            .music-title { font-size: 1.5rem; }
+            .music-stats { flex-wrap: wrap; gap: 1rem; }
+            .action-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo"><span class="logo-icon">🎵</span><span class="logo-text">Mute</span></div>
+            <div class="nav-links">
+                <a href="/">Главная</a>
+                <a href="/products.html">Продукты</a>
+                <a href="/music.html">Музыка</a>
+                <a href="/favor.html">Избранное</a>
+                <a href="/listening-history.html">История</a>
+                <a href="/likes.html">Лайки</a>
+                <div class="auth-buttons" id="authButtons">
+                    <a href="/login" class="btn btn-outline">Войти</a>
+                    <a href="/register" class="btn btn-primary">Регистрация</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div id="contentContainer">
+            <div class="loading-container" id="loadingContainer">
+                <div class="loading-spinner"></div>
+                <p>Загрузка информации о треке...</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section"><h4>Mute</h4><p>Бесплатная музыка для всех</p></div>
+            <div class="footer-section">
+                <h4>Навигация</h4>
+                <ul>
+                    <li><a href="/">Главная</a></li>
+                    <li><a href="/products.html">Продукты</a></li>
+                    <li><a href="/music.html">Музыка</a></li>
+                    <li><a href="/favor.html">Избранное</a></li>
+                    <li><a href="/listening-history.html">История</a></li>
+                    <li><a href="/likes.html">Лайки</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Пользователям</h4>
+                <ul>
+                    <li><a href="/register">Регистрация</a></li>
+                    <li><a href="/login">Вход</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom"><p>&copy; 2026 Mute. Все права защищены.</p></div>
+    </footer>
+
+    <script>
+        const apiBaseUrl = 'http://localhost:3003';
+        let musicData = null;
+        let favorStatus = false;
+        let currentMusicId = null;
+        let currentMusicName = '';
+        let currentArtistName = '';
+        let globalPlayerWindow = null;
+        const contentContainer = document.getElementById('contentContainer');
+
+        function getMusicIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        async function addToListeningHistory(musicId) {
+            try {
+                const response = await fetch(`${apiBaseUrl}/listening-history`, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ musicID: musicId }),
+                    credentials: 'include'
+                });
+                return response.ok;
+            } catch { return false; }
+        }
+
+        async function getPresignedUrl(musicId) {
+            const response = await fetch(`${apiBaseUrl}/music/play`, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ music_id: musicId }),
+                credentials: 'include'
+            });
+            const data = await response.json();
+            return data.presign_url || data.presigned_url || data.url;
+        }
+
+        async function playMusic(musicId, musicName, artistName) {
+            showNotification(`🎵 Воспроизведение: ${musicName}`, 'info');
+            // Просто открываем плеер в новом окне
+            openGlobalPlayer();
+        }
+
+        async function toggleFavor(musicId, musicName) {
+            const method = favorStatus ? 'DELETE' : 'POST';
+            const actionText = favorStatus ? 'удален из' : 'добавлен в';
+            try {
+                const response = await fetch(`${apiBaseUrl}/favor`, {
+                    method: method,
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ musicID: musicId }),
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    favorStatus = !favorStatus;
+                    updateFavorButton();
+                    showNotification(`⭐ Трек "${musicName}" ${actionText} избранного`);
+                }
+            } catch (error) { console.error(error); }
+        }
+
+        function updateFavorButton() {
+            const favorBtn = document.getElementById('favorBtn');
+            if (favorBtn) {
+                if (favorStatus) {
+                    favorBtn.innerHTML = '⭐ В избранном';
+                    favorBtn.classList.add('active');
+                } else {
+                    favorBtn.innerHTML = '☆ В избранное';
+                    favorBtn.classList.remove('active');
+                }
+            }
+        }
+
+        function openGlobalPlayer() {
+            if (globalPlayerWindow && !globalPlayerWindow.closed) {
+                globalPlayerWindow.focus();
+                return;
+            }
+            const encodedName = encodeURIComponent(currentMusicName);
+            const encodedArtist = encodeURIComponent(currentArtistName);
+            globalPlayerWindow = window.open(
+                `player-window.html?id=${currentMusicId}&name=${encodedName}&artist=${encodedArtist}`,
+                'MusicPlayer',
+                'width=450,height=420,resizable=yes'
+            );
+        }
+
+        async function loadMusicDetail() {
+            const musicId = getMusicIdFromUrl();
+            if (!musicId) { showError('ID трека не указан'); return; }
+            
+            contentContainer.innerHTML = `<div class="loading-container"><div class="loading-spinner"></div><p>Загрузка информации о треке...</p></div>`;
+            
+            try {
+                const response = await fetch(`${apiBaseUrl}/music/${musicId}`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'include'
+                });
+                if (response.status === 404) { showError('Трек не найден'); return; }
+                if (!response.ok) throw new Error(`HTTP ошибка! Статус: ${response.status}`);
+                
+                const data = await response.json();
+                let music = null, musicFavor = null;
+                if (data && data.music) { music = data.music; musicFavor = data.music_favor; }
+                else if (data && data.GetMusicResponse) { music = data.GetMusicResponse; }
+                else { music = data; }
+                
+                musicData = music;
+                favorStatus = !!(musicFavor && musicFavor.music_id);
+                currentMusicId = musicData.id;
+                currentMusicName = musicData.name || 'Без названия';
+                currentArtistName = musicData.uploader_username || musicData.uploader_id || 'Неизвестный исполнитель';
+                
+                renderMusicDetail();
+            } catch (error) { console.error(error); showError(error.message); }
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderMusicDetail() {
+            if (!musicData) return;
+            const duration = formatDuration(musicData.duration_seconds);
+            const musicId = musicData.id;
+            const musicName = escapeHtml(musicData.name || 'Без названия');
+            const artistName = escapeHtml(musicData.uploader_username || musicData.uploader_id || 'Неизвестный исполнитель');
+            
+            contentContainer.innerHTML = `
+                <div class="music-detail-card">
+                    <div class="music-cover-large" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}')">
+                        <span>🎵</span>
+                    </div>
+                    <div class="music-info">
+                        <h1 class="music-title">${musicName}</h1>
+                        <div class="music-artist">👤 ${artistName}</div>
+                        <div class="music-stats">
+                            <div class="stat"><span class="stat-icon">❤️</span><span class="stat-value">${musicData.likes || 0}</span><span>лайков</span></div>
+                            <div class="stat"><span class="stat-icon">⏱️</span><span class="stat-value">${duration}</span><span>длительность</span></div>
+                        </div>
+                        <div class="action-buttons">
+    <button class="action-btn action-btn-play" onclick="openGlobalPlayer()">
+        ▶️ Слушать
+    </button>
+    <button class="action-btn action-btn-favor" id="favorBtn" onclick="toggleFavor('${musicId}', '${musicName.replace(/'/g, "\\'")}')">
+        ${favorStatus ? '⭐ В избранном' : '☆ В избранное'}
+    </button>
+    <button class="action-btn action-btn-back" onclick="window.location.href='music.html'">
+        ← Назад к списку
+    </button>
+</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type === 'error' ? 'error' : type === 'info' ? 'info' : ''}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        function showError(message) {
+            contentContainer.innerHTML = `<div class="error-container"><div class="error-icon">⚠️</div><h3>Ошибка загрузки</h3><p>${message}</p><button class="btn btn-primary" onclick="window.location.href='music.html'">Вернуться к списку</button></div>`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => loadMusicDetail());
+    </script>
+</body>
+</html>

@@ -1272,33 +1272,33 @@ func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) e
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name: "Access-Token",
-		Value: access.Sign,
-		Expires: time.Now().Add(time.Hour * 1),
-		Secure: true,
-		Path: "/",
+		Name:     "Access-Token",
+		Value:    access.Sign,
+		Expires:  time.Now().Add(time.Hour * 1),
+		Secure:   true,
+		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteNoneMode,
-		Domain: "",
+		Domain:   "",
 	})
 	http.SetCookie(w, &http.Cookie{
-		Name: "Refresh-Token",
-		Value: refresh.Sign,
-		Expires: time.Now().Add(time.Hour * 24),
-		Secure: true,
+		Name:     "Refresh-Token",
+		Value:    refresh.Sign,
+		Expires:  time.Now().Add(time.Hour * 24),
+		Secure:   true,
 		HttpOnly: true,
-		Domain: "",
-		Path: "/refresh",
+		Domain:   "",
+		Path:     "/refresh",
 		SameSite: http.SameSiteNoneMode,
 	})
 	http.SetCookie(w, &http.Cookie{
-		Name: "Refresh-Token-Logout",
-		Value: refresh.Sign,
-		Expires: time.Now().Add(time.Hour * 24),
-		Secure: true,
+		Name:     "Refresh-Token-Logout",
+		Value:    refresh.Sign,
+		Expires:  time.Now().Add(time.Hour * 24),
+		Secure:   true,
 		HttpOnly: true,
-		Domain: "",
-		Path: "/logout",
+		Domain:   "",
+		Path:     "/logout",
 		SameSite: http.SameSiteNoneMode,
 	})
 
@@ -1349,33 +1349,33 @@ func (response PostLogout200Response) VisitPostLogoutResponse(w http.ResponseWri
 	_ = refresh
 
 	http.SetCookie(w, &http.Cookie{
-		Name: "Access-Token",
-		Value: "",
-		Expires: time.Now().Add(time.Second * 5),
-		Secure: true,
-		Path: "/",
+		Name:     "Access-Token",
+		Value:    "",
+		Expires:  time.Now().Add(time.Second * 5),
+		Secure:   true,
+		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteNoneMode,
-		Domain: "",
+		Domain:   "",
 	})
 	http.SetCookie(w, &http.Cookie{
-		Name: "Refresh-Token",
-		Value: "",
-		Expires: time.Now().Add(time.Second * 5),
-		Secure: true,
+		Name:     "Refresh-Token",
+		Value:    "",
+		Expires:  time.Now().Add(time.Second * 5),
+		Secure:   true,
 		HttpOnly: true,
-		Domain: "",
-		Path: "/refresh",
+		Domain:   "",
+		Path:     "/refresh",
 		SameSite: http.SameSiteNoneMode,
 	})
 	http.SetCookie(w, &http.Cookie{
-		Name: "Refresh-Token-Logout",
-		Value: "",
-		Expires: time.Now().Add(time.Second * 5),
-		Secure: true,
+		Name:     "Refresh-Token-Logout",
+		Value:    "",
+		Expires:  time.Now().Add(time.Second * 5),
+		Secure:   true,
 		HttpOnly: true,
-		Domain: "",
-		Path: "/logout",
+		Domain:   "",
+		Path:     "/logout",
 		SameSite: http.SameSiteNoneMode,
 	})
 
@@ -1383,6 +1383,7 @@ func (response PostLogout200Response) VisitPostLogoutResponse(w http.ResponseWri
 
 	return nil
 }
+
 type PostLogout500JSONResponse string
 
 func (response PostLogout500JSONResponse) VisitPostLogoutResponse(w http.ResponseWriter) error {

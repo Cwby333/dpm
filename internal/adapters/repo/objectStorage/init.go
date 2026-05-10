@@ -53,7 +53,6 @@ func NewS3Client(ctx context.Context, c config.S3) (S3Client, error) {
 		return S3Client{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-
 	client := s3.NewFromConfig(cfg,
 		func(o *s3.Options) {
 			o.Retryer = retry.NewAdaptiveMode(
@@ -147,13 +146,13 @@ func (s3Client S3Client) GetPresignURL(ctx context.Context, id string) (string, 
 
 	req := s3.GetObjectInput{
 		Bucket: &s3Client.bucketName,
-		Key: &id,
+		Key:    &id,
 	}
 
 	resp, err := presignClient.PresignGetObject(ctx, &req, s3.WithPresignExpires(expired))
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
-	
+
 	return resp.URL, nil
 }

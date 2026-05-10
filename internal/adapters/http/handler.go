@@ -9,8 +9,11 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	_ "mime/multipart"
 	"net/http"
+
+	"github.com/tcolgate/mp3"
 )
 
 type Handler struct {
@@ -22,7 +25,7 @@ type Handler struct {
 	likeService services.LikeService
 }
 
-func NewHandler(uService *services.UserService, mService *services.MusicService, lhService *services.ListeningHistoryService, fService *services.FavorService, likeService *services.LikeService, ) Handler {
+func NewHandler(uService *services.UserService, mService *services.MusicService, lhService *services.ListeningHistoryService, fService *services.FavorService, likeService *services.LikeService) Handler {
 	return Handler{
 		Mux:         http.NewServeMux(),
 		uServices:   uService,
@@ -941,7 +944,7 @@ func (h Handler) MusicUpload(w http.ResponseWriter, r *http.Request) {
 	if t.Value == "" {
 		slog.Info("Token empty")
 		http.Error(w, "Empty token", http.StatusBadRequest)
-		return 
+		return
 	}
 
 	claims, err := h.uServices.CheckAccessToken(r.Context(), t.Value)
@@ -988,10 +991,33 @@ func (h Handler) MusicUpload(w http.ResponseWriter, r *http.Request) {
 	slog.Info("First 100 file's ch", slog.String("value", string(songData[:100])))
 
 	m["songData"] = models.DataAndCT{
-		Name: "songData",
-		Data: songData,
-		ContentType: header.Header.Get("Content-Type"),	
+		Name:        "songData",
+		Data:        songData,
+		ContentType: header.Header.Get("Content-Type"),
 	}
+
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	skipped := 0
+	dec := mp3.NewDecoder(file)
+
+	var f mp3.Frame
+	count := 0
+	for {
+		if err := dec.Decode(&f, &skipped); err != nil {
+			slog.Error(err.Error())
+			break
+		}
+
+		count += 1
+	}
+
+	slog.Info("frames", slog.Int("count", count), slog.Int("dur seconds", (count*26)/1000))
 
 	musicCoverUploaded := true
 	musicCover, header, err := r.FormFile("music_cover")
@@ -1021,15 +1047,16 @@ func (h Handler) MusicUpload(w http.ResponseWriter, r *http.Request) {
 
 	if len(songCoverData) != 0 {
 		m["coverData"] = models.DataAndCT{
-			Name: "coverData",
-			Data: songCoverData,
+			Name:        "coverData",
+			Data:        songCoverData,
 			ContentType: header.Header.Get("Content-Type"),
 		}
 	}
 
 	music := models.Music{
-		Name: name,
-		UploaderID: claims["sub"].(string),
+		Name:        name,
+		UploaderID:  claims["sub"].(string),
+		DurationSec: int(math.Round((float64(count) * 26.0) / 1000.0)),
 	}
 
 	err = h.mService.UploadMusic(r.Context(), m, music)

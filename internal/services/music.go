@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	songPostfix        = "-song"
-	songImagePostfix   = "-songImage"
+	songPostfix      = "-song"
+	songImagePostfix = "-songImage"
 )
 
 type RepoMusic interface {
@@ -31,13 +31,13 @@ type S3 interface {
 
 type MusicService struct {
 	repo RepoMusic
-	s3 S3
+	s3   S3
 }
 
 func NewMusicService(repo RepoMusic, s3 S3) *MusicService {
 	return &MusicService{
 		repo: repo,
-		s3: s3,
+		s3:   s3,
 	}
 }
 
@@ -101,7 +101,7 @@ func (s *MusicService) GetAllMusic(ctx context.Context, u models.User) ([]models
 // 	return nil
 // }
 
-func (s *MusicService) UploadMusic(ctx context.Context, musicData map[string]models.DataAndCT, music models.Music) (error) {
+func (s *MusicService) UploadMusic(ctx context.Context, musicData map[string]models.DataAndCT, music models.Music) error {
 	const op = "./internal/services/music.go.UploadSong()"
 
 	musicID := uuid.NewString()
@@ -127,7 +127,7 @@ func (s *MusicService) UploadMusic(ctx context.Context, musicData map[string]mod
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	music.SongURL =	songID
+	music.SongURL = songID
 	music.CoverURL = coverID
 	music.ID = musicID
 	slog.Info(fmt.Sprintf("coverURL, songURL: %v, %v", music.CoverURL, music.SongURL))
@@ -144,7 +144,7 @@ func (s *MusicService) GetPresignURLSong(ctx context.Context, id string) (string
 
 	slog.Info("Get req presingURL")
 
-	url, err := s.s3.GetPresignURL(ctx, id + songPostfix)
+	url, err := s.s3.GetPresignURL(ctx, id+songPostfix)
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", op, err)
 	}

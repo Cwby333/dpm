@@ -66,13 +66,12 @@ func main() {
 	// }
 	// slog.Info(token)
 
-	
 	lhService := services.NewListeningHistoryService(pg)
-	
+
 	fService := services.NewFavorService(pg)
-	
+
 	likeService := services.NewLikeService(pg)
-	
+
 	s3, err := objectstorage.NewS3Client(context.Background(), cfg.S3)
 	if err != nil {
 		slog.Error(fmt.Sprintf("%s: %s", "Connect to s3: ", err.Error()))
@@ -81,7 +80,7 @@ func main() {
 	slog.Info("Success connect to s3")
 
 	mService := services.NewMusicService(pg, s3)
-	
+
 	handler := http.NewHandler(uService, mService, lhService, fService, likeService)
 
 	server := http.NewServer(handler)
