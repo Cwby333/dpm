@@ -474,13 +474,22 @@ func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequest
 
 	pResp := make([]api.Music, 0, len(p))
 	for i := range p {
+		urlCover := p[i].CoverURL
+		if p[i].CoverURL != "" {
+			urlCover, err = h.mService.GetPresignURCover(ctx, p[i].ID)
+			if err != nil {
+				slog.Error(err.Error())
+				return api.GetAllMusic500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+			}
+		}
+
 		pResp = append(pResp, api.Music{
 			Id:              p[i].ID,
 			Name:            p[i].Name,
 			UploaderId:      p[i].UploaderID,
 			Likes:           p[i].Likes,
 			DurationSeconds: p[i].DurationSec,
-			MusicCover:      &p[i].CoverURL,
+			MusicCover:      &urlCover,
 			SongUrl:         p[i].SongURL,
 		})
 	}
@@ -533,6 +542,13 @@ func (h Handler) GetMusic(ctx context.Context, request api.GetMusicRequestObject
 		}, err
 	}
 
+	urlCover, err := h.mService.GetPresignURCover(ctx, request.MusicID)
+	if err != nil {
+		msg := err.Error()
+		slog.Error(err.Error())
+		return api.GetMusic500JSONResponse{Message: &msg}, fmt.Errorf("%s: %w", op, err)
+	}
+
 	return api.GetMusic200JSONResponse{
 		GetMusicResponseJSONResponse: api.GetMusicResponseJSONResponse{
 			Music: api.Music{
@@ -541,7 +557,7 @@ func (h Handler) GetMusic(ctx context.Context, request api.GetMusicRequestObject
 				Name:            product.Name,
 				Likes:           product.Likes,
 				DurationSeconds: product.DurationSec,
-				MusicCover:      &product.CoverURL,
+				MusicCover:      &urlCover,
 				SongUrl:         product.SongURL,
 			},
 			MusicFavor: &api.MusicLikes{
@@ -1023,10 +1039,11 @@ func (h Handler) MusicUpload(w http.ResponseWriter, r *http.Request) {
 	musicCover, header, err := r.FormFile("music_cover")
 	if err != nil && errors.Is(err, http.ErrMissingFile) {
 		slog.Info(fmt.Sprint(op, "Missing song's cover file"))
-		musicCoverUploaded = false
-	} else {
-		musicCoverUploaded = false
 		slog.Error(op + " " + err.Error())
+		musicCoverUploaded = false
+	} else if err != nil {
+		slog.Error("error here")
+		musicCoverUploaded = false
 		http.Error(w, "Failed to get song's cover file", http.StatusBadRequest)
 		return
 	}

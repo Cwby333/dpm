@@ -1,785 +1,807 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mute - Понравившиеся треки</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-
-        .navbar {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .logo-icon {
-            font-size: 2rem;
-            line-height: 1;
-        }
-
-        .logo-text {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: #555;
-            font-weight: 500;
-            transition: color 0.3s ease;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-        }
-
-        .nav-links a:hover {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-
-        .nav-links .active {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-
-        .auth-buttons {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .btn {
-            padding: 0.5rem 1.5rem;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-outline {
-            border: 2px solid #667eea;
-            color: #667eea;
-            background: transparent;
-        }
-
-        .btn-outline:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #e53e3e;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #c53030;
-        }
-
-        .main-content {
-            max-width: 1200px;
-            margin: 80px auto 0;
-            padding: 2rem;
-        }
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            color: white;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .page-header h1 {
-            font-size: 2.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .refresh-btn {
-            padding: 0.75rem 1.5rem;
-            background: white;
-            color: #667eea;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .refresh-btn:hover {
-            background: #f0f0f0;
-            transform: rotate(180deg);
-        }
-
-        .loading-container {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 4rem;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .likes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
-        }
-
-        .like-card {
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            position: relative;
-        }
-
-        .like-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-        }
-
-        .like-cover {
-            height: 180px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 4rem;
-            position: relative;
-            cursor: pointer;
-        }
-
-        .like-cover .play-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .like-card:hover .play-overlay {
-            opacity: 1;
-        }
-
-        .play-button {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: #667eea;
-            transition: transform 0.3s ease;
-        }
-
-        .play-button:hover {
-            transform: scale(1.1);
-        }
-
-        .remove-like-btn {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: rgba(0, 0, 0, 0.6);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-        }
-
-        .remove-like-btn:hover {
-            background: #e53e3e;
-            transform: scale(1.1);
-        }
-
-        .like-info {
-            padding: 1.5rem;
-        }
-
-        .like-name {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: #333;
-            cursor: pointer;
-        }
-
-        .like-name:hover {
-            color: #667eea;
-        }
-
-        .like-artist {
-            font-size: 0.9rem;
-            color: #667eea;
-            margin-bottom: 0.5rem;
-        }
-
-        .like-meta {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            color: #666;
-            font-size: 0.85rem;
-        }
-
-        .like-likes {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            color: #e53e3e;
-        }
-
-        .like-duration {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .like-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .music-btn {
-            flex: 1;
-            padding: 0.75rem;
-            border: none;
-            border-radius: 6px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-play {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-play:hover {
-            background: #5a67d8;
-            transform: translateY(-2px);
-        }
-
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            color: white;
-            font-size: 0.9rem;
-        }
-
-        .status-info {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #48bb78;
-        }
-
-        .status-dot.error {
-            background: #f56565;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 4rem;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .empty-state-icon {
-            font-size: 5rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        .empty-state h3 {
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .empty-state p {
-            color: #666;
-            margin-bottom: 1.5rem;
-        }
-
-        .error-container {
-            background: white;
-            border-radius: 10px;
-            padding: 2rem;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .error-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-
-        .error-container h3 {
-            color: #c53030;
-            margin-bottom: 0.5rem;
-        }
-
-        .error-container p {
-            color: #666;
-            margin-bottom: 1.5rem;
-        }
-
-        .notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #48bb78;
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            z-index: 3000;
-            animation: slideIn 0.3s ease;
-        }
-
-        .notification.error {
-            background: #e53e3e;
-        }
-
-        .notification.info {
-            background: #fbbf24;
-            color: #333;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .footer {
-            background: #1a1a2e;
-            color: white;
-            padding: 3rem 2rem 1rem;
-            margin-top: 4rem;
-        }
-
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 3rem;
-        }
-
-        .footer-section h4 {
-            margin-bottom: 1rem;
-            color: #667eea;
-        }
-
-        .footer-section ul {
-            list-style: none;
-        }
-
-        .footer-section ul li {
-            margin-bottom: 0.5rem;
-        }
-
-        .footer-section a {
-            color: #999;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .footer-section a:hover {
-            color: #667eea;
-        }
-
-        .footer-bottom {
-            max-width: 1200px;
-            margin: 2rem auto 0;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-            color: #999;
-            font-size: 0.9rem;
-        }
-
-        @media (max-width: 768px) {
-            .nav-container {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .nav-links {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .auth-buttons {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .page-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .likes-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <span class="logo-icon">❤️</span>
-                <span class="logo-text">Mute</span>
-            </div>
-            <div class="nav-links">
-                <a href="/">Главная</a>
-                <a href="/products.html">Продукты</a>
-                <a href="/music.html">Музыка</a>
-                <a href="/favor.html">Избранное</a>
-                <a href="/listening-history.html">История</a>
-                <a href="#" class="active">Лайки</a>
-                <div class="auth-buttons" id="authButtons">
-                    <a href="/login" class="btn btn-outline">Войти</a>
-                    <a href="/register" class="btn btn-primary">Регистрация</a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <div class="main-content">
-        <div class="page-header">
-            <h1>❤️ Понравившиеся треки</h1>
-            <button class="refresh-btn" id="refreshBtn">🔄 Обновить</button>
-        </div>
-
-        <div class="status-bar" id="statusBar">
-            <div class="status-info">
-                <span class="status-dot" id="statusDot"></span>
-                <span id="statusText">Загрузка понравившихся треков...</span>
-            </div>
-            <span id="likesCount">0 треков</span>
-        </div>
-
-        <div class="loading-container" id="loadingContainer">
-            <div class="loading-spinner"></div>
-            <p>Загрузка понравившихся треков...</p>
-        </div>
-
-        <div id="likesContainer"></div>
-    </div>
-
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h4>Mute</h4>
-                <p>Бесплатная музыка для всех</p>
-            </div>
-            <div class="footer-section">
-                <h4>Навигация</h4>
-                <ul>
-                    <li><a href="/">Главная</a></li>
-                    <li><a href="/products.html">Продукты</a></li>
-                    <li><a href="/music.html">Музыка</a></li>
-                    <li><a href="/favor.html">Избранное</a></li>
-                    <li><a href="/listening-history.html">История</a></li>
-                    <li><a href="#">Лайки</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Пользователям</h4>
-                <ul>
-                    <li><a href="/register">Регистрация</a></li>
-                    <li><a href="/login">Вход</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 Mute. Все права защищены.</p>
-        </div>
-    </footer>
-
-    <script>
-        // Конфигурация
-        const apiBaseUrl = 'http://localhost:3003';
-        let likedTracks = [];
-
-        // DOM элементы
-        const loadingContainer = document.getElementById('loadingContainer');
-        const likesContainer = document.getElementById('likesContainer');
-        const refreshBtn = document.getElementById('refreshBtn');
-        const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
-        const likesCount = document.getElementById('likesCount');
-
-        // Добавление в историю прослушиваний (POST /listening-history)
-        async function addToListeningHistory(musicId) {
-            try {
-                console.log(`Добавление трека ${musicId} в историю прослушиваний`);
-                
-                const response = await fetch(`${apiBaseUrl}/listening-history`, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ musicID: musicId }),
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    console.log(`Трек ${musicId} успешно добавлен в историю`);
-                    return true;
-                } else if (response.status === 401 || response.status === 403) {
-                    console.log('Пользователь не авторизован, история не сохранена');
-                    return false;
-                } else {
-                    console.error('Ошибка добавления в историю:', response.status);
-                    return false;
-                }
-            } catch (error) {
-                console.error('Ошибка при добавлении в историю:', error);
-                return false;
-            }
-        }
-
-        // Воспроизведение музыки
-        async function playMusic(musicId, musicName, artistName, songUrl) {
-            const added = await addToListeningHistory(musicId);
-            if (added) {
-                showNotification(`🎵 "${musicName}" добавлен в историю прослушиваний`, 'info');
-            } else {
-                console.log(`Трек "${musicName}" не добавлен в историю (возможно, пользователь не авторизован)`);
-            }
-            
-            showNotification(`🎵 Воспроизведение: ${musicName} - ${artistName || 'Неизвестный'} (демо-режим)`, 'info');
-        }
-
-        // Удаление лайка (DELETE /music/like)
-        async function removeLike(musicId, musicName) {
-            if (!confirm(`Удалить лайк с трека "${musicName}"?`)) {
-                return;
-            }
-
-            showLoading();
-            updateStatus('loading', 'Удаление лайка...');
-
-            try {
-                const response = await fetch(`${apiBaseUrl}/music/like`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ musicID: musicId }),
-                    credentials: 'include'
-                });
-
-                console.log('Статус ответа DELETE /music/like:', response.status);
-
-                if (response.status === 401 || response.status === 403) {
-                    showNotification('Сессия истекла, пожалуйста, войдите снова', 'error');
-                    renderUnauthorizedState();
-                    return;
-                }
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ошибка! Статус: ${response.status}`);
-                }
-
-                showNotification(`❤️ Лайк с трека "${musicName}" удален`, 'info');
-                await loadLikes();
-
-            } catch (error) {
-                console.error('Ошибка удаления лайка:', error);
-                updateStatus('error', 'Ошибка удаления');
-                showNotification('Не удалось удалить лайк', 'error');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // Загрузка понравившихся треков (GET /likes)
-        async function loadLikes() {
-            showLoading();
-            updateStatus('loading', 'Загрузка понравившихся треков...');
-
-            try {
-                const response = await fetch(`${apiBaseUrl}/likes`, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' },
-                    credentials: 'include'
-                });
-
-                console.log('Статус ответа /likes:', response.status);
-
-                if (response.status === 401 || response.status === 403) {
-                    renderUnauthorizedState();
-                    updateStatus('error', 'Не авторизован. Пожалуйста, войдите в систему.');
-                    likesCount.textContent = '0 треков';
-                    return;
-                }
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ошибка! Статус: ${response.status}`);
-                }
-
-                const data = await response.json();
-                console.log('Получены данные понравившихся треков:', data);
-
-                // Обработка формата ответа согласно OpenAPI (массив объектов LikedTrack)
-                if (Array.isArray(data)) {
-                    likedTracks = data;
-                } else if (data && data.GetLikedTracksJSONResponse && Array.isArray(data.GetLikedTracksJSONResponse)) {
-                    likedTracks = data.GetLikedTracksJSONResponse;
-                } else {
-                    likedTracks = [];
-                }
-
-                console.log(`Загружено понравившихся треков: ${likedTracks.length}`);
-
-                renderLikes();
-
-                updateStatus('success', 'Понравившиеся треки загружены');
-                likesCount.textContent = `${likedTracks.length} треков`;
-
-            } catch (error) {
-                console.error('Ошибка загрузки:', error);
-                updateStatus('error', 'Ошибка загрузки');
-                showError(error.message);
-            } finally {
-                hideLoading();
-            }
-        }
-
-        function formatDuration(seconds) {
-            if (!seconds) return '0:00';
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function renderUnauthorizedState() {
-            likesContainer.innerHTML = `
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Mute - Понравившиеся треки</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				min-height: 100vh;
+				color: #333;
+			}
+
+			.navbar {
+				background: rgba(255, 255, 255, 0.95);
+				backdrop-filter: blur(10px);
+				box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+				position: fixed;
+				width: 100%;
+				top: 0;
+				z-index: 1000;
+			}
+
+			.nav-container {
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: 1rem 2rem;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.logo {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+
+			.logo-icon {
+				font-size: 2rem;
+				line-height: 1;
+			}
+
+			.logo-text {
+				font-size: 1.5rem;
+				font-weight: 700;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+			}
+
+			.nav-links {
+				display: flex;
+				gap: 2rem;
+				align-items: center;
+				flex-wrap: wrap;
+			}
+
+			.nav-links a {
+				text-decoration: none;
+				color: #555;
+				font-weight: 500;
+				transition: color 0.3s ease;
+				padding: 0.5rem 1rem;
+				border-radius: 6px;
+			}
+
+			.nav-links a:hover {
+				color: #667eea;
+				background: rgba(102, 126, 234, 0.1);
+			}
+
+			.nav-links .active {
+				color: #667eea;
+				background: rgba(102, 126, 234, 0.1);
+			}
+
+			.auth-buttons {
+				display: flex;
+				gap: 1rem;
+			}
+
+			.btn {
+				padding: 0.5rem 1.5rem;
+				border-radius: 6px;
+				text-decoration: none;
+				font-weight: 500;
+				transition: all 0.3s ease;
+				border: none;
+				cursor: pointer;
+				font-size: 1rem;
+			}
+
+			.btn-primary {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+			}
+
+			.btn-primary:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+			}
+
+			.btn-outline {
+				border: 2px solid #667eea;
+				color: #667eea;
+				background: transparent;
+			}
+
+			.btn-outline:hover {
+				background: #667eea;
+				color: white;
+			}
+
+			.btn-danger {
+				background: #e53e3e;
+				color: white;
+			}
+
+			.btn-danger:hover {
+				background: #c53030;
+			}
+
+			.main-content {
+				max-width: 1200px;
+				margin: 80px auto 0;
+				padding: 2rem;
+			}
+
+			.page-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 2rem;
+				color: white;
+				flex-wrap: wrap;
+				gap: 1rem;
+			}
+
+			.page-header h1 {
+				font-size: 2.5rem;
+				text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+			}
+
+			.refresh-btn {
+				padding: 0.75rem 1.5rem;
+				background: white;
+				color: #667eea;
+				border: none;
+				border-radius: 8px;
+				cursor: pointer;
+				font-size: 1rem;
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				transition: all 0.3s ease;
+				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+			}
+
+			.refresh-btn:hover {
+				background: #f0f0f0;
+				transform: rotate(180deg);
+			}
+
+			.loading-container {
+				display: none;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				padding: 4rem;
+				background: white;
+				border-radius: 10px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+			}
+
+			.loading-spinner {
+				width: 50px;
+				height: 50px;
+				border: 5px solid #f3f3f3;
+				border-top: 5px solid #667eea;
+				border-radius: 50%;
+				animation: spin 1s linear infinite;
+				margin-bottom: 1rem;
+			}
+
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
+
+			.likes-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+				gap: 2rem;
+				margin-top: 2rem;
+			}
+
+			.like-card {
+				background: white;
+				border-radius: 10px;
+				overflow: hidden;
+				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+				transition:
+					transform 0.3s ease,
+					box-shadow 0.3s ease;
+				position: relative;
+			}
+
+			.like-card:hover {
+				transform: translateY(-5px);
+				box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+			}
+
+			.like-cover {
+				height: 180px;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: white;
+				font-size: 4rem;
+				position: relative;
+				cursor: pointer;
+			}
+
+			.like-cover .play-overlay {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.5);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				opacity: 0;
+				transition: opacity 0.3s ease;
+			}
+
+			.like-card:hover .play-overlay {
+				opacity: 1;
+			}
+
+			.play-button {
+				width: 60px;
+				height: 60px;
+				border-radius: 50%;
+				background: white;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 1.5rem;
+				color: #667eea;
+				transition: transform 0.3s ease;
+			}
+
+			.play-button:hover {
+				transform: scale(1.1);
+			}
+
+			.remove-like-btn {
+				position: absolute;
+				top: 12px;
+				right: 12px;
+				background: rgba(0, 0, 0, 0.6);
+				color: white;
+				border: none;
+				border-radius: 50%;
+				width: 32px;
+				height: 32px;
+				cursor: pointer;
+				font-size: 1rem;
+				transition: all 0.3s ease;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 10;
+			}
+
+			.remove-like-btn:hover {
+				background: #e53e3e;
+				transform: scale(1.1);
+			}
+
+			.like-info {
+				padding: 1.5rem;
+			}
+
+			.like-name {
+				font-size: 1.25rem;
+				font-weight: 600;
+				margin-bottom: 0.5rem;
+				color: #333;
+				cursor: pointer;
+			}
+
+			.like-name:hover {
+				color: #667eea;
+			}
+
+			.like-artist {
+				font-size: 0.9rem;
+				color: #667eea;
+				margin-bottom: 0.5rem;
+			}
+
+			.like-meta {
+				display: flex;
+				align-items: center;
+				gap: 1rem;
+				margin-bottom: 1rem;
+				color: #666;
+				font-size: 0.85rem;
+			}
+
+			.like-likes {
+				display: flex;
+				align-items: center;
+				gap: 0.25rem;
+				color: #e53e3e;
+			}
+
+			.like-duration {
+				display: flex;
+				align-items: center;
+				gap: 0.25rem;
+			}
+
+			.like-actions {
+				display: flex;
+				gap: 0.5rem;
+			}
+
+			.music-btn {
+				flex: 1;
+				padding: 0.75rem;
+				border: none;
+				border-radius: 6px;
+				font-weight: 500;
+				cursor: pointer;
+				transition: all 0.3s ease;
+			}
+
+			.btn-play {
+				background: #667eea;
+				color: white;
+			}
+
+			.btn-play:hover {
+				background: #5a67d8;
+				transform: translateY(-2px);
+			}
+
+			.status-bar {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 1rem;
+				color: white;
+				font-size: 0.9rem;
+			}
+
+			.status-info {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+			}
+
+			.status-dot {
+				width: 8px;
+				height: 8px;
+				border-radius: 50%;
+				background: #48bb78;
+			}
+
+			.status-dot.error {
+				background: #f56565;
+			}
+
+			.empty-state {
+				text-align: center;
+				padding: 4rem;
+				background: white;
+				border-radius: 10px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+			}
+
+			.empty-state-icon {
+				font-size: 5rem;
+				margin-bottom: 1rem;
+				opacity: 0.5;
+			}
+
+			.empty-state h3 {
+				color: #333;
+				margin-bottom: 0.5rem;
+			}
+
+			.empty-state p {
+				color: #666;
+				margin-bottom: 1.5rem;
+			}
+
+			.error-container {
+				background: white;
+				border-radius: 10px;
+				padding: 2rem;
+				text-align: center;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+			}
+
+			.error-icon {
+				font-size: 4rem;
+				margin-bottom: 1rem;
+			}
+
+			.error-container h3 {
+				color: #c53030;
+				margin-bottom: 0.5rem;
+			}
+
+			.error-container p {
+				color: #666;
+				margin-bottom: 1.5rem;
+			}
+
+			.notification {
+				position: fixed;
+				bottom: 20px;
+				right: 20px;
+				background: #48bb78;
+				color: white;
+				padding: 1rem 1.5rem;
+				border-radius: 8px;
+				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+				z-index: 3000;
+				animation: slideIn 0.3s ease;
+			}
+
+			.notification.error {
+				background: #e53e3e;
+			}
+
+			.notification.info {
+				background: #fbbf24;
+				color: #333;
+			}
+
+			@keyframes slideIn {
+				from {
+					transform: translateX(100%);
+					opacity: 0;
+				}
+				to {
+					transform: translateX(0);
+					opacity: 1;
+				}
+			}
+
+			.footer {
+				background: #1a1a2e;
+				color: white;
+				padding: 3rem 2rem 1rem;
+				margin-top: 4rem;
+			}
+
+			.footer-content {
+				max-width: 1200px;
+				margin: 0 auto;
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 3rem;
+			}
+
+			.footer-section h4 {
+				margin-bottom: 1rem;
+				color: #667eea;
+			}
+
+			.footer-section ul {
+				list-style: none;
+			}
+
+			.footer-section ul li {
+				margin-bottom: 0.5rem;
+			}
+
+			.footer-section a {
+				color: #999;
+				text-decoration: none;
+				transition: color 0.3s ease;
+			}
+
+			.footer-section a:hover {
+				color: #667eea;
+			}
+
+			.footer-bottom {
+				max-width: 1200px;
+				margin: 2rem auto 0;
+				padding-top: 2rem;
+				border-top: 1px solid rgba(255, 255, 255, 0.1);
+				text-align: center;
+				color: #999;
+				font-size: 0.9rem;
+			}
+
+			@media (max-width: 768px) {
+				.nav-container {
+					flex-direction: column;
+					gap: 1rem;
+				}
+
+				.nav-links {
+					flex-direction: column;
+					width: 100%;
+				}
+
+				.auth-buttons {
+					width: 100%;
+					justify-content: center;
+				}
+
+				.page-header {
+					flex-direction: column;
+					align-items: stretch;
+				}
+
+				.likes-grid {
+					grid-template-columns: 1fr;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<nav class="navbar">
+			<div class="nav-container">
+				<div class="logo">
+					<span class="logo-icon">❤️</span>
+					<span class="logo-text">Mute</span>
+				</div>
+				<div class="nav-links">
+					<a href="/">Главная</a>
+					<a href="/products.html">Продукты</a>
+					<a href="/music.html">Музыка</a>
+					<a href="/favor.html">Избранное</a>
+					<a href="/listening-history.html">История</a>
+					<a href="#" class="active">Лайки</a>
+					<div class="auth-buttons" id="authButtons">
+						<a href="/login" class="btn btn-outline">Войти</a>
+						<a href="/register" class="btn btn-primary">Регистрация</a>
+					</div>
+				</div>
+			</div>
+		</nav>
+
+		<div class="main-content">
+			<div class="page-header">
+				<h1>❤️ Понравившиеся треки</h1>
+				<button class="refresh-btn" id="refreshBtn">🔄 Обновить</button>
+			</div>
+
+			<div class="status-bar" id="statusBar">
+				<div class="status-info">
+					<span class="status-dot" id="statusDot"></span>
+					<span id="statusText">Загрузка понравившихся треков...</span>
+				</div>
+				<span id="likesCount">0 треков</span>
+			</div>
+
+			<div class="loading-container" id="loadingContainer">
+				<div class="loading-spinner"></div>
+				<p>Загрузка понравившихся треков...</p>
+			</div>
+
+			<div id="likesContainer"></div>
+		</div>
+
+		<footer class="footer">
+			<div class="footer-content">
+				<div class="footer-section">
+					<h4>Mute</h4>
+					<p>Бесплатная музыка для всех</p>
+				</div>
+				<div class="footer-section">
+					<h4>Навигация</h4>
+					<ul>
+						<li><a href="/">Главная</a></li>
+						<li><a href="/products.html">Продукты</a></li>
+						<li><a href="/music.html">Музыка</a></li>
+						<li><a href="/favor.html">Избранное</a></li>
+						<li><a href="/listening-history.html">История</a></li>
+						<li><a href="#">Лайки</a></li>
+					</ul>
+				</div>
+				<div class="footer-section">
+					<h4>Пользователям</h4>
+					<ul>
+						<li><a href="/register">Регистрация</a></li>
+						<li><a href="/login">Вход</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="footer-bottom">
+				<p>&copy; 2026 Mute. Все права защищены.</p>
+			</div>
+		</footer>
+
+		<script>
+			// Конфигурация
+			const apiBaseUrl = 'http://localhost:3003'
+			let likedTracks = []
+
+			// DOM элементы
+			const loadingContainer = document.getElementById('loadingContainer')
+			const likesContainer = document.getElementById('likesContainer')
+			const refreshBtn = document.getElementById('refreshBtn')
+			const statusDot = document.getElementById('statusDot')
+			const statusText = document.getElementById('statusText')
+			const likesCount = document.getElementById('likesCount')
+
+			// Добавление в историю прослушиваний (POST /listening-history)
+			async function addToListeningHistory(musicId) {
+				try {
+					console.log(`Добавление трека ${musicId} в историю прослушиваний`)
+
+					const response = await fetch(`${apiBaseUrl}/listening-history`, {
+						method: 'POST',
+						headers: {
+							Accept: 'application/json',
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({ musicID: musicId }),
+						credentials: 'include',
+					})
+
+					if (response.ok) {
+						console.log(`Трек ${musicId} успешно добавлен в историю`)
+						return true
+					} else if (response.status === 401 || response.status === 403) {
+						console.log('Пользователь не авторизован, история не сохранена')
+						return false
+					} else {
+						console.error('Ошибка добавления в историю:', response.status)
+						return false
+					}
+				} catch (error) {
+					console.error('Ошибка при добавлении в историю:', error)
+					return false
+				}
+			}
+
+			// Воспроизведение музыки
+			async function playMusic(musicId, musicName, artistName, songUrl) {
+				const added = await addToListeningHistory(musicId)
+				if (added) {
+					showNotification(
+						`🎵 "${musicName}" добавлен в историю прослушиваний`,
+						'info',
+					)
+				} else {
+					console.log(
+						`Трек "${musicName}" не добавлен в историю (возможно, пользователь не авторизован)`,
+					)
+				}
+
+				showNotification(
+					`🎵 Воспроизведение: ${musicName} - ${artistName || 'Неизвестный'} (демо-режим)`,
+					'info',
+				)
+			}
+
+			// Удаление лайка (DELETE /music/like)
+			async function removeLike(musicId, musicName) {
+				if (!confirm(`Удалить лайк с трека "${musicName}"?`)) {
+					return
+				}
+
+				showLoading()
+				updateStatus('loading', 'Удаление лайка...')
+
+				try {
+					const response = await fetch(`${apiBaseUrl}/music/like`, {
+						method: 'DELETE',
+						headers: {
+							Accept: 'application/json',
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({ musicID: musicId }),
+						credentials: 'include',
+					})
+
+					console.log('Статус ответа DELETE /music/like:', response.status)
+
+					if (response.status === 401 || response.status === 403) {
+						showNotification(
+							'Сессия истекла, пожалуйста, войдите снова',
+							'error',
+						)
+						renderUnauthorizedState()
+						return
+					}
+
+					if (!response.ok) {
+						throw new Error(`HTTP ошибка! Статус: ${response.status}`)
+					}
+
+					showNotification(`❤️ Лайк с трека "${musicName}" удален`, 'info')
+					await loadLikes()
+				} catch (error) {
+					console.error('Ошибка удаления лайка:', error)
+					updateStatus('error', 'Ошибка удаления')
+					showNotification('Не удалось удалить лайк', 'error')
+				} finally {
+					hideLoading()
+				}
+			}
+
+			// Загрузка понравившихся треков (GET /likes)
+			async function loadLikes() {
+				showLoading()
+				updateStatus('loading', 'Загрузка понравившихся треков...')
+
+				try {
+					const response = await fetch(`${apiBaseUrl}/likes`, {
+						method: 'GET',
+						headers: { Accept: 'application/json' },
+						credentials: 'include',
+					})
+
+					console.log('Статус ответа /likes:', response.status)
+
+					if (response.status === 401 || response.status === 403) {
+						renderUnauthorizedState()
+						updateStatus(
+							'error',
+							'Не авторизован. Пожалуйста, войдите в систему.',
+						)
+						likesCount.textContent = '0 треков'
+						return
+					}
+
+					if (!response.ok) {
+						throw new Error(`HTTP ошибка! Статус: ${response.status}`)
+					}
+
+					const data = await response.json()
+					console.log('Получены данные понравившихся треков:', data)
+
+					// Обработка формата ответа согласно OpenAPI (массив объектов LikedTrack)
+					if (Array.isArray(data)) {
+						likedTracks = data
+					} else if (
+						data &&
+						data.GetLikedTracksJSONResponse &&
+						Array.isArray(data.GetLikedTracksJSONResponse)
+					) {
+						likedTracks = data.GetLikedTracksJSONResponse
+					} else {
+						likedTracks = []
+					}
+
+					console.log(`Загружено понравившихся треков: ${likedTracks.length}`)
+
+					renderLikes()
+
+					updateStatus('success', 'Понравившиеся треки загружены')
+					likesCount.textContent = `${likedTracks.length} треков`
+				} catch (error) {
+					console.error('Ошибка загрузки:', error)
+					updateStatus('error', 'Ошибка загрузки')
+					showError(error.message)
+				} finally {
+					hideLoading()
+				}
+			}
+
+			function formatDuration(seconds) {
+				if (!seconds) return '0:00'
+				const mins = Math.floor(seconds / 60)
+				const secs = seconds % 60
+				return `${mins}:${secs.toString().padStart(2, '0')}`
+			}
+
+			function escapeHtml(text) {
+				if (!text) return ''
+				const div = document.createElement('div')
+				div.textContent = text
+				return div.innerHTML
+			}
+
+			function renderUnauthorizedState() {
+				likesContainer.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">🔒</div>
                     <h3>Требуется авторизация</h3>
@@ -787,34 +809,41 @@
                     <button class="btn btn-primary" onclick="window.location.href='/login'">Войти</button>
                     <button class="btn btn-outline" onclick="window.location.href='/register'" style="margin-left: 1rem;">Зарегистрироваться</button>
                 </div>
-            `;
-        }
+            `
+			}
 
-        function renderLikes() {
-            if (!likedTracks || likedTracks.length === 0) {
-                likesContainer.innerHTML = `
+			function renderLikes() {
+				if (!likedTracks || likedTracks.length === 0) {
+					likesContainer.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">❤️</div>
                         <h3>Нет понравившихся треков</h3>
                         <p>Ставьте лайки трекам, чтобы они отображались здесь</p>
                         <button class="btn btn-primary" onclick="window.location.href='/music.html'">Перейти к музыке</button>
                     </div>
-                `;
-                return;
-            }
+                `
+					return
+				}
 
-            likesContainer.innerHTML = `
+				likesContainer.innerHTML = `
                 <div class="likes-grid">
-                    ${likedTracks.map(track => {
-                        const musicId = track.music_id;
-                        const musicName = escapeHtml(track.music_name || 'Без названия');
-                        const artist = escapeHtml(track.uploader_username || track.uploader_id || 'Неизвестный исполнитель');
-                        const likes = track.music_likes || 0;
-                        const duration = track.music_duration || 0;
-                        const songUrl = track.song_url || '';
-                        const cover = track.music_cover;
-                        
-                        return `
+                    ${likedTracks
+											.map(track => {
+												const musicId = track.music_id
+												const musicName = escapeHtml(
+													track.music_name || 'Без названия',
+												)
+												const artist = escapeHtml(
+													track.uploader_username ||
+														track.uploader_id ||
+														'Неизвестный исполнитель',
+												)
+												const likes = track.music_likes || 0
+												const duration = track.music_duration || 0
+												const songUrl = track.song_url || ''
+												const cover = track.music_cover
+
+												return `
                             <div class="like-card">
                                 <div class="like-cover" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artist.replace(/'/g, "\\'")}', '${songUrl}')">
                                     <span>🎵</span>
@@ -835,48 +864,49 @@
                                     </div>
                                 </div>
                             </div>
-                        `;
-                    }).join('')}
+                        `
+											})
+											.join('')}
                 </div>
-            `;
-        }
+            `
+			}
 
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type === 'error' ? 'error' : type === 'info' ? 'info' : ''}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
+			function showNotification(message, type = 'success') {
+				const notification = document.createElement('div')
+				notification.className = `notification ${type === 'error' ? 'error' : type === 'info' ? 'info' : ''}`
+				notification.textContent = message
+				document.body.appendChild(notification)
 
-        function showLoading() {
-            loadingContainer.style.display = 'flex';
-            likesContainer.style.display = 'none';
-        }
+				setTimeout(() => {
+					notification.remove()
+				}, 3000)
+			}
 
-        function hideLoading() {
-            loadingContainer.style.display = 'none';
-            likesContainer.style.display = 'block';
-        }
+			function showLoading() {
+				loadingContainer.style.display = 'flex'
+				likesContainer.style.display = 'none'
+			}
 
-        function updateStatus(type, message) {
-            statusText.textContent = message;
-            statusDot.className = 'status-dot';
-            if (type === 'success') {
-                statusDot.style.background = '#48bb78';
-            } else if (type === 'error') {
-                statusDot.style.background = '#f56565';
-            } else {
-                statusDot.style.background = '#fbbf24';
-            }
-        }
+			function hideLoading() {
+				loadingContainer.style.display = 'none'
+				likesContainer.style.display = 'block'
+			}
 
-        function showError(message) {
-            likesContainer.style.display = 'block';
-            likesContainer.innerHTML = `
+			function updateStatus(type, message) {
+				statusText.textContent = message
+				statusDot.className = 'status-dot'
+				if (type === 'success') {
+					statusDot.style.background = '#48bb78'
+				} else if (type === 'error') {
+					statusDot.style.background = '#f56565'
+				} else {
+					statusDot.style.background = '#fbbf24'
+				}
+			}
+
+			function showError(message) {
+				likesContainer.style.display = 'block'
+				likesContainer.innerHTML = `
                 <div class="error-container">
                     <div class="error-icon">⚠️</div>
                     <h3>Ошибка загрузки</h3>
@@ -889,16 +919,16 @@
                     </ul>
                     <button class="btn btn-primary" onclick="loadLikes()">Повторить попытку</button>
                 </div>
-            `;
-        }
+            `
+			}
 
-        refreshBtn.addEventListener('click', () => {
-            loadLikes();
-        });
+			refreshBtn.addEventListener('click', () => {
+				loadLikes()
+			})
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadLikes();
-        });
-    </script>
-</body>
+			document.addEventListener('DOMContentLoaded', () => {
+				loadLikes()
+			})
+		</script>
+	</body>
 </html>

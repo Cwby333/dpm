@@ -1,300 +1,339 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Mute - Музыкальный плеер</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .player-container {
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(10px);
-            padding: 2rem;
-            border-radius: 20px;
-            text-align: center;
-            width: 100%;
-            max-width: 400px;
-            margin: 1rem;
-        }
-        .album-art { font-size: 4rem; margin-bottom: 1rem; }
-        .track-name { font-size: 1.3rem; margin-bottom: 0.5rem; font-weight: bold; }
-        .track-artist { font-size: 0.9rem; opacity: 0.8; margin-bottom: 1.5rem; }
-        .controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 1rem;
-            margin: 1.5rem 0;
-        }
-        button {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        button:hover {
-            background: rgba(255,255,255,0.4);
-            transform: scale(1.05);
-        }
-        /* Кастомный бегунок с шкалой заполненности */
-        .progress-slider {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            outline: none;
-            cursor: pointer;
-            margin: 1rem 0;
-        }
-        .progress-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            background: #667eea;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
-            transition: transform 0.2s ease;
-        }
-        .progress-slider::-webkit-slider-thumb:hover {
-            transform: scale(1.3);
-        }
-        .time-info {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.75rem;
-            opacity: 0.7;
-            margin-top: 0.5rem;
-        }
-        .volume-control {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-        .volume-slider {
-            -webkit-appearance: none;
-            width: 100px;
-            height: 4px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 2px;
-            cursor: pointer;
-        }
-        .volume-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 12px;
-            height: 12px;
-            background: white;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            margin-top: 1rem;
-            background: rgba(0,0,0,0.3);
-        }
-        .close-btn {
-            background: #e53e3e;
-            margin-top: 1rem;
-            width: auto;
-            border-radius: 8px;
-            padding: 0.5rem 1rem;
-            font-size: 0.9rem;
-        }
-        /* Бегунок громкости */
-.volume-slider {
-    -webkit-appearance: none;
-    width: 100px;
-    height: 6px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 3px;
-    outline: none;
-    cursor: pointer;
-}
+	<head>
+		<title>Mute - Музыкальный плеер</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			body {
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				min-height: 100vh;
+			}
+			.player-container {
+				background: rgba(0, 0, 0, 0.5);
+				backdrop-filter: blur(10px);
+				padding: 2rem;
+				border-radius: 20px;
+				text-align: center;
+				width: 100%;
+				max-width: 400px;
+				margin: 1rem;
+			}
+			.album-art {
+				font-size: 4rem;
+				margin-bottom: 1rem;
+			}
+			.track-name {
+				font-size: 1.3rem;
+				margin-bottom: 0.5rem;
+				font-weight: bold;
+			}
+			.track-artist {
+				font-size: 0.9rem;
+				opacity: 0.8;
+				margin-bottom: 1.5rem;
+			}
+			.controls {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				gap: 1rem;
+				margin: 1.5rem 0;
+			}
+			button {
+				background: rgba(255, 255, 255, 0.2);
+				border: none;
+				color: white;
+				font-size: 1.5rem;
+				cursor: pointer;
+				width: 48px;
+				height: 48px;
+				border-radius: 50%;
+				transition: all 0.3s ease;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			button:hover {
+				background: rgba(255, 255, 255, 0.4);
+				transform: scale(1.05);
+			}
+			/* Кастомный бегунок с шкалой заполненности */
+			.progress-slider {
+				-webkit-appearance: none;
+				width: 100%;
+				height: 6px;
+				border-radius: 3px;
+				outline: none;
+				cursor: pointer;
+				margin: 1rem 0;
+			}
+			.progress-slider::-webkit-slider-thumb {
+				-webkit-appearance: none;
+				width: 16px;
+				height: 16px;
+				background: #667eea;
+				border-radius: 50%;
+				cursor: pointer;
+				box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
+				transition: transform 0.2s ease;
+			}
+			.progress-slider::-webkit-slider-thumb:hover {
+				transform: scale(1.3);
+			}
+			.time-info {
+				display: flex;
+				justify-content: space-between;
+				font-size: 0.75rem;
+				opacity: 0.7;
+				margin-top: 0.5rem;
+			}
+			.volume-control {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 0.5rem;
+				margin-top: 1rem;
+			}
+			.volume-slider {
+				-webkit-appearance: none;
+				width: 100px;
+				height: 4px;
+				background: rgba(255, 255, 255, 0.2);
+				border-radius: 2px;
+				cursor: pointer;
+			}
+			.volume-slider::-webkit-slider-thumb {
+				-webkit-appearance: none;
+				width: 12px;
+				height: 12px;
+				background: white;
+				border-radius: 50%;
+				cursor: pointer;
+			}
+			.status-badge {
+				display: inline-block;
+				padding: 0.25rem 0.75rem;
+				border-radius: 20px;
+				font-size: 0.7rem;
+				margin-top: 1rem;
+				background: rgba(0, 0, 0, 0.3);
+			}
+			.close-btn {
+				background: #e53e3e;
+				margin-top: 1rem;
+				width: auto;
+				border-radius: 8px;
+				padding: 0.5rem 1rem;
+				font-size: 0.9rem;
+			}
+			/* Бегунок громкости */
+			.volume-slider {
+				-webkit-appearance: none;
+				width: 100px;
+				height: 6px;
+				background: rgba(255, 255, 255, 0.2);
+				border-radius: 3px;
+				outline: none;
+				cursor: pointer;
+			}
 
-.volume-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
-    background: #667eea;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
+			.volume-slider::-webkit-slider-thumb {
+				-webkit-appearance: none;
+				width: 14px;
+				height: 14px;
+				background: #667eea;
+				border-radius: 50%;
+				cursor: pointer;
+				transition: transform 0.2s ease;
+			}
 
-.volume-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-}
-        .close-btn:hover { background: #c53030; transform: none; }
-    </style>
-</head>
-<body>
-    <div class="player-container">
-        <div class="album-art">🎵</div>
-        <div class="track-name" id="globalTrackName">—</div>
-        <div class="track-artist" id="globalTrackArtist">—</div>
-        <div class="controls">
-            <button id="prevBtn">⏮️</button>
-            <button id="playPauseBtn">▶️</button>
-            <button id="nextBtn">⏭️</button>
-            <button id="repeatBtn" style="opacity:0.6;">🔁</button>
-        </div>
-        
-        <!-- Бегунок с шкалой заполненности -->
-        <input type="range" class="progress-slider" id="progressSlider" min="0" max="100" value="0">
-        
-        <div class="time-info">
-            <span id="currentTime">0:00</span>
-            <span id="duration">0:00</span>
-        </div>
-        
-        <div class="volume-control">
-            <span>🔊</span>
-            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.01" value="1">
-        </div>
-        <div class="status-badge" id="statusBadge">● Готов</div>
-        <button class="close-btn" id="closeBtn">Закрыть плеер</button>
-    </div>
-    <script src="player-core.js"></script>
-    <script>
-        // DOM элементы
-        const trackNameSpan = document.getElementById('globalTrackName');
-        const trackArtistSpan = document.getElementById('globalTrackArtist');
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        const repeatBtn = document.getElementById('repeatBtn');
-        const progressSlider = document.getElementById('progressSlider');
-        const currentTimeSpan = document.getElementById('currentTime');
-        const durationSpan = document.getElementById('duration');
-        const volumeSlider = document.getElementById('volumeSlider');
-        const statusBadge = document.getElementById('statusBadge');
-        closeBtn.onclick = function() {
-    PlayerCore.pause();
-    setTimeout(() => window.close(), 100);
-};
-        let isSeeking = false;
-        
-        // Функция обновления цвета заполнения бегунка
-        function updateSliderFill(percent) {
-            progressSlider.style.background = `linear-gradient(90deg, #667eea ${percent}%, rgba(255,255,255,0.2) ${percent}%)`;
-        }
-        function updateVolumeFill(volume) {
-    const percent = volume * 100;
-    volumeSlider.style.background = `linear-gradient(90deg, #667eea ${percent}%, rgba(255,255,255,0.2) ${percent}%)`;
-}
-        
-        function formatTime(seconds) {
-            if (isNaN(seconds) || seconds === undefined) return '0:00';
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
-        }
-        
-        function updateUI() {
-            const state = PlayerCore.getState();
-            if (!state) return;
-            trackNameSpan.textContent = state.musicName || '—';
-            trackArtistSpan.textContent = state.artistName || '—';
-            playPauseBtn.textContent = state.isPlaying ? '⏸️' : '▶️';
-            statusBadge.textContent = state.isPlaying ? '● Сейчас играет' : '● Пауза';
-            currentTimeSpan.textContent = formatTime(state.currentTime);
-            durationSpan.textContent = formatTime(state.duration);
-            
-            const percent = (state.currentTime / (state.duration || 1)) * 100;
-            if (!isSeeking) {
-                progressSlider.value = percent || 0;
-                updateSliderFill(percent);
-            }
-        }
-        
-        function updateTime() {
-            const state = PlayerCore.getState();
-            if (!state) return;
-            currentTimeSpan.textContent = formatTime(state.currentTime);
-            if (!isSeeking) {
-                const percent = (state.currentTime / (state.duration || 1)) * 100;
-                progressSlider.value = percent || 0;
-                updateSliderFill(percent);
-            }
-        }
-        
-        // Подписка на события PlayerCore
-        PlayerCore.addListener((event, data) => {
-            if (event === 'timeupdate') {
-                updateTime();
-            } else {
-                updateUI();
-            }
-        });
-        
-        // Обработчики бегунка
-        progressSlider.addEventListener('mousedown', () => {
-            isSeeking = true;
-        });
-        
-        progressSlider.addEventListener('input', (e) => {
-            const percent = parseFloat(e.target.value);
-            updateSliderFill(percent);
-            const state = PlayerCore.getState();
-            if (state.duration) {
-                const seekTime = (percent / 100) * state.duration;
-                currentTimeSpan.textContent = formatTime(seekTime);
-            }
-        });
-        
-        progressSlider.addEventListener('mouseup', (e) => {
-            const percent = parseFloat(e.target.value);
-            PlayerCore.seek(percent / 100);
-            isSeeking = false;
-        });
-        
-        // Обработчики кнопок
-        playPauseBtn.onclick = () => {
-            const state = PlayerCore.getState();
-            if (state.isPlaying) PlayerCore.pause();
-            else PlayerCore.resume();
-        };
-        
-        repeatBtn.onclick = () => {
-            const enabled = PlayerCore.toggleRepeat();
-            repeatBtn.style.opacity = enabled ? '1' : '0.6';
-            repeatBtn.style.color = enabled ? '#667eea' : 'white';
-        };
-        
-        volumeSlider.style.background = `linear-gradient(90deg, #667eea 100%, rgba(255,255,255,0.2) 100%)`;
-        volumeSlider.oninput = (e) => {
-    const val = parseFloat(e.target.value);
-    PlayerCore.setVolume(val);
-    updateVolumeFill(val);
-};
-        
-        // Инициализация из URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const musicId = urlParams.get('id');
-        const musicName = urlParams.get('name') || '';
-        const artistName = urlParams.get('artist') || '';
-        
-        if (musicId) {
-            PlayerCore.play(musicId, decodeURIComponent(musicName), decodeURIComponent(artistName));
-        }
-    </script>
-</body>
+			.volume-slider::-webkit-slider-thumb:hover {
+				transform: scale(1.2);
+			}
+			.close-btn:hover {
+				background: #c53030;
+				transform: none;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="player-container">
+			<div class="album-art">🎵</div>
+			<div class="track-name" id="globalTrackName">—</div>
+			<div class="track-artist" id="globalTrackArtist">—</div>
+			<div class="controls">
+				<button id="prevBtn">⏮️</button>
+				<button id="playPauseBtn">▶️</button>
+				<button id="nextBtn">⏭️</button>
+				<button id="repeatBtn" style="opacity: 0.6">🔁</button>
+			</div>
+
+			<!-- Бегунок с шкалой заполненности -->
+			<input
+				type="range"
+				class="progress-slider"
+				id="progressSlider"
+				min="0"
+				max="100"
+				value="0"
+			/>
+
+			<div class="time-info">
+				<span id="currentTime">0:00</span>
+				<span id="duration">0:00</span>
+			</div>
+
+			<div class="volume-control">
+				<span>🔊</span>
+				<input
+					type="range"
+					class="volume-slider"
+					id="volumeSlider"
+					min="0"
+					max="1"
+					step="0.01"
+					value="1"
+				/>
+			</div>
+			<div class="status-badge" id="statusBadge">● Готов</div>
+			<button class="close-btn" id="closeBtn">Закрыть плеер</button>
+		</div>
+		<script src="player-core.js"></script>
+		<script>
+			// DOM элементы
+			const trackNameSpan = document.getElementById('globalTrackName')
+			const trackArtistSpan = document.getElementById('globalTrackArtist')
+			const playPauseBtn = document.getElementById('playPauseBtn')
+			const repeatBtn = document.getElementById('repeatBtn')
+			const progressSlider = document.getElementById('progressSlider')
+			const currentTimeSpan = document.getElementById('currentTime')
+			const durationSpan = document.getElementById('duration')
+			const volumeSlider = document.getElementById('volumeSlider')
+			const statusBadge = document.getElementById('statusBadge')
+			closeBtn.onclick = function () {
+				PlayerCore.pause()
+				setTimeout(() => window.close(), 100)
+			}
+			let isSeeking = false
+
+			// Функция обновления цвета заполнения бегунка
+			function updateSliderFill(percent) {
+				progressSlider.style.background = `linear-gradient(90deg, #667eea ${percent}%, rgba(255,255,255,0.2) ${percent}%)`
+			}
+			function updateVolumeFill(volume) {
+				const percent = volume * 100
+				volumeSlider.style.background = `linear-gradient(90deg, #667eea ${percent}%, rgba(255,255,255,0.2) ${percent}%)`
+			}
+
+			function formatTime(seconds) {
+				if (isNaN(seconds) || seconds === undefined) return '0:00'
+				const mins = Math.floor(seconds / 60)
+				const secs = Math.floor(seconds % 60)
+				return `${mins}:${secs.toString().padStart(2, '0')}`
+			}
+
+			function updateUI() {
+				const state = PlayerCore.getState()
+				if (!state) return
+				trackNameSpan.textContent = state.musicName || '—'
+				trackArtistSpan.textContent = state.artistName || '—'
+				playPauseBtn.textContent = state.isPlaying ? '⏸️' : '▶️'
+				statusBadge.textContent = state.isPlaying
+					? '● Сейчас играет'
+					: '● Пауза'
+				currentTimeSpan.textContent = formatTime(state.currentTime)
+				durationSpan.textContent = formatTime(state.duration)
+
+				const percent = (state.currentTime / (state.duration || 1)) * 100
+				if (!isSeeking) {
+					progressSlider.value = percent || 0
+					updateSliderFill(percent)
+				}
+			}
+
+			function updateTime() {
+				const state = PlayerCore.getState()
+				if (!state) return
+				currentTimeSpan.textContent = formatTime(state.currentTime)
+				if (!isSeeking) {
+					const percent = (state.currentTime / (state.duration || 1)) * 100
+					progressSlider.value = percent || 0
+					updateSliderFill(percent)
+				}
+			}
+
+			// Подписка на события PlayerCore
+			PlayerCore.addListener((event, data) => {
+				if (event === 'timeupdate') {
+					updateTime()
+				} else {
+					updateUI()
+				}
+			})
+
+			// Обработчики бегунка
+			progressSlider.addEventListener('mousedown', () => {
+				isSeeking = true
+			})
+
+			progressSlider.addEventListener('input', e => {
+				const percent = parseFloat(e.target.value)
+				updateSliderFill(percent)
+				const state = PlayerCore.getState()
+				if (state.duration) {
+					const seekTime = (percent / 100) * state.duration
+					currentTimeSpan.textContent = formatTime(seekTime)
+				}
+			})
+
+			progressSlider.addEventListener('mouseup', e => {
+				const percent = parseFloat(e.target.value)
+				PlayerCore.seek(percent / 100)
+				isSeeking = false
+			})
+
+			// Обработчики кнопок
+			playPauseBtn.onclick = () => {
+				const state = PlayerCore.getState()
+				if (state.isPlaying) PlayerCore.pause()
+				else PlayerCore.resume()
+			}
+
+			repeatBtn.onclick = () => {
+				const enabled = PlayerCore.toggleRepeat()
+				repeatBtn.style.opacity = enabled ? '1' : '0.6'
+				repeatBtn.style.color = enabled ? '#667eea' : 'white'
+			}
+
+			volumeSlider.style.background = `linear-gradient(90deg, #667eea 100%, rgba(255,255,255,0.2) 100%)`
+			volumeSlider.oninput = e => {
+				const val = parseFloat(e.target.value)
+				PlayerCore.setVolume(val)
+				updateVolumeFill(val)
+			}
+
+			// Инициализация из URL
+			const urlParams = new URLSearchParams(window.location.search)
+			const musicId = urlParams.get('id')
+			const musicName = urlParams.get('name') || ''
+			const artistName = urlParams.get('artist') || ''
+
+			if (musicId) {
+				PlayerCore.play(
+					musicId,
+					decodeURIComponent(musicName),
+					decodeURIComponent(artistName),
+				)
+			}
+		</script>
+	</body>
 </html>

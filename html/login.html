@@ -1,415 +1,428 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход в приложение</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Вход в приложение</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
+			body {
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				min-height: 100vh;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				padding: 20px;
+			}
 
-        .container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 400px;
-            padding: 40px;
-        }
+			.container {
+				background: white;
+				border-radius: 10px;
+				box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+				width: 100%;
+				max-width: 400px;
+				padding: 40px;
+			}
 
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
+			h1 {
+				text-align: center;
+				color: #333;
+				margin-bottom: 10px;
+				font-size: 28px;
+			}
 
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
+			.subtitle {
+				text-align: center;
+				color: #666;
+				margin-bottom: 30px;
+				font-size: 14px;
+			}
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+			.form-group {
+				margin-bottom: 20px;
+			}
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
-            font-size: 14px;
-        }
+			label {
+				display: block;
+				margin-bottom: 8px;
+				color: #555;
+				font-weight: 500;
+				font-size: 14px;
+			}
 
-        input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e1e1e1;
-            border-radius: 6px;
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
+			input {
+				width: 100%;
+				padding: 12px 15px;
+				border: 2px solid #e1e1e1;
+				border-radius: 6px;
+				font-size: 16px;
+				transition: border-color 0.3s ease;
+			}
 
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
+			input:focus {
+				outline: none;
+				border-color: #667eea;
+			}
 
-        button {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            margin-top: 10px;
-        }
+			button {
+				width: 100%;
+				padding: 14px;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+				border: none;
+				border-radius: 6px;
+				font-size: 16px;
+				font-weight: 600;
+				cursor: pointer;
+				transition:
+					transform 0.2s ease,
+					box-shadow 0.2s ease;
+				margin-top: 10px;
+			}
 
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
+			button:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+			}
 
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
+			button:disabled {
+				opacity: 0.6;
+				cursor: not-allowed;
+				transform: none;
+			}
 
-        .response-container {
-            margin-top: 30px;
-            padding: 20px;
-            border-radius: 6px;
-            background: #f8f9fa;
-            border-left: 4px solid #667eea;
-        }
+			.response-container {
+				margin-top: 30px;
+				padding: 20px;
+				border-radius: 6px;
+				background: #f8f9fa;
+				border-left: 4px solid #667eea;
+			}
 
-        .response-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #555;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+			.response-title {
+				font-size: 14px;
+				font-weight: 600;
+				color: #555;
+				margin-bottom: 10px;
+				text-transform: uppercase;
+				letter-spacing: 1px;
+			}
 
-        .response-content {
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            color: #333;
-            word-wrap: break-word;
-            max-height: 200px;
-            overflow-y: auto;
-            padding: 10px;
-            background: white;
-            border-radius: 4px;
-            white-space: pre-wrap;
-        }
+			.response-content {
+				font-family: 'Courier New', monospace;
+				font-size: 14px;
+				color: #333;
+				word-wrap: break-word;
+				max-height: 200px;
+				overflow-y: auto;
+				padding: 10px;
+				background: white;
+				border-radius: 4px;
+				white-space: pre-wrap;
+			}
 
-        .error {
-            border-left-color: #dc3545;
-        }
+			.error {
+				border-left-color: #dc3545;
+			}
 
-        .success {
-            border-left-color: #28a745;
-        }
+			.success {
+				border-left-color: #28a745;
+			}
 
-        .loading {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 8px;
-        }
+			.loading {
+				display: inline-block;
+				width: 16px;
+				height: 16px;
+				border: 2px solid #f3f3f3;
+				border-top: 2px solid #667eea;
+				border-radius: 50%;
+				animation: spin 1s linear infinite;
+				margin-right: 8px;
+			}
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
 
-        .register-link {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-            color: #666;
-        }
+			.register-link {
+				text-align: center;
+				margin-top: 20px;
+				font-size: 14px;
+				color: #666;
+			}
 
-        .register-link a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
-        }
+			.register-link a {
+				color: #667eea;
+				text-decoration: none;
+				font-weight: 600;
+			}
 
-        .register-link a:hover {
-            text-decoration: underline;
-        }
+			.register-link a:hover {
+				text-decoration: underline;
+			}
 
-        .error-message {
-            color: #dc3545;
-            font-size: 12px;
-            margin-top: 5px;
-            display: none;
-        }
+			.error-message {
+				color: #dc3545;
+				font-size: 12px;
+				margin-top: 5px;
+				display: none;
+			}
 
-        .input-error {
-            border-color: #dc3545;
-        }
+			.input-error {
+				border-color: #dc3545;
+			}
 
-        .forgot-password {
-            text-align: right;
-            margin-top: 5px;
-        }
+			.forgot-password {
+				text-align: right;
+				margin-top: 5px;
+			}
 
-        .forgot-password a {
-            color: #667eea;
-            text-decoration: none;
-            font-size: 12px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Добро пожаловать</h1>
-        <div class="subtitle">Войдите в свой аккаунт</div>
-        
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="username">Имя пользователя</label>
-                <input 
-                    type="text" 
-                    id="username" 
-                    name="username" 
-                    required 
-                    placeholder="Введите имя пользователя"
-                >
-                <div class="error-message" id="usernameError"></div>
-            </div>
+			.forgot-password a {
+				color: #667eea;
+				text-decoration: none;
+				font-size: 12px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>Добро пожаловать</h1>
+			<div class="subtitle">Войдите в свой аккаунт</div>
 
-            <div class="form-group">
-                <label for="password">Пароль</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    name="password" 
-                    required 
-                    placeholder="Введите пароль"
-                >
-                <div class="forgot-password">
-                    <a href="#">Забыли пароль?</a>
-                </div>
-                <div class="error-message" id="passwordError"></div>
-            </div>
+			<form id="loginForm">
+				<div class="form-group">
+					<label for="username">Имя пользователя</label>
+					<input
+						type="text"
+						id="username"
+						name="username"
+						required
+						placeholder="Введите имя пользователя"
+					/>
+					<div class="error-message" id="usernameError"></div>
+				</div>
 
-            <button type="submit" id="submitBtn">
-                <span id="buttonText">Войти</span>
-            </button>
-        </form>
+				<div class="form-group">
+					<label for="password">Пароль</label>
+					<input
+						type="password"
+						id="password"
+						name="password"
+						required
+						placeholder="Введите пароль"
+					/>
+					<div class="forgot-password">
+						<a href="#">Забыли пароль?</a>
+					</div>
+					<div class="error-message" id="passwordError"></div>
+				</div>
 
-        <div class="register-link">
-            Нет аккаунта? <a href="http://localhost:3003/register">Зарегистрироваться</a>
-        </div>
+				<button type="submit" id="submitBtn">
+					<span id="buttonText">Войти</span>
+				</button>
+			</form>
 
-        <div class="response-container" id="responseContainer" style="display: none;">
-            <div class="response-title">Ответ сервера:</div>
-            <div class="response-content" id="responseContent"></div>
-        </div>
-    </div>
+			<div class="register-link">
+				Нет аккаунта?
+				<a href="http://localhost:3003/register">Зарегистрироваться</a>
+			</div>
 
-    <script>
-        const form = document.getElementById('loginForm');
-        const submitBtn = document.getElementById('submitBtn');
-        const buttonText = document.getElementById('buttonText');
-        const responseContainer = document.getElementById('responseContainer');
-        const responseContent = document.getElementById('responseContent');
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
-        const usernameError = document.getElementById('usernameError');
-        const passwordError = document.getElementById('passwordError');
+			<div
+				class="response-container"
+				id="responseContainer"
+				style="display: none"
+			>
+				<div class="response-title">Ответ сервера:</div>
+				<div class="response-content" id="responseContent"></div>
+			</div>
+		</div>
 
-        // Функция для отображения ответа
-        function displayResponse(data, isError = false) {
-            responseContainer.style.display = 'block';
-            responseContainer.classList.remove('error', 'success');
-            responseContainer.classList.add(isError ? 'error' : 'success');
-            
-            let displayData;
-            
-            if (typeof data === 'string') {
-                try {
-                    // Пробуем распарсить строку как JSON для лучшего форматирования
-                    displayData = JSON.parse(data);
-                } catch {
-                    displayData = data;
-                }
-            } else {
-                displayData = data;
-            }
-            
-            if (typeof displayData === 'object') {
-                responseContent.textContent = JSON.stringify(displayData, null, 2);
-            } else {
-                responseContent.textContent = displayData;
-            }
+		<script>
+			const form = document.getElementById('loginForm')
+			const submitBtn = document.getElementById('submitBtn')
+			const buttonText = document.getElementById('buttonText')
+			const responseContainer = document.getElementById('responseContainer')
+			const responseContent = document.getElementById('responseContent')
+			const usernameInput = document.getElementById('username')
+			const passwordInput = document.getElementById('password')
+			const usernameError = document.getElementById('usernameError')
+			const passwordError = document.getElementById('passwordError')
 
-            // Автоматически скрываем сообщение через 10 секунд
-            setTimeout(() => {
-                if (responseContainer.style.display === 'block') {
-                    responseContainer.style.opacity = '0.5';
-                    setTimeout(() => {
-                        responseContainer.style.display = 'none';
-                        responseContainer.style.opacity = '1';
-                    }, 500);
-                }
-            }, 10000);
-        }
+			// Функция для отображения ответа
+			function displayResponse(data, isError = false) {
+				responseContainer.style.display = 'block'
+				responseContainer.classList.remove('error', 'success')
+				responseContainer.classList.add(isError ? 'error' : 'success')
 
-        // Функция для показа загрузки
-        function setLoading(isLoading) {
-            if (isLoading) {
-                submitBtn.disabled = true;
-                buttonText.innerHTML = '<span class="loading"></span> Вход...';
-            } else {
-                submitBtn.disabled = false;
-                buttonText.textContent = 'Войти';
-            }
-        }
+				let displayData
 
-        // Функция валидации формы
-        function validateForm() {
-            let isValid = true;
-            
-            // Сброс ошибок
-            usernameInput.classList.remove('input-error');
-            passwordInput.classList.remove('input-error');
-            usernameError.style.display = 'none';
-            passwordError.style.display = 'none';
-            
-            // Проверка username
-            if (!usernameInput.value.trim()) {
-                usernameInput.classList.add('input-error');
-                usernameError.textContent = 'Введите имя пользователя';
-                usernameError.style.display = 'block';
-                isValid = false;
-            }
-            
-            // Проверка password
-            if (!passwordInput.value) {
-                passwordInput.classList.add('input-error');
-                passwordError.textContent = 'Введите пароль';
-                passwordError.style.display = 'block';
-                isValid = false;
-            }
-            
-            return isValid;
-        }
+				if (typeof data === 'string') {
+					try {
+						// Пробуем распарсить строку как JSON для лучшего форматирования
+						displayData = JSON.parse(data)
+					} catch {
+						displayData = data
+					}
+				} else {
+					displayData = data
+				}
 
-        // Обработчик отправки формы
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+				if (typeof displayData === 'object') {
+					responseContent.textContent = JSON.stringify(displayData, null, 2)
+				} else {
+					responseContent.textContent = displayData
+				}
 
-            // Валидация
-            if (!validateForm()) {
-                return;
-            }
+				// Автоматически скрываем сообщение через 10 секунд
+				setTimeout(() => {
+					if (responseContainer.style.display === 'block') {
+						responseContainer.style.opacity = '0.5'
+						setTimeout(() => {
+							responseContainer.style.display = 'none'
+							responseContainer.style.opacity = '1'
+						}, 500)
+					}
+				}, 10000)
+			}
 
-            // Собираем данные формы
-            const formData = {
-                username: usernameInput.value.trim(),
-                password: passwordInput.value
-            };
+			// Функция для показа загрузки
+			function setLoading(isLoading) {
+				if (isLoading) {
+					submitBtn.disabled = true
+					buttonText.innerHTML = '<span class="loading"></span> Вход...'
+				} else {
+					submitBtn.disabled = false
+					buttonText.textContent = 'Войти'
+				}
+			}
 
-            setLoading(true);
+			// Функция валидации формы
+			function validateForm() {
+				let isValid = true
 
-            try {
-                // Отправляем запрос на сервер
-                const response = await fetch('http://localhost:3003/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData),
-                    credentials: 'include',
-                });
+				// Сброс ошибок
+				usernameInput.classList.remove('input-error')
+				passwordInput.classList.remove('input-error')
+				usernameError.style.display = 'none'
+				passwordError.style.display = 'none'
 
-                let responseData;
-                const contentType = response.headers.get('content-type');
-                
-                if (contentType && contentType.includes('application/json')) {
-                    responseData = await response.json();
-                } else {
-                    responseData = await response.text();
-                }
+				// Проверка username
+				if (!usernameInput.value.trim()) {
+					usernameInput.classList.add('input-error')
+					usernameError.textContent = 'Введите имя пользователя'
+					usernameError.style.display = 'block'
+					isValid = false
+				}
 
-                // Формируем объект с полной информацией об ответе
-                const fullResponse = {
-                    status: response.status,
-                    statusText: response.statusText,
-                    timestamp: new Date().toISOString(),
-                    data: responseData
-                };
+				// Проверка password
+				if (!passwordInput.value) {
+					passwordInput.classList.add('input-error')
+					passwordError.textContent = 'Введите пароль'
+					passwordError.style.display = 'block'
+					isValid = false
+				}
 
-                displayResponse(fullResponse, !response.ok);
+				return isValid
+			}
 
-                // Если вход успешный, можно добавить редирект
-                if (response.ok) {
-                    console.log('Вход выполнен успешно');
-                    // Пример: window.location.href = '/dashboard';
-                }
+			// Обработчик отправки формы
+			form.addEventListener('submit', async e => {
+				e.preventDefault()
 
-            } catch (error) {
-                displayResponse({
-                    error: true,
-                    message: 'Ошибка соединения с сервером: ' + error.message,
-                    timestamp: new Date().toISOString()
-                }, true);
-            } finally {
-                setLoading(false);
-            }
-        });
+				// Валидация
+				if (!validateForm()) {
+					return
+				}
 
-        // Добавляем обработчики для сброса стилей при изменении полей
-        [usernameInput, passwordInput].forEach(input => {
-            input.addEventListener('input', () => {
-                input.classList.remove('input-error');
-                const errorDiv = document.getElementById(input.id + 'Error');
-                if (errorDiv) {
-                    errorDiv.style.display = 'none';
-                }
-                
-                // Скрываем контейнер с ответом при изменении полей
-                if (responseContainer.style.display === 'block') {
-                    responseContainer.style.display = 'none';
-                }
-            });
-        });
+				// Собираем данные формы
+				const formData = {
+					username: usernameInput.value.trim(),
+					password: passwordInput.value,
+				}
 
-        // Добавляем обработчик для показа/скрытия пароля
-        const togglePassword = document.createElement('button');
-        togglePassword.type = 'button';
-        togglePassword.textContent = '👁';
-        togglePassword.style.cssText = `
+				setLoading(true)
+
+				try {
+					// Отправляем запрос на сервер
+					const response = await fetch('http://localhost:3003/login', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify(formData),
+						credentials: 'include',
+					})
+
+					let responseData
+					const contentType = response.headers.get('content-type')
+
+					if (contentType && contentType.includes('application/json')) {
+						responseData = await response.json()
+					} else {
+						responseData = await response.text()
+					}
+
+					// Формируем объект с полной информацией об ответе
+					const fullResponse = {
+						status: response.status,
+						statusText: response.statusText,
+						timestamp: new Date().toISOString(),
+						data: responseData,
+					}
+
+					displayResponse(fullResponse, !response.ok)
+
+					// Если вход успешный, можно добавить редирект
+					if (response.ok) {
+						console.log('Вход выполнен успешно')
+						// Пример: window.location.href = '/dashboard';
+					}
+				} catch (error) {
+					displayResponse(
+						{
+							error: true,
+							message: 'Ошибка соединения с сервером: ' + error.message,
+							timestamp: new Date().toISOString(),
+						},
+						true,
+					)
+				} finally {
+					setLoading(false)
+				}
+			})
+
+			// Добавляем обработчики для сброса стилей при изменении полей
+			;[usernameInput, passwordInput].forEach(input => {
+				input.addEventListener('input', () => {
+					input.classList.remove('input-error')
+					const errorDiv = document.getElementById(input.id + 'Error')
+					if (errorDiv) {
+						errorDiv.style.display = 'none'
+					}
+
+					// Скрываем контейнер с ответом при изменении полей
+					if (responseContainer.style.display === 'block') {
+						responseContainer.style.display = 'none'
+					}
+				})
+			})
+
+			// Добавляем обработчик для показа/скрытия пароля
+			const togglePassword = document.createElement('button')
+			togglePassword.type = 'button'
+			togglePassword.textContent = '👁'
+			togglePassword.style.cssText = `
             position: absolute;
             right: 10px;
             top: 35px;
@@ -421,45 +434,45 @@
             width: auto;
             transform: none;
             box-shadow: none;
-        `;
-        
-        const passwordGroup = document.querySelector('.form-group:has(#password)');
-        passwordGroup.style.position = 'relative';
-        passwordGroup.appendChild(togglePassword);
+        `
 
-        togglePassword.addEventListener('click', () => {
-            const type = passwordInput.type === 'password' ? 'text' : 'password';
-            passwordInput.type = type;
-            togglePassword.textContent = type === 'password' ? '👁' : '👁‍🗨';
-        });
+			const passwordGroup = document.querySelector('.form-group:has(#password)')
+			passwordGroup.style.position = 'relative'
+			passwordGroup.appendChild(togglePassword)
 
-        // Добавляем обработчик для клавиши Enter
-        form.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                form.dispatchEvent(new Event('submit'));
-            }
-        });
+			togglePassword.addEventListener('click', () => {
+				const type = passwordInput.type === 'password' ? 'text' : 'password'
+				passwordInput.type = type
+				togglePassword.textContent = type === 'password' ? '👁' : '👁‍🗨'
+			})
 
-        // Добавляем демо-данные для быстрого тестирования (опционально)
-        const demoButton = document.createElement('button');
-        demoButton.type = 'button';
-        demoButton.textContent = 'Заполнить демо-данные';
-        demoButton.style.cssText = `
+			// Добавляем обработчик для клавиши Enter
+			form.addEventListener('keypress', e => {
+				if (e.key === 'Enter') {
+					e.preventDefault()
+					form.dispatchEvent(new Event('submit'))
+				}
+			})
+
+			// Добавляем демо-данные для быстрого тестирования (опционально)
+			const demoButton = document.createElement('button')
+			demoButton.type = 'button'
+			demoButton.textContent = 'Заполнить демо-данные'
+			demoButton.style.cssText = `
             background: transparent;
             border: 1px solid #667eea;
             color: #667eea;
             margin-top: 10px;
             font-size: 14px;
             padding: 8px;
-        `;
-        
-        demoButton.addEventListener('click', () => {
-            usernameInput.value = 'demo_user';
-            passwordInput.value = 'demo_password';
-        });
-        
-        form.appendChild(demoButton);
-    </script>
-</body>
+        `
+
+			demoButton.addEventListener('click', () => {
+				usernameInput.value = 'demo_user'
+				passwordInput.value = 'demo_password'
+			})
+
+			form.appendChild(demoButton)
+		</script>
+	</body>
 </html>

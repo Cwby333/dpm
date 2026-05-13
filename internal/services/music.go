@@ -153,3 +153,14 @@ func (s *MusicService) GetPresignURLSong(ctx context.Context, id string) (string
 
 	return url, nil
 }
+
+func (s *MusicService) GetPresignURCover(ctx context.Context, id string) (string, error) {
+	const op = "./internal/services/music.go.GetPresignURLCover()"
+
+	url, err := s.s3.GetPresignURL(ctx, id+songImagePostfix)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	return url, nil
+}

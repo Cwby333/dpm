@@ -1,710 +1,716 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mute - Мой профиль</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-
-        .navbar {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .logo-icon {
-            font-size: 2rem;
-            line-height: 1;
-        }
-
-        .logo-text {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: #555;
-            font-weight: 500;
-            transition: color 0.3s ease;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-        }
-
-        .nav-links a:hover {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-
-        .nav-links .active {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-
-        .auth-buttons {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .btn {
-            padding: 0.5rem 1.5rem;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-outline {
-            border: 2px solid #667eea;
-            color: #667eea;
-            background: transparent;
-        }
-
-        .btn-outline:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #e53e3e;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #c53030;
-        }
-
-        .main-content {
-            max-width: 800px;
-            margin: 80px auto 0;
-            padding: 2rem;
-        }
-
-        .page-header {
-            margin-bottom: 2rem;
-            color: white;
-        }
-
-        .page-header h1 {
-            font-size: 2.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .loading-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 4rem;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .profile-card {
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-        }
-
-        .profile-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 2rem;
-            text-align: center;
-            color: white;
-        }
-
-        .profile-avatar {
-            width: 100px;
-            height: 100px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1rem;
-            font-size: 3rem;
-            border: 3px solid white;
-        }
-
-        .profile-header h2 {
-            font-size: 1.5rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .profile-header p {
-            opacity: 0.9;
-            font-size: 0.9rem;
-        }
-
-        .profile-info {
-            padding: 2rem;
-        }
-
-        .info-item {
-            display: flex;
-            align-items: center;
-            padding: 1rem 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .info-icon {
-            width: 50px;
-            font-size: 1.5rem;
-            text-align: center;
-        }
-
-        .info-content {
-            flex: 1;
-        }
-
-        .info-label {
-            font-size: 0.8rem;
-            color: #999;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .info-value {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #333;
-            margin-top: 0.25rem;
-        }
-
-        .info-value.email {
-            font-size: 0.95rem;
-            font-weight: normal;
-            word-break: break-all;
-        }
-
-        .stats-row {
-            display: flex;
-            justify-content: space-around;
-            padding: 1.5rem 0;
-            background: #f8f9fa;
-            border-radius: 12px;
-            margin-top: 1rem;
-        }
-
-        .stat-item {
-            text-align: center;
-            flex: 1;
-        }
-
-        .stat-number {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #667eea;
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            color: #666;
-            margin-top: 0.25rem;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .action-btn {
-            flex: 1;
-            padding: 0.75rem;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-            font-size: 1rem;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .action-btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .action-btn-primary:hover {
-            background: #5a67d8;
-            transform: translateY(-2px);
-        }
-
-        .action-btn-secondary {
-            background: #4a5568;
-            color: white;
-        }
-
-        .action-btn-secondary:hover {
-            background: #2d3748;
-        }
-
-        .action-btn-logout {
-            background: #e53e3e;
-            color: white;
-        }
-
-        .action-btn-logout:hover {
-            background: #c53030;
-        }
-
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            color: white;
-            font-size: 0.9rem;
-        }
-
-        .status-info {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #48bb78;
-        }
-
-        .status-dot.error {
-            background: #f56565;
-        }
-
-        .error-container {
-            background: white;
-            border-radius: 20px;
-            padding: 3rem;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .error-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-
-        .error-container h3 {
-            color: #c53030;
-            margin-bottom: 0.5rem;
-        }
-
-        .error-container p {
-            color: #666;
-            margin-bottom: 1.5rem;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 4rem;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .empty-state-icon {
-            font-size: 5rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        .empty-state h3 {
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .empty-state p {
-            color: #666;
-            margin-bottom: 1.5rem;
-        }
-
-        .notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #48bb78;
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            z-index: 3000;
-            animation: slideIn 0.3s ease;
-        }
-
-        .notification.error {
-            background: #e53e3e;
-        }
-
-        .notification.info {
-            background: #fbbf24;
-            color: #333;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .footer {
-            background: #1a1a2e;
-            color: white;
-            padding: 3rem 2rem 1rem;
-            margin-top: 4rem;
-        }
-
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 3rem;
-        }
-
-        .footer-section h4 {
-            margin-bottom: 1rem;
-            color: #667eea;
-        }
-
-        .footer-section ul {
-            list-style: none;
-        }
-
-        .footer-section ul li {
-            margin-bottom: 0.5rem;
-        }
-
-        .footer-section a {
-            color: #999;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .footer-section a:hover {
-            color: #667eea;
-        }
-
-        .footer-bottom {
-            max-width: 1200px;
-            margin: 2rem auto 0;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-            color: #999;
-            font-size: 0.9rem;
-        }
-
-        @media (max-width: 768px) {
-            .nav-container {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .nav-links {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .auth-buttons {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .main-content {
-                padding: 1rem;
-            }
-
-            .profile-info {
-                padding: 1rem;
-            }
-
-            .stats-row {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-            }
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <span class="logo-icon">👤</span>
-                <span class="logo-text">Mute</span>
-            </div>
-            <div class="nav-links">
-                <a href="/">Главная</a>
-                <a href="/products.html">Продукты</a>
-                <a href="/music.html">Музыка</a>
-                <a href="/favor.html">Избранное</a>
-                <a href="/listening-history.html">История</a>
-                <a href="/likes.html">Лайки</a>
-                <a href="/profile.html" class="active">Профиль</a>
-                <div class="auth-buttons" id="authButtons">
-                    <a href="/login" class="btn btn-outline">Войти</a>
-                    <a href="/register" class="btn btn-primary">Регистрация</a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <div class="main-content">
-        <div class="page-header">
-            <h1>👤 Мой профиль</h1>
-        </div>
-
-        <div class="status-bar" id="statusBar">
-            <div class="status-info">
-                <span class="status-dot" id="statusDot"></span>
-                <span id="statusText">Загрузка профиля...</span>
-            </div>
-        </div>
-
-        <div id="profileContainer">
-            <div class="loading-container" id="loadingContainer">
-                <div class="loading-spinner"></div>
-                <p>Загрузка информации о профиле...</p>
-            </div>
-        </div>
-    </div>
-
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h4>Mute</h4>
-                <p>Бесплатная музыка для всех</p>
-            </div>
-            <div class="footer-section">
-                <h4>Навигация</h4>
-                <ul>
-                    <li><a href="/">Главная</a></li>
-                    <li><a href="/products.html">Продукты</a></li>
-                    <li><a href="/music.html">Музыка</a></li>
-                    <li><a href="/favor.html">Избранное</a></li>
-                    <li><a href="/listening-history.html">История</a></li>
-                    <li><a href="/likes.html">Лайки</a></li>
-                    <li><a href="/profile.html">Профиль</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Пользователям</h4>
-                <ul>
-                    <li><a href="/register">Регистрация</a></li>
-                    <li><a href="/login">Вход</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 Mute. Все права защищены.</p>
-        </div>
-    </footer>
-
-    <script>
-        // Конфигурация
-        const apiBaseUrl = 'http://localhost:3003';
-        let profileData = null;
-
-        // DOM элементы
-        const profileContainer = document.getElementById('profileContainer');
-        const loadingContainer = document.getElementById('loadingContainer');
-        const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
-
-        // Выход из системы (POST /logout)
-        async function logout() {
-            if (!confirm('Вы уверены, что хотите выйти из системы?')) {
-                return;
-            }
-
-            showLoading();
-            updateStatus('loading', 'Выход из системы...');
-
-            try {
-                const response = await fetch(`${apiBaseUrl}/logout`, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json'
-                    },
-                    credentials: 'include'
-                });
-
-                console.log('Статус ответа /logout:', response.status);
-
-                if (response.ok) {
-                    showNotification('Вы успешно вышли из системы', 'info');
-                    // Перенаправляем на страницу входа
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 1000);
-                } else {
-                    throw new Error(`Ошибка при выходе: ${response.status}`);
-                }
-            } catch (error) {
-                console.error('Ошибка выхода:', error);
-                updateStatus('error', 'Ошибка выхода');
-                showNotification('Не удалось выйти из системы', 'error');
-                hideLoading();
-            }
-        }
-
-        // Загрузка профиля (GET /profile)
-        async function loadProfile() {
-            showLoading();
-            updateStatus('loading', 'Загрузка профиля...');
-
-            try {
-                const response = await fetch(`${apiBaseUrl}/profile`, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' },
-                    credentials: 'include'
-                });
-
-                console.log('Статус ответа /profile:', response.status);
-
-                // Если 401 или 403 — пользователь не авторизован
-                if (response.status === 401 || response.status === 403) {
-                    renderUnauthorizedState();
-                    updateStatus('error', 'Не авторизован. Пожалуйста, войдите в систему.');
-                    return;
-                }
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ошибка! Статус: ${response.status}`);
-                }
-
-                const data = await response.json();
-                console.log('Получены данные профиля:', data);
-
-                // Обработка формата ответа согласно OpenAPI (GetProfile)
-                if (data && data.GetProfile) {
-                    profileData = data.GetProfile;
-                } else {
-                    profileData = data;
-                }
-
-                renderProfile();
-
-                updateStatus('success', 'Профиль загружен');
-
-            } catch (error) {
-                console.error('Ошибка загрузки:', error);
-                updateStatus('error', 'Ошибка загрузки');
-                showError(error.message);
-            } finally {
-                hideLoading();
-            }
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return 'Дата не указана';
-            try {
-                const date = new Date(dateString);
-                return date.toLocaleDateString('ru-RU', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                });
-            } catch {
-                return dateString;
-            }
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function renderUnauthorizedState() {
-            profileContainer.innerHTML = `
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Mute - Мой профиль</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				min-height: 100vh;
+				color: #333;
+			}
+
+			.navbar {
+				background: rgba(255, 255, 255, 0.95);
+				backdrop-filter: blur(10px);
+				box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+				position: fixed;
+				width: 100%;
+				top: 0;
+				z-index: 1000;
+			}
+
+			.nav-container {
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: 1rem 2rem;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.logo {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+
+			.logo-icon {
+				font-size: 2rem;
+				line-height: 1;
+			}
+
+			.logo-text {
+				font-size: 1.5rem;
+				font-weight: 700;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+			}
+
+			.nav-links {
+				display: flex;
+				gap: 2rem;
+				align-items: center;
+				flex-wrap: wrap;
+			}
+
+			.nav-links a {
+				text-decoration: none;
+				color: #555;
+				font-weight: 500;
+				transition: color 0.3s ease;
+				padding: 0.5rem 1rem;
+				border-radius: 6px;
+			}
+
+			.nav-links a:hover {
+				color: #667eea;
+				background: rgba(102, 126, 234, 0.1);
+			}
+
+			.nav-links .active {
+				color: #667eea;
+				background: rgba(102, 126, 234, 0.1);
+			}
+
+			.auth-buttons {
+				display: flex;
+				gap: 1rem;
+			}
+
+			.btn {
+				padding: 0.5rem 1.5rem;
+				border-radius: 6px;
+				text-decoration: none;
+				font-weight: 500;
+				transition: all 0.3s ease;
+				border: none;
+				cursor: pointer;
+				font-size: 1rem;
+			}
+
+			.btn-primary {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+			}
+
+			.btn-primary:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+			}
+
+			.btn-outline {
+				border: 2px solid #667eea;
+				color: #667eea;
+				background: transparent;
+			}
+
+			.btn-outline:hover {
+				background: #667eea;
+				color: white;
+			}
+
+			.btn-danger {
+				background: #e53e3e;
+				color: white;
+			}
+
+			.btn-danger:hover {
+				background: #c53030;
+			}
+
+			.main-content {
+				max-width: 800px;
+				margin: 80px auto 0;
+				padding: 2rem;
+			}
+
+			.page-header {
+				margin-bottom: 2rem;
+				color: white;
+			}
+
+			.page-header h1 {
+				font-size: 2.5rem;
+				text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+			}
+
+			.loading-container {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				padding: 4rem;
+				background: white;
+				border-radius: 20px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+			}
+
+			.loading-spinner {
+				width: 50px;
+				height: 50px;
+				border: 5px solid #f3f3f3;
+				border-top: 5px solid #667eea;
+				border-radius: 50%;
+				animation: spin 1s linear infinite;
+				margin-bottom: 1rem;
+			}
+
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
+
+			.profile-card {
+				background: white;
+				border-radius: 20px;
+				overflow: hidden;
+				box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+			}
+
+			.profile-header {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				padding: 2rem;
+				text-align: center;
+				color: white;
+			}
+
+			.profile-avatar {
+				width: 100px;
+				height: 100px;
+				background: rgba(255, 255, 255, 0.2);
+				border-radius: 50%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				margin: 0 auto 1rem;
+				font-size: 3rem;
+				border: 3px solid white;
+			}
+
+			.profile-header h2 {
+				font-size: 1.5rem;
+				margin-bottom: 0.25rem;
+			}
+
+			.profile-header p {
+				opacity: 0.9;
+				font-size: 0.9rem;
+			}
+
+			.profile-info {
+				padding: 2rem;
+			}
+
+			.info-item {
+				display: flex;
+				align-items: center;
+				padding: 1rem 0;
+				border-bottom: 1px solid #e2e8f0;
+			}
+
+			.info-icon {
+				width: 50px;
+				font-size: 1.5rem;
+				text-align: center;
+			}
+
+			.info-content {
+				flex: 1;
+			}
+
+			.info-label {
+				font-size: 0.8rem;
+				color: #999;
+				text-transform: uppercase;
+				letter-spacing: 1px;
+			}
+
+			.info-value {
+				font-size: 1.1rem;
+				font-weight: 600;
+				color: #333;
+				margin-top: 0.25rem;
+			}
+
+			.info-value.email {
+				font-size: 0.95rem;
+				font-weight: normal;
+				word-break: break-all;
+			}
+
+			.stats-row {
+				display: flex;
+				justify-content: space-around;
+				padding: 1.5rem 0;
+				background: #f8f9fa;
+				border-radius: 12px;
+				margin-top: 1rem;
+			}
+
+			.stat-item {
+				text-align: center;
+				flex: 1;
+			}
+
+			.stat-number {
+				font-size: 1.8rem;
+				font-weight: 700;
+				color: #667eea;
+			}
+
+			.stat-label {
+				font-size: 0.8rem;
+				color: #666;
+				margin-top: 0.25rem;
+			}
+
+			.action-buttons {
+				display: flex;
+				gap: 1rem;
+				margin-top: 2rem;
+				flex-wrap: wrap;
+			}
+
+			.action-btn {
+				flex: 1;
+				padding: 0.75rem;
+				border-radius: 8px;
+				font-weight: 500;
+				cursor: pointer;
+				transition: all 0.3s ease;
+				border: none;
+				font-size: 1rem;
+				text-align: center;
+				text-decoration: none;
+				display: inline-block;
+			}
+
+			.action-btn-primary {
+				background: #667eea;
+				color: white;
+			}
+
+			.action-btn-primary:hover {
+				background: #5a67d8;
+				transform: translateY(-2px);
+			}
+
+			.action-btn-secondary {
+				background: #4a5568;
+				color: white;
+			}
+
+			.action-btn-secondary:hover {
+				background: #2d3748;
+			}
+
+			.action-btn-logout {
+				background: #e53e3e;
+				color: white;
+			}
+
+			.action-btn-logout:hover {
+				background: #c53030;
+			}
+
+			.status-bar {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 1rem;
+				color: white;
+				font-size: 0.9rem;
+			}
+
+			.status-info {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+			}
+
+			.status-dot {
+				width: 8px;
+				height: 8px;
+				border-radius: 50%;
+				background: #48bb78;
+			}
+
+			.status-dot.error {
+				background: #f56565;
+			}
+
+			.error-container {
+				background: white;
+				border-radius: 20px;
+				padding: 3rem;
+				text-align: center;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+			}
+
+			.error-icon {
+				font-size: 4rem;
+				margin-bottom: 1rem;
+			}
+
+			.error-container h3 {
+				color: #c53030;
+				margin-bottom: 0.5rem;
+			}
+
+			.error-container p {
+				color: #666;
+				margin-bottom: 1.5rem;
+			}
+
+			.empty-state {
+				text-align: center;
+				padding: 4rem;
+				background: white;
+				border-radius: 20px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+			}
+
+			.empty-state-icon {
+				font-size: 5rem;
+				margin-bottom: 1rem;
+				opacity: 0.5;
+			}
+
+			.empty-state h3 {
+				color: #333;
+				margin-bottom: 0.5rem;
+			}
+
+			.empty-state p {
+				color: #666;
+				margin-bottom: 1.5rem;
+			}
+
+			.notification {
+				position: fixed;
+				bottom: 20px;
+				right: 20px;
+				background: #48bb78;
+				color: white;
+				padding: 1rem 1.5rem;
+				border-radius: 8px;
+				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+				z-index: 3000;
+				animation: slideIn 0.3s ease;
+			}
+
+			.notification.error {
+				background: #e53e3e;
+			}
+
+			.notification.info {
+				background: #fbbf24;
+				color: #333;
+			}
+
+			@keyframes slideIn {
+				from {
+					transform: translateX(100%);
+					opacity: 0;
+				}
+				to {
+					transform: translateX(0);
+					opacity: 1;
+				}
+			}
+
+			.footer {
+				background: #1a1a2e;
+				color: white;
+				padding: 3rem 2rem 1rem;
+				margin-top: 4rem;
+			}
+
+			.footer-content {
+				max-width: 1200px;
+				margin: 0 auto;
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 3rem;
+			}
+
+			.footer-section h4 {
+				margin-bottom: 1rem;
+				color: #667eea;
+			}
+
+			.footer-section ul {
+				list-style: none;
+			}
+
+			.footer-section ul li {
+				margin-bottom: 0.5rem;
+			}
+
+			.footer-section a {
+				color: #999;
+				text-decoration: none;
+				transition: color 0.3s ease;
+			}
+
+			.footer-section a:hover {
+				color: #667eea;
+			}
+
+			.footer-bottom {
+				max-width: 1200px;
+				margin: 2rem auto 0;
+				padding-top: 2rem;
+				border-top: 1px solid rgba(255, 255, 255, 0.1);
+				text-align: center;
+				color: #999;
+				font-size: 0.9rem;
+			}
+
+			@media (max-width: 768px) {
+				.nav-container {
+					flex-direction: column;
+					gap: 1rem;
+				}
+
+				.nav-links {
+					flex-direction: column;
+					width: 100%;
+				}
+
+				.auth-buttons {
+					width: 100%;
+					justify-content: center;
+				}
+
+				.main-content {
+					padding: 1rem;
+				}
+
+				.profile-info {
+					padding: 1rem;
+				}
+
+				.stats-row {
+					flex-direction: column;
+					gap: 1rem;
+				}
+
+				.action-buttons {
+					flex-direction: column;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<nav class="navbar">
+			<div class="nav-container">
+				<div class="logo">
+					<span class="logo-icon">👤</span>
+					<span class="logo-text">Mute</span>
+				</div>
+				<div class="nav-links">
+					<a href="/">Главная</a>
+					<a href="/products.html">Продукты</a>
+					<a href="/music.html">Музыка</a>
+					<a href="/favor.html">Избранное</a>
+					<a href="/listening-history.html">История</a>
+					<a href="/likes.html">Лайки</a>
+					<a href="/profile.html" class="active">Профиль</a>
+					<div class="auth-buttons" id="authButtons">
+						<a href="/login" class="btn btn-outline">Войти</a>
+						<a href="/register" class="btn btn-primary">Регистрация</a>
+					</div>
+				</div>
+			</div>
+		</nav>
+
+		<div class="main-content">
+			<div class="page-header">
+				<h1>👤 Мой профиль</h1>
+			</div>
+
+			<div class="status-bar" id="statusBar">
+				<div class="status-info">
+					<span class="status-dot" id="statusDot"></span>
+					<span id="statusText">Загрузка профиля...</span>
+				</div>
+			</div>
+
+			<div id="profileContainer">
+				<div class="loading-container" id="loadingContainer">
+					<div class="loading-spinner"></div>
+					<p>Загрузка информации о профиле...</p>
+				</div>
+			</div>
+		</div>
+
+		<footer class="footer">
+			<div class="footer-content">
+				<div class="footer-section">
+					<h4>Mute</h4>
+					<p>Бесплатная музыка для всех</p>
+				</div>
+				<div class="footer-section">
+					<h4>Навигация</h4>
+					<ul>
+						<li><a href="/">Главная</a></li>
+						<li><a href="/products.html">Продукты</a></li>
+						<li><a href="/music.html">Музыка</a></li>
+						<li><a href="/favor.html">Избранное</a></li>
+						<li><a href="/listening-history.html">История</a></li>
+						<li><a href="/likes.html">Лайки</a></li>
+						<li><a href="/profile.html">Профиль</a></li>
+					</ul>
+				</div>
+				<div class="footer-section">
+					<h4>Пользователям</h4>
+					<ul>
+						<li><a href="/register">Регистрация</a></li>
+						<li><a href="/login">Вход</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="footer-bottom">
+				<p>&copy; 2026 Mute. Все права защищены.</p>
+			</div>
+		</footer>
+
+		<script>
+			// Конфигурация
+			const apiBaseUrl = 'http://localhost:3003'
+			let profileData = null
+
+			// DOM элементы
+			const profileContainer = document.getElementById('profileContainer')
+			const loadingContainer = document.getElementById('loadingContainer')
+			const statusDot = document.getElementById('statusDot')
+			const statusText = document.getElementById('statusText')
+
+			// Выход из системы (POST /logout)
+			async function logout() {
+				if (!confirm('Вы уверены, что хотите выйти из системы?')) {
+					return
+				}
+
+				showLoading()
+				updateStatus('loading', 'Выход из системы...')
+
+				try {
+					const response = await fetch(`${apiBaseUrl}/logout`, {
+						method: 'POST',
+						headers: {
+							Accept: 'application/json',
+						},
+						credentials: 'include',
+					})
+
+					console.log('Статус ответа /logout:', response.status)
+
+					if (response.ok) {
+						showNotification('Вы успешно вышли из системы', 'info')
+						// Перенаправляем на страницу входа
+						setTimeout(() => {
+							window.location.href = '/login'
+						}, 1000)
+					} else {
+						throw new Error(`Ошибка при выходе: ${response.status}`)
+					}
+				} catch (error) {
+					console.error('Ошибка выхода:', error)
+					updateStatus('error', 'Ошибка выхода')
+					showNotification('Не удалось выйти из системы', 'error')
+					hideLoading()
+				}
+			}
+
+			// Загрузка профиля (GET /profile)
+			async function loadProfile() {
+				showLoading()
+				updateStatus('loading', 'Загрузка профиля...')
+
+				try {
+					const response = await fetch(`${apiBaseUrl}/profile`, {
+						method: 'GET',
+						headers: { Accept: 'application/json' },
+						credentials: 'include',
+					})
+
+					console.log('Статус ответа /profile:', response.status)
+
+					// Если 401 или 403 — пользователь не авторизован
+					if (response.status === 401 || response.status === 403) {
+						renderUnauthorizedState()
+						updateStatus(
+							'error',
+							'Не авторизован. Пожалуйста, войдите в систему.',
+						)
+						return
+					}
+
+					if (!response.ok) {
+						throw new Error(`HTTP ошибка! Статус: ${response.status}`)
+					}
+
+					const data = await response.json()
+					console.log('Получены данные профиля:', data)
+
+					// Обработка формата ответа согласно OpenAPI (GetProfile)
+					if (data && data.GetProfile) {
+						profileData = data.GetProfile
+					} else {
+						profileData = data
+					}
+
+					renderProfile()
+
+					updateStatus('success', 'Профиль загружен')
+				} catch (error) {
+					console.error('Ошибка загрузки:', error)
+					updateStatus('error', 'Ошибка загрузки')
+					showError(error.message)
+				} finally {
+					hideLoading()
+				}
+			}
+
+			function formatDate(dateString) {
+				if (!dateString) return 'Дата не указана'
+				try {
+					const date = new Date(dateString)
+					return date.toLocaleDateString('ru-RU', {
+						day: '2-digit',
+						month: '2-digit',
+						year: 'numeric',
+					})
+				} catch {
+					return dateString
+				}
+			}
+
+			function escapeHtml(text) {
+				if (!text) return ''
+				const div = document.createElement('div')
+				div.textContent = text
+				return div.innerHTML
+			}
+
+			function renderUnauthorizedState() {
+				profileContainer.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">🔒</div>
                     <h3>Требуется авторизация</h3>
@@ -712,28 +718,28 @@
                     <button class="btn btn-primary" onclick="window.location.href='/login'">Войти</button>
                     <button class="btn btn-outline" onclick="window.location.href='/register'" style="margin-left: 1rem;">Зарегистрироваться</button>
                 </div>
-            `;
-        }
+            `
+			}
 
-        function renderProfile() {
-            if (!profileData) {
-                renderUnauthorizedState();
-                return;
-            }
+			function renderProfile() {
+				if (!profileData) {
+					renderUnauthorizedState()
+					return
+				}
 
-            const username = escapeHtml(profileData.username || 'Не указан');
-            const email = escapeHtml(profileData.email || 'Не указан');
-            const registerAt = formatDate(profileData.register_at);
-            
-            // Получаем данные из OpenAPI спецификации
-            const totalLikes = profileData.likes || 0;
-            const listeningCount = profileData.listening_count || 0;
-            const favorCount = profileData.favor_count || 0;
+				const username = escapeHtml(profileData.username || 'Не указан')
+				const email = escapeHtml(profileData.email || 'Не указан')
+				const registerAt = formatDate(profileData.register_at)
 
-            // Получаем первую букву username для аватара
-            const avatarLetter = username.charAt(0).toUpperCase() || '👤';
+				// Получаем данные из OpenAPI спецификации
+				const totalLikes = profileData.likes || 0
+				const listeningCount = profileData.listening_count || 0
+				const favorCount = profileData.favor_count || 0
 
-            profileContainer.innerHTML = `
+				// Получаем первую букву username для аватара
+				const avatarLetter = username.charAt(0).toUpperCase() || '👤'
+
+				profileContainer.innerHTML = `
                 <div class="profile-card">
                     <div class="profile-header">
                         <div class="profile-avatar">
@@ -779,45 +785,45 @@
                         </div>
                     </div>
                 </div>
-            `;
-        }
+            `
+			}
 
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type === 'error' ? 'error' : type === 'info' ? 'info' : ''}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
+			function showNotification(message, type = 'success') {
+				const notification = document.createElement('div')
+				notification.className = `notification ${type === 'error' ? 'error' : type === 'info' ? 'info' : ''}`
+				notification.textContent = message
+				document.body.appendChild(notification)
 
-        function updateStatus(type, message) {
-            statusText.textContent = message;
-            statusDot.className = 'status-dot';
-            if (type === 'success') {
-                statusDot.style.background = '#48bb78';
-            } else if (type === 'error') {
-                statusDot.style.background = '#f56565';
-            } else {
-                statusDot.style.background = '#fbbf24';
-            }
-        }
+				setTimeout(() => {
+					notification.remove()
+				}, 3000)
+			}
 
-        function showLoading() {
-            profileContainer.innerHTML = `
+			function updateStatus(type, message) {
+				statusText.textContent = message
+				statusDot.className = 'status-dot'
+				if (type === 'success') {
+					statusDot.style.background = '#48bb78'
+				} else if (type === 'error') {
+					statusDot.style.background = '#f56565'
+				} else {
+					statusDot.style.background = '#fbbf24'
+				}
+			}
+
+			function showLoading() {
+				profileContainer.innerHTML = `
                 <div class="loading-container">
                     <div class="loading-spinner"></div>
                     <p>Загрузка информации о профиле...</p>
                 </div>
-            `;
-        }
+            `
+			}
 
-        function hideLoading() {}
+			function hideLoading() {}
 
-        function showError(message) {
-            profileContainer.innerHTML = `
+			function showError(message) {
+				profileContainer.innerHTML = `
                 <div class="error-container">
                     <div class="error-icon">⚠️</div>
                     <h3>Ошибка загрузки</h3>
@@ -830,13 +836,13 @@
                     </ul>
                     <button class="btn btn-primary" onclick="loadProfile()">Повторить попытку</button>
                 </div>
-            `;
-        }
+            `
+			}
 
-        // Инициализация
-        document.addEventListener('DOMContentLoaded', () => {
-            loadProfile();
-        });
-    </script>
-</body>
+			// Инициализация
+			document.addEventListener('DOMContentLoaded', () => {
+				loadProfile()
+			})
+		</script>
+	</body>
 </html>
