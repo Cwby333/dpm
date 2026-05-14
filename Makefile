@@ -12,3 +12,4 @@ nginx:
 	y
 	sudo docker build -t dpm_nginx:1.0 --platform linux/amd64 ./nginx
 	sudo docker compose up nginx
+

@@ -158,21 +158,29 @@ const PlayerCore = (function () {
 	}
 
 	// Кеширование
-	// player-core.js - замените функции кеширования на эти
+	const CACHE_NAME = 'audio-cache-v2'
 
-// Кеширование
-const CACHE_NAME = 'audio-cache-v2';
+	async function cacheAudioById(musicId, audioBlob) {
+		const cache = await caches.open(CACHE_NAME)
+		const cacheKey = `/audio/${musicId}`
+		const response = new Response(audioBlob, {
+			headers: {
+				'Content-Type': 'audio/mpeg',
+				'Content-Length': audioBlob.size.toString(),
+			},
+		})
+		await cache.put(cacheKey, response)
+	}
 
-async function cacheAudioById(musicId, audioBlob) {
-	console.log('Кеширование отключено для этой сборки')
-	return false
-}
-
-async function getCachedAudioById(musicId) {
-	console.log('Кеширование отключено для этой сборки')
-	return null
-}
-
+	async function getCachedAudioById(musicId) {
+		const cache = await caches.open(CACHE_NAME)
+		const cacheKey = `/audio/${musicId}`
+		const cachedResponse = await cache.match(cacheKey)
+		if (cachedResponse && cachedResponse.ok) {
+			return await cachedResponse.blob()
+		}
+		return null
+	}
 
 	// Добавление в историю
 	async function addToListeningHistory(musicId) {

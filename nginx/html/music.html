@@ -1,1103 +1,1081 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mute - Каталог музыки</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-
-        .navbar {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .logo-icon {
-            font-size: 2rem;
-            line-height: 1;
-        }
-
-        .logo-text {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: #555;
-            font-weight: 500;
-            transition: color 0.3s ease;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-        }
-
-        .nav-links a:hover {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-
-        .nav-links .active {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-
-        .auth-buttons {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .btn {
-            padding: 0.5rem 1.5rem;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-outline {
-            border: 2px solid #667eea;
-            color: #667eea;
-            background: transparent;
-        }
-
-        .btn-outline:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #e53e3e;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #c53030;
-        }
-
-        .main-content {
-            max-width: 1200px;
-            margin: 80px auto 0;
-            padding: 2rem;
-        }
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            color: white;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .page-header h1 {
-            font-size: 2.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .search-box {
-            display: flex;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .search-box input {
-            padding: 0.75rem 1rem;
-            border: none;
-            width: 250px;
-            font-size: 1rem;
-        }
-
-        .search-box input:focus {
-            outline: none;
-        }
-
-        .search-box button {
-            padding: 0.75rem 1.5rem;
-            background: #667eea;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .search-box button:hover {
-            background: #5a67d8;
-        }
-
-        .refresh-btn {
-            padding: 0.75rem 1.5rem;
-            background: white;
-            color: #667eea;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .refresh-btn:hover {
-            background: #f0f0f0;
-            transform: rotate(180deg);
-        }
-
-        .loading-container {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 4rem;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .music-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
-        }
-
-        .music-card {
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            position: relative;
-        }
-
-        .music-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-        }
-
-        .music-cover {
-            height: 180px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 4rem;
-            position: relative;
-            cursor: pointer;
-        }
-
-        .music-cover .play-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .music-card:hover .play-overlay {
-            opacity: 1;
-        }
-
-        .play-button {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            color: #667eea;
-            transition: transform 0.3s ease;
-        }
-
-        .play-button:hover {
-            transform: scale(1.1);
-        }
-
-        .favor-icon {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            font-size: 1.5rem;
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            z-index: 10;
-        }
-
-        .favor-icon:hover {
-            transform: scale(1.1);
-            background: rgba(0, 0, 0, 0.8);
-        }
-
-        .favor-icon.star-empty {
-            color: #ffc107;
-        }
-
-        .favor-icon.star-filled {
-            color: #ffc107;
-            text-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
-        }
-
-        .music-info {
-            padding: 1.5rem;
-        }
-
-        .music-name {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: #333;
-            cursor: pointer;
-        }
-
-        .music-name:hover {
-            color: #667eea;
-        }
-
-        .music-artist {
-            font-size: 0.9rem;
-            color: #667eea;
-            margin-bottom: 0.5rem;
-        }
-
-        .music-meta {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            color: #666;
-            font-size: 0.85rem;
-        }
-
-        .likes {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            color: #e53e3e;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-
-        .likes:hover {
-            transform: scale(1.05);
-        }
-
-        .likes.liked {
-            color: #e53e3e;
-            font-weight: bold;
-        }
-
-        .duration {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .music-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .music-btn {
-            flex: 1;
-            padding: 0.75rem;
-            border: none;
-            border-radius: 6px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-play {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-play:hover {
-            background: #5a67d8;
-            transform: translateY(-2px);
-        }
-
-        .btn-like {
-            background: #f0f0f0;
-            color: #666;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .btn-like:hover {
-            background: #fed7d7;
-            color: #e53e3e;
-        }
-
-        .btn-like.liked {
-            background: #e53e3e;
-            color: white;
-        }
-
-        .status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            color: white;
-            font-size: 0.9rem;
-        }
-
-        .status-info {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #48bb78;
-        }
-
-        .status-dot.error {
-            background: #f56565;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 4rem;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .empty-state-icon {
-            font-size: 5rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        .empty-state h3 {
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .empty-state p {
-            color: #666;
-            margin-bottom: 1.5rem;
-        }
-
-        .error-container {
-            background: white;
-            border-radius: 10px;
-            padding: 2rem;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .error-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-
-        .error-container h3 {
-            color: #c53030;
-            margin-bottom: 0.5rem;
-        }
-
-        .error-container p {
-            color: #666;
-            margin-bottom: 1.5rem;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-top: 3rem;
-            flex-wrap: wrap;
-        }
-
-        .page-btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            background: white;
-            color: #667eea;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .page-btn:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .page-btn.active {
-            background: #667eea;
-            color: white;
-        }
-
-        .page-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #48bb78;
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            z-index: 3000;
-            animation: slideIn 0.3s ease;
-        }
-
-        .notification.error {
-            background: #e53e3e;
-        }
-
-        .notification.info {
-            background: #fbbf24;
-            color: #333;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .footer {
-            background: #1a1a2e;
-            color: white;
-            padding: 3rem 2rem 1rem;
-            margin-top: 4rem;
-        }
-
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 3rem;
-        }
-
-        .footer-section h4 {
-            margin-bottom: 1rem;
-            color: #667eea;
-        }
-
-        .footer-section ul {
-            list-style: none;
-        }
-
-        .footer-section ul li {
-            margin-bottom: 0.5rem;
-        }
-
-        .footer-section a {
-            color: #999;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .footer-section a:hover {
-            color: #667eea;
-        }
-
-        .footer-bottom {
-            max-width: 1200px;
-            margin: 2rem auto 0;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            text-align: center;
-            color: #999;
-            font-size: 0.9rem;
-        }
-
-        @media (max-width: 768px) {
-            .nav-container {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .nav-links {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .auth-buttons {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .page-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .header-actions {
-                flex-direction: column;
-            }
-
-            .music-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <span class="logo-icon">🎵</span>
-                <span class="logo-text">Mute</span>
-            </div>
-            <div class="nav-links">
-                <a href="/">Главная</a>
-                <a href="/products.html">Продукты</a>
-                <a href="#" class="active">Музыка</a>
-                <a href="/favor.html">Избранное</a>
-                <a href="/listening-history.html">История</a>
-                <a href="/likes.html">Лайки</a>
-                <div class="auth-buttons" id="authButtons">
-                    <a href="/login" class="btn btn-outline">Войти</a>
-                    <a href="/register" class="btn btn-primary">Регистрация</a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <div class="main-content">
-        <div class="page-header">
-            <h1>Каталог музыки</h1>
-            <div class="header-actions">
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="Поиск музыки...">
-                    <button id="searchBtn">🔍</button>
-                </div>
-                <button class="refresh-btn" id="refreshBtn">🔄</button>
-            </div>
-        </div>
-
-        <div class="status-bar" id="statusBar">
-            <div class="status-info">
-                <span class="status-dot" id="statusDot"></span>
-                <span id="statusText">Загрузка музыки...</span>
-            </div>
-            <span id="musicCount">0 треков</span>
-        </div>
-
-        <div class="loading-container" id="loadingContainer">
-            <div class="loading-spinner"></div>
-            <p>Загрузка музыки...</p>
-        </div>
-
-        <div id="musicContainer"></div>
-
-        <div class="pagination" id="pagination"></div>
-    </div>
-
-    <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h4>Mute</h4>
-                <p>Бесплатная музыка для всех</p>
-            </div>
-            <div class="footer-section">
-                <h4>Навигация</h4>
-                <ul>
-                    <li><a href="/">Главная</a></li>
-                    <li><a href="/products.html">Продукты</a></li>
-                    <li><a href="#">Музыка</a></li>
-                    <li><a href="/favor.html">Избранное</a></li>
-                    <li><a href="/listening-history.html">История</a></li>
-                    <li><a href="/likes.html">Лайки</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Пользователям</h4>
-                <ul>
-                    <li><a href="/register">Регистрация</a></li>
-                    <li><a href="/login">Вход</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 Mute. Все права защищены.</p>
-        </div>
-    </footer>
-
-    <script>
-        // Конфигурация
-        const apiBaseUrl = 'http://localhost:3003';
-        let allMusic = [];
-        let filteredMusic = [];
-        let currentPage = 1;
-        let musicPerPage = 12;
-        let isLoading = false;
-        let favorStatus = new Map();
-        let likeStatus = new Map(); // Хранит статус лайка для каждого трека
-
-        // DOM элементы
-        const loadingContainer = document.getElementById('loadingContainer');
-        const musicContainer = document.getElementById('musicContainer');
-        const paginationContainer = document.getElementById('pagination');
-        const searchInput = document.getElementById('searchInput');
-        const searchBtn = document.getElementById('searchBtn');
-        const refreshBtn = document.getElementById('refreshBtn');
-        const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
-        const musicCount = document.getElementById('musicCount');
-
-        // Добавление в историю прослушиваний (POST /listening-history)
-        async function addToListeningHistory(musicId) {
-            try {
-                console.log(`Добавление трека ${musicId} в историю прослушиваний`);
-                
-                const response = await fetch(`${apiBaseUrl}/listening-history`, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ musicID: musicId }),
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    console.log(`Трек ${musicId} успешно добавлен в историю`);
-                    return true;
-                } else if (response.status === 401 || response.status === 403) {
-                    console.log('Пользователь не авторизован, история не сохранена');
-                    return false;
-                } else {
-                    console.error('Ошибка добавления в историю:', response.status);
-                    return false;
-                }
-            } catch (error) {
-                console.error('Ошибка при добавлении в историю:', error);
-                return false;
-            }
-        }
-
-        // Поставить/убрать лайк (POST/DELETE /music/like)
-        async function toggleLike(musicId, musicName) {
-            const isLiked = likeStatus.get(musicId) || false;
-            const method = isLiked ? 'DELETE' : 'POST';
-            const actionText = isLiked ? 'удален лайк' : 'поставлен лайк';
-            
-            try {
-                const response = await fetch(`${apiBaseUrl}/music/like`, {
-                    method: method,
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ musicID: musicId }),
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    // Обновляем статус лайка
-                    likeStatus.set(musicId, !isLiked);
-                    
-                    // Обновляем количество лайков в allMusic
-                    const music = allMusic.find(m => m.id === musicId);
-                    if (music) {
-                        if (!isLiked) {
-                            music.likes = (music.likes || 0) + 1;
-                        } else {
-                            music.likes = (music.likes || 1) - 1;
-                        }
-                    }
-                    
-                    showNotification(`❤️ "${musicName}" — ${actionText}`, 'info');
-                    renderMusic(); // Обновляем отображение
-                } else if (response.status === 401 || response.status === 403) {
-                    showNotification('Пожалуйста, войдите в систему, чтобы ставить/убирать лайки', 'error');
-                } else if (response.status === 409) {
-                    showNotification(`❤️ Лайк "${musicName}" уже существует`, 'info');
-                    likeStatus.set(musicId, true);
-                    renderMusic();
-                } else {
-                    const errorText = await response.text();
-                    console.error('Ошибка сервера:', errorText);
-                    throw new Error('Ошибка при выполнении операции');
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                showNotification(`Ошибка: ${error.message}`, 'error');
-            }
-        }
-
-        // Загрузка статуса избранного (GET /favor)
-        async function loadFavorStatus() {
-            try {
-                console.log('Загрузка избранного');
-                const response = await fetch(`${apiBaseUrl}/favor`, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' },
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('Избранное получено:', data);
-                    
-                    let favorItems = [];
-                    if (data && data.GetFavorJSONResponse && Array.isArray(data.GetFavorJSONResponse)) {
-                        favorItems = data.GetFavorJSONResponse;
-                    } else if (Array.isArray(data)) {
-                        favorItems = data;
-                    } else if (data && data.favor && Array.isArray(data.favor)) {
-                        favorItems = data.favor;
-                    }
-                    
-                    favorStatus.clear();
-                    favorItems.forEach(item => {
-                        const musicId = item.id || item.musicID || item.productID;
-                        if (musicId) {
-                            favorStatus.set(musicId, true);
-                        }
-                    });
-                    
-                    renderMusic();
-                } else if (response.status === 401 || response.status === 403) {
-                    console.log('Пользователь не авторизован, избранное не загружено');
-                    favorStatus.clear();
-                    renderMusic();
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки избранного:', error);
-            }
-        }
-
-        // Загрузка статуса лайков (GET /music/like)
-        async function loadLikeStatus() {
-            try {
-                console.log('Загрузка статуса лайков');
-                const response = await fetch(`${apiBaseUrl}/music/like`, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' },
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('Лайки получены:', data);
-                    
-                    likeStatus.clear();
-                    
-                    // Обработка различных форматов ответа
-                    if (Array.isArray(data)) {
-                        data.forEach(item => {
-                            let musicId = null;
-                            if (typeof item === 'string') {
-                                musicId = item;
-                            } else if (item && typeof item === 'object') {
-                                musicId = item.music_id || item.musicID || item.id;
-                            }
-                            if (musicId) {
-                                likeStatus.set(musicId, true);
-                            }
-                        });
-                    } else if (data && data.music_likes && Array.isArray(data.music_likes)) {
-                        data.music_likes.forEach(item => {
-                            const musicId = item.music_id || item.musicID;
-                            if (musicId) {
-                                likeStatus.set(musicId, true);
-                            }
-                        });
-                    } else if (data && data.likes && Array.isArray(data.likes)) {
-                        data.likes.forEach(musicId => {
-                            likeStatus.set(musicId, true);
-                        });
-                    } else if (data && typeof data === 'object') {
-                        for (const key in data) {
-                            if (data.hasOwnProperty(key) && (key.startsWith('music_') || key.length > 5)) {
-                                likeStatus.set(key, true);
-                            }
-                        }
-                    }
-                    
-                    console.log('Загружено лайков:', likeStatus.size);
-                    renderMusic();
-                } else if (response.status === 401 || response.status === 403) {
-                    console.log('Пользователь не авторизован, статус лайков не загружен');
-                    likeStatus.clear();
-                    renderMusic();
-                } else {
-                    console.warn('GET /music/like вернул статус:', response.status);
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки статуса лайков:', error);
-            }
-        }
-
-        // Добавление/удаление из избранного (POST/DELETE /favor)
-        async function toggleFavor(musicId, musicName) {
-            const isInFavor = favorStatus.get(musicId);
-            const method = isInFavor ? 'DELETE' : 'POST';
-            const actionText = isInFavor ? 'удален из' : 'добавлен в';
-            
-            try {
-                const response = await fetch(`${apiBaseUrl}/favor`, {
-                    method: method,
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ musicID: musicId }),
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    if (isInFavor) {
-                        favorStatus.delete(musicId);
-                        showNotification(`⭐ Трек "${musicName}" ${actionText} избранного`);
-                    } else {
-                        favorStatus.set(musicId, true);
-                        showNotification(`⭐ Трек "${musicName}" ${actionText} избранное`);
-                    }
-                    renderMusic();
-                } else if (response.status === 401 || response.status === 403) {
-                    showNotification('Пожалуйста, войдите в систему', 'error');
-                } else {
-                    throw new Error('Ошибка при выполнении операции');
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                showNotification(`Ошибка: ${error.message}`, 'error');
-            }
-        }
-
-        // Воспроизведение музыки (отправляет POST в историю)
-        async function playMusic(musicId, musicName, artistName, songUrl) {
-            const added = await addToListeningHistory(musicId);
-            if (added) {
-                showNotification(`🎵 "${musicName}" добавлен в историю прослушиваний`, 'info');
-            } else {
-                console.log(`Трек "${musicName}" не добавлен в историю (возможно, пользователь не авторизован)`);
-            }
-            
-            showNotification(`🎵 Воспроизведение: ${musicName} - ${artistName || 'Неизвестный'} (демо-режим)`, 'info');
-        }
-
-        // Загрузка музыки (GET /music)
-        // Загрузка музыки (GET /music)
-async function fetchMusic() {
-    if (isLoading) return;
-    
-    showLoading();
-    updateStatus('loading', 'Загрузка музыки...');
-    
-    try {
-        const response = await fetch(`${apiBaseUrl}/music`, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' },
-            credentials: 'include'
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ошибка! Статус: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Получены данные:', data);
-        
-        if (data && data.music && Array.isArray(data.music)) {
-            allMusic = data.music;
-            
-            // Загружаем статус лайков из data.music_likes (не делаем отдельный запрос)
-            likeStatus.clear();
-            if (data.music_likes && Array.isArray(data.music_likes)) {
-                data.music_likes.forEach(like => {
-                    if (like.music_id) {
-                        likeStatus.set(like.music_id, true);
-                    }
-                });
-            }
-            console.log('Загружено лайков из music_likes:', likeStatus.size);
-        } else if (data && data.GetMusicJSONResponse && Array.isArray(data.GetMusicJSONResponse)) {
-            allMusic = data.GetMusicJSONResponse;
-        } else if (Array.isArray(data)) {
-            allMusic = data;
-        } else {
-            allMusic = [];
-        }
-        
-        console.log(`Загружено треков: ${allMusic.length}`);
-        
-        filterMusic();
-        
-        updateStatus('success', 'Музыка загружена');
-        musicCount.textContent = `${allMusic.length} треков`;
-        
-        // Загружаем только статус избранного (лайки уже есть)
-        await loadFavorStatus();
-        
-    } catch (error) {
-        console.error('Ошибка загрузки:', error);
-        updateStatus('error', 'Ошибка загрузки');
-        showError(error.message);
-    } finally {
-        hideLoading();
-    }
-}
-
-        function filterMusic() {
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            
-            filteredMusic = allMusic.filter(music => {
-                if (!music) return false;
-                const matchesSearch = searchTerm === '' || 
-                    (music.name && music.name.toLowerCase().includes(searchTerm)) ||
-                    (music.uploader_username && music.uploader_username.toLowerCase().includes(searchTerm));
-                return matchesSearch;
-            });
-            
-            currentPage = 1;
-            renderMusic();
-            renderPagination();
-            
-            if (filteredMusic.length !== allMusic.length) {
-                musicCount.textContent = `${filteredMusic.length} из ${allMusic.length} треков`;
-            } else {
-                musicCount.textContent = `${allMusic.length} треков`;
-            }
-        }
-
-        function formatDuration(seconds) {
-            if (!seconds) return '0:00';
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function createMusicCard(music) {
-            const duration = formatDuration(music.duration_seconds);
-            const musicId = music.id;
-            const musicName = escapeHtml(music.name || 'Без названия');
-            const artistName = escapeHtml(music.uploader_username || music.uploader_id || 'Неизвестный исполнитель');
-            const songUrl = music.song_url || '';
-            const isInFavor = favorStatus.get(musicId) || false;
-            const isLiked = likeStatus.get(musicId) || false;
-            const likesCount = music.likes || 0;
-            
-            return `
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Mute - Каталог музыки</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				min-height: 100vh;
+				color: #333;
+			}
+
+			.navbar {
+				background: rgba(255, 255, 255, 0.95);
+				backdrop-filter: blur(10px);
+				box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+				position: fixed;
+				width: 100%;
+				top: 0;
+				z-index: 1000;
+			}
+
+			.nav-container {
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: 1rem 2rem;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+
+			.logo {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+
+			.logo-icon {
+				font-size: 2rem;
+				line-height: 1;
+			}
+
+			.logo-text {
+				font-size: 1.5rem;
+				font-weight: 700;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+			}
+
+			.nav-links {
+				display: flex;
+				gap: 2rem;
+				align-items: center;
+				flex-wrap: wrap;
+			}
+
+			.nav-links a {
+				text-decoration: none;
+				color: #555;
+				font-weight: 500;
+				transition: color 0.3s ease;
+				padding: 0.5rem 1rem;
+				border-radius: 6px;
+			}
+
+			.nav-links a:hover {
+				color: #667eea;
+				background: rgba(102, 126, 234, 0.1);
+			}
+
+			.nav-links .active {
+				color: #667eea;
+				background: rgba(102, 126, 234, 0.1);
+			}
+
+			.auth-buttons {
+				display: flex;
+				gap: 1rem;
+			}
+
+			.btn {
+				padding: 0.5rem 1.5rem;
+				border-radius: 6px;
+				text-decoration: none;
+				font-weight: 500;
+				transition: all 0.3s ease;
+				border: none;
+				cursor: pointer;
+				font-size: 1rem;
+			}
+
+			.btn-primary {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+			}
+
+			.btn-primary:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+			}
+
+			.btn-outline {
+				border: 2px solid #667eea;
+				color: #667eea;
+				background: transparent;
+			}
+
+			.btn-outline:hover {
+				background: #667eea;
+				color: white;
+			}
+
+			.btn-danger {
+				background: #e53e3e;
+				color: white;
+			}
+
+			.btn-danger:hover {
+				background: #c53030;
+			}
+
+			.main-content {
+				max-width: 1200px;
+				margin: 80px auto 0;
+				padding: 2rem;
+			}
+
+			.page-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 2rem;
+				color: white;
+				flex-wrap: wrap;
+				gap: 1rem;
+			}
+
+			.page-header h1 {
+				font-size: 2.5rem;
+				text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+			}
+
+			.header-actions {
+				display: flex;
+				gap: 1rem;
+			}
+
+			.search-box {
+				display: flex;
+				background: white;
+				border-radius: 8px;
+				overflow: hidden;
+				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+			}
+
+			.search-box input {
+				padding: 0.75rem 1rem;
+				border: none;
+				width: 250px;
+				font-size: 1rem;
+			}
+
+			.search-box input:focus {
+				outline: none;
+			}
+
+			.search-box button {
+				padding: 0.75rem 1.5rem;
+				background: #667eea;
+				color: white;
+				border: none;
+				cursor: pointer;
+				transition: background 0.3s ease;
+			}
+
+			.search-box button:hover {
+				background: #5a67d8;
+			}
+
+			.refresh-btn {
+				padding: 0.75rem 1.5rem;
+				background: white;
+				color: #667eea;
+				border: none;
+				border-radius: 8px;
+				cursor: pointer;
+				font-size: 1rem;
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				transition: all 0.3s ease;
+				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+			}
+
+			.refresh-btn:hover {
+				background: #f0f0f0;
+				transform: rotate(180deg);
+			}
+
+			.loading-container {
+				display: none;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				padding: 4rem;
+				background: white;
+				border-radius: 10px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+			}
+
+			.loading-spinner {
+				width: 50px;
+				height: 50px;
+				border: 5px solid #f3f3f3;
+				border-top: 5px solid #667eea;
+				border-radius: 50%;
+				animation: spin 1s linear infinite;
+				margin-bottom: 1rem;
+			}
+
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
+
+			.music-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+				gap: 2rem;
+				margin-top: 2rem;
+			}
+
+			.music-card {
+				background: white;
+				border-radius: 10px;
+				overflow: hidden;
+				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+				transition:
+					transform 0.3s ease,
+					box-shadow 0.3s ease;
+				position: relative;
+			}
+
+			.music-card:hover {
+				transform: translateY(-5px);
+				box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+			}
+
+			.music-cover {
+				height: 180px;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: white;
+				font-size: 4rem;
+				position: relative;
+				cursor: pointer;
+				background-size: cover;
+				background-position: center;
+				background-repeat: no-repeat;
+			}
+
+			.music-cover.has-cover span {
+				display: none;
+			}
+
+			.music-cover .play-overlay {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.5);
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				opacity: 0;
+				transition: opacity 0.3s ease;
+			}
+
+			.music-card:hover .play-overlay {
+				opacity: 1;
+			}
+
+			.play-button {
+				width: 60px;
+				height: 60px;
+				border-radius: 50%;
+				background: white;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 1.5rem;
+				color: #667eea;
+				transition: transform 0.3s ease;
+			}
+
+			.play-button:hover {
+				transform: scale(1.1);
+			}
+
+			.favor-icon {
+				position: absolute;
+				top: 12px;
+				right: 12px;
+				font-size: 1.5rem;
+				background: rgba(0, 0, 0, 0.6);
+				border-radius: 50%;
+				width: 36px;
+				height: 36px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				cursor: pointer;
+				transition: all 0.3s ease;
+				z-index: 10;
+			}
+
+			.favor-icon:hover {
+				transform: scale(1.1);
+				background: rgba(0, 0, 0, 0.8);
+			}
+
+			.favor-icon.star-empty {
+				color: #ffc107;
+			}
+
+			.favor-icon.star-filled {
+				color: #ffc107;
+				text-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
+			}
+
+			.music-info {
+				padding: 1.5rem;
+			}
+
+			.music-name {
+				font-size: 1.25rem;
+				font-weight: 600;
+				margin-bottom: 0.5rem;
+				color: #333;
+				cursor: pointer;
+			}
+
+			.music-name:hover {
+				color: #667eea;
+			}
+
+			.music-artist {
+				font-size: 0.9rem;
+				color: #667eea;
+				margin-bottom: 0.5rem;
+			}
+
+			.music-meta {
+				display: flex;
+				align-items: center;
+				gap: 1rem;
+				margin-bottom: 1rem;
+				color: #666;
+				font-size: 0.85rem;
+			}
+
+			.likes {
+				display: flex;
+				align-items: center;
+				gap: 0.25rem;
+				color: #e53e3e;
+				cursor: pointer;
+				transition: transform 0.2s ease;
+			}
+
+			.likes:hover {
+				transform: scale(1.05);
+			}
+
+			.likes.liked {
+				color: #e53e3e;
+				font-weight: bold;
+			}
+
+			.duration {
+				display: flex;
+				align-items: center;
+				gap: 0.25rem;
+			}
+
+			.music-actions {
+				display: flex;
+				gap: 0.5rem;
+			}
+
+			.music-btn {
+				flex: 1;
+				padding: 0.75rem;
+				border: none;
+				border-radius: 6px;
+				font-weight: 500;
+				cursor: pointer;
+				transition: all 0.3s ease;
+			}
+
+			.btn-play {
+				background: #667eea;
+				color: white;
+			}
+
+			.btn-play:hover {
+				background: #5a67d8;
+				transform: translateY(-2px);
+			}
+
+			.btn-like {
+				background: #f0f0f0;
+				color: #666;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 0.5rem;
+			}
+
+			.btn-like:hover {
+				background: #fed7d7;
+				color: #e53e3e;
+			}
+
+			.btn-like.liked {
+				background: #e53e3e;
+				color: white;
+			}
+
+			.status-bar {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 1rem;
+				color: white;
+				font-size: 0.9rem;
+			}
+
+			.status-info {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+			}
+
+			.status-dot {
+				width: 8px;
+				height: 8px;
+				border-radius: 50%;
+				background: #48bb78;
+			}
+
+			.status-dot.error {
+				background: #f56565;
+			}
+
+			.empty-state {
+				text-align: center;
+				padding: 4rem;
+				background: white;
+				border-radius: 10px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+			}
+
+			.empty-state-icon {
+				font-size: 5rem;
+				margin-bottom: 1rem;
+				opacity: 0.5;
+			}
+
+			.empty-state h3 {
+				color: #333;
+				margin-bottom: 0.5rem;
+			}
+
+			.empty-state p {
+				color: #666;
+				margin-bottom: 1.5rem;
+			}
+
+			.error-container {
+				background: white;
+				border-radius: 10px;
+				padding: 2rem;
+				text-align: center;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+			}
+
+			.error-icon {
+				font-size: 4rem;
+				margin-bottom: 1rem;
+			}
+
+			.error-container h3 {
+				color: #c53030;
+				margin-bottom: 0.5rem;
+			}
+
+			.error-container p {
+				color: #666;
+				margin-bottom: 1.5rem;
+			}
+
+			.pagination {
+				display: flex;
+				justify-content: center;
+				gap: 0.5rem;
+				margin-top: 3rem;
+				flex-wrap: wrap;
+			}
+
+			.page-btn {
+				padding: 0.5rem 1rem;
+				border: none;
+				background: white;
+				color: #667eea;
+				border-radius: 6px;
+				cursor: pointer;
+				transition: all 0.3s ease;
+				font-weight: 500;
+			}
+
+			.page-btn:hover {
+				background: #667eea;
+				color: white;
+			}
+
+			.page-btn.active {
+				background: #667eea;
+				color: white;
+			}
+
+			.page-btn:disabled {
+				opacity: 0.5;
+				cursor: not-allowed;
+			}
+
+			.notification {
+				position: fixed;
+				bottom: 20px;
+				right: 20px;
+				background: #48bb78;
+				color: white;
+				padding: 1rem 1.5rem;
+				border-radius: 8px;
+				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+				z-index: 3000;
+				animation: slideIn 0.3s ease;
+			}
+
+			.notification.error {
+				background: #e53e3e;
+			}
+
+			.notification.info {
+				background: #fbbf24;
+				color: #333;
+			}
+
+			@keyframes slideIn {
+				from {
+					transform: translateX(100%);
+					opacity: 0;
+				}
+				to {
+					transform: translateX(0);
+					opacity: 1;
+				}
+			}
+
+			.footer {
+				background: #1a1a2e;
+				color: white;
+				padding: 3rem 2rem 1rem;
+				margin-top: 4rem;
+			}
+
+			.footer-content {
+				max-width: 1200px;
+				margin: 0 auto;
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 3rem;
+			}
+
+			.footer-section h4 {
+				margin-bottom: 1rem;
+				color: #667eea;
+			}
+
+			.footer-section ul {
+				list-style: none;
+			}
+
+			.footer-section ul li {
+				margin-bottom: 0.5rem;
+			}
+
+			.footer-section a {
+				color: #999;
+				text-decoration: none;
+				transition: color 0.3s ease;
+			}
+
+			.footer-section a:hover {
+				color: #667eea;
+			}
+
+			.footer-bottom {
+				max-width: 1200px;
+				margin: 2rem auto 0;
+				padding-top: 2rem;
+				border-top: 1px solid rgba(255, 255, 255, 0.1);
+				text-align: center;
+				color: #999;
+				font-size: 0.9rem;
+			}
+
+			@media (max-width: 768px) {
+				.nav-container {
+					flex-direction: column;
+					gap: 1rem;
+				}
+
+				.nav-links {
+					flex-direction: column;
+					width: 100%;
+				}
+
+				.auth-buttons {
+					width: 100%;
+					justify-content: center;
+				}
+
+				.page-header {
+					flex-direction: column;
+					align-items: stretch;
+				}
+
+				.header-actions {
+					flex-direction: column;
+				}
+
+				.music-grid {
+					grid-template-columns: 1fr;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<nav class="navbar">
+			<div class="nav-container">
+				<div class="logo">
+					<span class="logo-icon">🎵</span>
+					<span class="logo-text">Mute</span>
+				</div>
+				<div class="nav-links">
+					<a href="/">Главная</a>
+					<a href="/products.html">Продукты</a>
+					<a href="#" class="active">Музыка</a>
+					<a href="/favor.html">Избранное</a>
+					<a href="/listening-history.html">История</a>
+					<a href="/likes.html">Лайки</a>
+					<div class="auth-buttons" id="authButtons">
+						<a href="/login" class="btn btn-outline">Войти</a>
+						<a href="/register" class="btn btn-primary">Регистрация</a>
+					</div>
+				</div>
+			</div>
+		</nav>
+
+		<div class="main-content">
+			<div class="page-header">
+				<h1>Каталог музыки</h1>
+				<div class="header-actions">
+					<div class="search-box">
+						<input type="text" id="searchInput" placeholder="Поиск музыки..." />
+						<button id="searchBtn">🔍</button>
+					</div>
+					<button class="refresh-btn" id="refreshBtn">🔄</button>
+				</div>
+			</div>
+
+			<div class="status-bar" id="statusBar">
+				<div class="status-info">
+					<span class="status-dot" id="statusDot"></span>
+					<span id="statusText">Загрузка музыки...</span>
+				</div>
+				<span id="musicCount">0 треков</span>
+			</div>
+
+			<div class="loading-container" id="loadingContainer">
+				<div class="loading-spinner"></div>
+				<p>Загрузка музыки...</p>
+			</div>
+
+			<div id="musicContainer"></div>
+
+			<div class="pagination" id="pagination"></div>
+		</div>
+
+		<footer class="footer">
+			<div class="footer-content">
+				<div class="footer-section">
+					<h4>Mute</h4>
+					<p>Бесплатная музыка для всех</p>
+				</div>
+				<div class="footer-section">
+					<h4>Навигация</h4>
+					<ul>
+						<li><a href="/">Главная</a></li>
+						<li><a href="/products.html">Продукты</a></li>
+						<li><a href="#">Музыка</a></li>
+						<li><a href="/favor.html">Избранное</a></li>
+						<li><a href="/listening-history.html">История</a></li>
+						<li><a href="/likes.html">Лайки</a></li>
+					</ul>
+				</div>
+				<div class="footer-section">
+					<h4>Пользователям</h4>
+					<ul>
+						<li><a href="/register">Регистрация</a></li>
+						<li><a href="/login">Вход</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="footer-bottom">
+				<p>&copy; 2026 Mute. Все права защищены.</p>
+			</div>
+		</footer>
+
+		<script>
+			// Конфигурация
+			const apiBaseUrl = 'http://localhost:3003'
+			let allMusic = []
+			let filteredMusic = []
+			let currentPage = 1
+			let musicPerPage = 12
+			let isLoading = false
+			let favorStatus = new Map()
+			let likeStatus = new Map() // Хранит статус лайка для каждого трека
+
+			// DOM элементы
+			const loadingContainer = document.getElementById('loadingContainer')
+			const musicContainer = document.getElementById('musicContainer')
+			const paginationContainer = document.getElementById('pagination')
+			const searchInput = document.getElementById('searchInput')
+			const searchBtn = document.getElementById('searchBtn')
+			const refreshBtn = document.getElementById('refreshBtn')
+			const statusDot = document.getElementById('statusDot')
+			const statusText = document.getElementById('statusText')
+			const musicCount = document.getElementById('musicCount')
+
+			// Добавление в историю прослушиваний (POST /listening-history)
+			async function addToListeningHistory(musicId) {
+				try {
+					console.log(`Добавление трека ${musicId} в историю прослушиваний`)
+
+					const response = await fetch(`${apiBaseUrl}/listening-history`, {
+						method: 'POST',
+						headers: {
+							Accept: 'application/json',
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({ musicID: musicId }),
+						credentials: 'include',
+					})
+
+					if (response.ok) {
+						console.log(`Трек ${musicId} успешно добавлен в историю`)
+						return true
+					} else if (response.status === 401 || response.status === 403) {
+						console.log('Пользователь не авторизован, история не сохранена')
+						return false
+					} else {
+						console.error('Ошибка добавления в историю:', response.status)
+						return false
+					}
+				} catch (error) {
+					console.error('Ошибка при добавлении в историю:', error)
+					return false
+				}
+			}
+
+			// Поставить/убрать лайк (POST/DELETE /music/like)
+			async function toggleLike(musicId, musicName) {
+				const isLiked = likeStatus.get(musicId) || false
+				const method = isLiked ? 'DELETE' : 'POST'
+				const actionText = isLiked ? 'удален лайк' : 'поставлен лайк'
+
+				try {
+					const response = await fetch(`${apiBaseUrl}/music/like`, {
+						method: method,
+						headers: {
+							Accept: 'application/json',
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({ musicID: musicId }),
+						credentials: 'include',
+					})
+
+					if (response.ok) {
+						likeStatus.set(musicId, !isLiked)
+
+						const music = allMusic.find(m => m.id === musicId)
+						if (music) {
+							if (!isLiked) {
+								music.likes = (music.likes || 0) + 1
+							} else {
+								music.likes = (music.likes || 1) - 1
+							}
+						}
+
+						showNotification(`❤️ "${musicName}" — ${actionText}`, 'info')
+						renderMusic()
+					} else if (response.status === 401 || response.status === 403) {
+						showNotification(
+							'Пожалуйста, войдите в систему, чтобы ставить/убирать лайки',
+							'error',
+						)
+					} else if (response.status === 409) {
+						showNotification(`❤️ Лайк "${musicName}" уже существует`, 'info')
+						likeStatus.set(musicId, true)
+						renderMusic()
+					} else {
+						const errorText = await response.text()
+						console.error('Ошибка сервера:', errorText)
+						throw new Error('Ошибка при выполнении операции')
+					}
+				} catch (error) {
+					console.error('Ошибка:', error)
+					showNotification(`Ошибка: ${error.message}`, 'error')
+				}
+			}
+
+			// Загрузка статуса избранного (GET /favor)
+			async function loadFavorStatus() {
+				try {
+					console.log('Загрузка избранного')
+					const response = await fetch(`${apiBaseUrl}/favor`, {
+						method: 'GET',
+						headers: { Accept: 'application/json' },
+						credentials: 'include',
+					})
+
+					if (response.ok) {
+						const data = await response.json()
+						console.log('Избранное получено:', data)
+
+						let favorItems = []
+						if (
+							data &&
+							data.GetFavorJSONResponse &&
+							Array.isArray(data.GetFavorJSONResponse)
+						) {
+							favorItems = data.GetFavorJSONResponse
+						} else if (Array.isArray(data)) {
+							favorItems = data
+						} else if (data && data.favor && Array.isArray(data.favor)) {
+							favorItems = data.favor
+						}
+
+						favorStatus.clear()
+						favorItems.forEach(item => {
+							const musicId = item.id || item.musicID || item.productID
+							if (musicId) {
+								favorStatus.set(musicId, true)
+							}
+						})
+
+						renderMusic()
+					} else if (response.status === 401 || response.status === 403) {
+						console.log('Пользователь не авторизован, избранное не загружено')
+						favorStatus.clear()
+						renderMusic()
+					}
+				} catch (error) {
+					console.error('Ошибка загрузки избранного:', error)
+				}
+			}
+
+			// Добавление/удаление из избранного (POST/DELETE /favor)
+			async function toggleFavor(musicId, musicName) {
+				const isInFavor = favorStatus.get(musicId)
+				const method = isInFavor ? 'DELETE' : 'POST'
+				const actionText = isInFavor ? 'удален из' : 'добавлен в'
+
+				try {
+					const response = await fetch(`${apiBaseUrl}/favor`, {
+						method: method,
+						headers: {
+							Accept: 'application/json',
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({ musicID: musicId }),
+						credentials: 'include',
+					})
+
+					if (response.ok) {
+						if (isInFavor) {
+							favorStatus.delete(musicId)
+							showNotification(
+								`⭐ Трек "${musicName}" ${actionText} избранного`,
+							)
+						} else {
+							favorStatus.set(musicId, true)
+							showNotification(`⭐ Трек "${musicName}" ${actionText} избранное`)
+						}
+						renderMusic()
+					} else if (response.status === 401 || response.status === 403) {
+						showNotification('Пожалуйста, войдите в систему', 'error')
+					} else {
+						throw new Error('Ошибка при выполнении операции')
+					}
+				} catch (error) {
+					console.error('Ошибка:', error)
+					showNotification(`Ошибка: ${error.message}`, 'error')
+				}
+			}
+
+			// Воспроизведение музыки (отправляет POST в историю)
+			async function playMusic(musicId, musicName, artistName, songUrl) {
+				const added = await addToListeningHistory(musicId)
+				if (added) {
+					showNotification(
+						`🎵 "${musicName}" добавлен в историю прослушиваний`,
+						'info',
+					)
+				} else {
+					console.log(
+						`Трек "${musicName}" не добавлен в историю (возможно, пользователь не авторизован)`,
+					)
+				}
+
+				showNotification(
+					`🎵 Воспроизведение: ${musicName} - ${artistName || 'Неизвестный'} (демо-режим)`,
+					'info',
+				)
+			}
+
+			// Загрузка музыки (GET /music)
+			async function fetchMusic() {
+				if (isLoading) return
+
+				showLoading()
+				updateStatus('loading', 'Загрузка музыки...')
+
+				try {
+					const response = await fetch(`${apiBaseUrl}/music`, {
+						method: 'GET',
+						headers: { Accept: 'application/json' },
+						credentials: 'include',
+					})
+
+					if (!response.ok) {
+						throw new Error(`HTTP ошибка! Статус: ${response.status}`)
+					}
+
+					const data = await response.json()
+					console.log('Получены данные:', data)
+
+					if (data && data.music && Array.isArray(data.music)) {
+						allMusic = data.music
+
+						likeStatus.clear()
+						if (data.music_likes && Array.isArray(data.music_likes)) {
+							data.music_likes.forEach(like => {
+								if (like.music_id) {
+									likeStatus.set(like.music_id, true)
+								}
+							})
+						}
+						console.log('Загружено лайков из music_likes:', likeStatus.size)
+					} else if (
+						data &&
+						data.GetMusicJSONResponse &&
+						Array.isArray(data.GetMusicJSONResponse)
+					) {
+						allMusic = data.GetMusicJSONResponse
+					} else if (Array.isArray(data)) {
+						allMusic = data
+					} else {
+						allMusic = []
+					}
+
+					console.log(`Загружено треков: ${allMusic.length}`)
+
+					filterMusic()
+
+					updateStatus('success', 'Музыка загружена')
+					musicCount.textContent = `${allMusic.length} треков`
+
+					await loadFavorStatus()
+				} catch (error) {
+					console.error('Ошибка загрузки:', error)
+					updateStatus('error', 'Ошибка загрузки')
+					showError(error.message)
+				} finally {
+					hideLoading()
+				}
+			}
+
+			function filterMusic() {
+				const searchTerm = searchInput.value.toLowerCase().trim()
+
+				filteredMusic = allMusic.filter(music => {
+					if (!music) return false
+					const matchesSearch =
+						searchTerm === '' ||
+						(music.name && music.name.toLowerCase().includes(searchTerm)) ||
+						(music.uploader_username &&
+							music.uploader_username.toLowerCase().includes(searchTerm))
+					return matchesSearch
+				})
+
+				currentPage = 1
+				renderMusic()
+				renderPagination()
+
+				if (filteredMusic.length !== allMusic.length) {
+					musicCount.textContent = `${filteredMusic.length} из ${allMusic.length} треков`
+				} else {
+					musicCount.textContent = `${allMusic.length} треков`
+				}
+			}
+
+			function formatDuration(seconds) {
+				if (!seconds) return '0:00'
+				const mins = Math.floor(seconds / 60)
+				const secs = seconds % 60
+				return `${mins}:${secs.toString().padStart(2, '0')}`
+			}
+
+			function escapeHtml(text) {
+				if (!text) return ''
+				const div = document.createElement('div')
+				div.textContent = text
+				return div.innerHTML
+			}
+
+			function createMusicCard(music) {
+				const duration = formatDuration(music.duration_seconds)
+				const musicId = music.id
+				const musicName = escapeHtml(music.name || 'Без названия')
+				const artistName = escapeHtml(
+					music.uploader_username ||
+						music.uploader_id ||
+						'Неизвестный исполнитель',
+				)
+				const songUrl = music.song_url || ''
+				const coverUrl = music.music_cover || ''
+				const isInFavor = favorStatus.get(musicId) || false
+				const isLiked = likeStatus.get(musicId) || false
+				const likesCount = music.likes || 0
+
+				const coverStyle = coverUrl
+					? `background-image: url('${coverUrl}'); background-size: cover; background-position: center;`
+					: ''
+				const hasCoverClass = coverUrl ? 'has-cover' : ''
+
+				return `
                 <div class="music-card">
-                    <div class="music-cover" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}', '${songUrl}')">
+                    <div class="music-cover ${hasCoverClass}" style="${coverStyle}" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}', '${songUrl}')">
                         <span>🎵</span>
                         <div class="play-overlay">
                             <div class="play-button">▶️</div>
@@ -1123,100 +1101,104 @@ async function fetchMusic() {
                         </div>
                     </div>
                 </div>
-            `;
-        }
+            `
+			}
 
-        function renderMusic() {
-            const start = (currentPage - 1) * musicPerPage;
-            const end = start + musicPerPage;
-            const musicToShow = filteredMusic.slice(start, end);
-            
-            if (filteredMusic.length === 0) {
-                musicContainer.innerHTML = `
+			function renderMusic() {
+				const start = (currentPage - 1) * musicPerPage
+				const end = start + musicPerPage
+				const musicToShow = filteredMusic.slice(start, end)
+
+				if (filteredMusic.length === 0) {
+					musicContainer.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">🎵</div>
                         <h3>Треки не найдены</h3>
                         <p>Попробуйте изменить параметры поиска</p>
                     </div>
-                `;
-                return;
-            }
-            
-            musicContainer.innerHTML = `
+                `
+					return
+				}
+
+				musicContainer.innerHTML = `
                 <div class="music-grid">
                     ${musicToShow.map(music => createMusicCard(music)).join('')}
                 </div>
-            `;
-        }
+            `
+			}
 
-        function renderPagination() {
-            const totalPages = Math.ceil(filteredMusic.length / musicPerPage);
-            
-            if (totalPages <= 1) {
-                paginationContainer.innerHTML = '';
-                return;
-            }
-            
-            let paginationHTML = '';
-            paginationHTML += `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>←</button>`;
-            
-            for (let i = 1; i <= totalPages; i++) {
-                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
-                    paginationHTML += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
-                } else if (i === currentPage - 3 || i === currentPage + 3) {
-                    paginationHTML += `<span class="page-btn" style="cursor: default;">...</span>`;
-                }
-            }
-            
-            paginationHTML += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>→</button>`;
-            paginationContainer.innerHTML = paginationHTML;
-        }
+			function renderPagination() {
+				const totalPages = Math.ceil(filteredMusic.length / musicPerPage)
 
-        function changePage(page) {
-            currentPage = page;
-            renderMusic();
-            renderPagination();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+				if (totalPages <= 1) {
+					paginationContainer.innerHTML = ''
+					return
+				}
 
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type === 'error' ? 'error' : type === 'info' ? 'info' : ''}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
+				let paginationHTML = ''
+				paginationHTML += `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>←</button>`
 
-        function showLoading() {
-            isLoading = true;
-            loadingContainer.style.display = 'flex';
-            musicContainer.style.display = 'none';
-        }
+				for (let i = 1; i <= totalPages; i++) {
+					if (
+						i === 1 ||
+						i === totalPages ||
+						(i >= currentPage - 2 && i <= currentPage + 2)
+					) {
+						paginationHTML += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`
+					} else if (i === currentPage - 3 || i === currentPage + 3) {
+						paginationHTML += `<span class="page-btn" style="cursor: default;">...</span>`
+					}
+				}
 
-        function hideLoading() {
-            isLoading = false;
-            loadingContainer.style.display = 'none';
-            musicContainer.style.display = 'block';
-        }
+				paginationHTML += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>→</button>`
+				paginationContainer.innerHTML = paginationHTML
+			}
 
-        function updateStatus(type, message) {
-            statusText.textContent = message;
-            statusDot.className = 'status-dot';
-            if (type === 'success') {
-                statusDot.style.background = '#48bb78';
-            } else if (type === 'error') {
-                statusDot.style.background = '#f56565';
-            } else {
-                statusDot.style.background = '#fbbf24';
-            }
-        }
+			function changePage(page) {
+				currentPage = page
+				renderMusic()
+				renderPagination()
+				window.scrollTo({ top: 0, behavior: 'smooth' })
+			}
 
-        function showError(message) {
-            musicContainer.style.display = 'block';
-            musicContainer.innerHTML = `
+			function showNotification(message, type = 'success') {
+				const notification = document.createElement('div')
+				notification.className = `notification ${type === 'error' ? 'error' : type === 'info' ? 'info' : ''}`
+				notification.textContent = message
+				document.body.appendChild(notification)
+
+				setTimeout(() => {
+					notification.remove()
+				}, 3000)
+			}
+
+			function showLoading() {
+				isLoading = true
+				loadingContainer.style.display = 'flex'
+				musicContainer.style.display = 'none'
+			}
+
+			function hideLoading() {
+				isLoading = false
+				loadingContainer.style.display = 'none'
+				musicContainer.style.display = 'block'
+			}
+
+			function updateStatus(type, message) {
+				statusText.textContent = message
+				statusDot.className = 'status-dot'
+				if (type === 'success') {
+					statusDot.style.background = '#48bb78'
+				} else if (type === 'error') {
+					statusDot.style.background = '#f56565'
+				} else {
+					statusDot.style.background = '#fbbf24'
+				}
+			}
+
+			function showError(message) {
+				musicContainer.style.display = 'block'
+				musicContainer.innerHTML = `
                 <div class="error-container">
                     <div class="error-icon">⚠️</div>
                     <h3>Ошибка загрузки данных</h3>
@@ -1229,22 +1211,21 @@ async function fetchMusic() {
                     </ul>
                     <button class="btn btn-primary" onclick="fetchMusic()">Повторить попытку</button>
                 </div>
-            `;
-        }
+            `
+			}
 
-        // Инициализация
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchMusic();
-        });
+			document.addEventListener('DOMContentLoaded', () => {
+				fetchMusic()
+			})
 
-        refreshBtn.addEventListener('click', () => {
-            fetchMusic();
-        });
-        searchBtn.addEventListener('click', filterMusic);
-        searchInput.addEventListener('input', filterMusic);
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') filterMusic();
-        });
-    </script>
-</body>
+			refreshBtn.addEventListener('click', () => {
+				fetchMusic()
+			})
+			searchBtn.addEventListener('click', filterMusic)
+			searchInput.addEventListener('input', filterMusic)
+			searchInput.addEventListener('keypress', e => {
+				if (e.key === 'Enter') filterMusic()
+			})
+		</script>
+	</body>
 </html>

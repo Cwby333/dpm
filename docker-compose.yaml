@@ -35,10 +35,12 @@ services:
     image: dpm_nginx:1.0
     container_name: dpm-nginx
     ports:
-      - "80:80"
-    # volumes:
-    #   - ./html:/usr/share/nginx/html:ro
-    #   - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - "443:443"
+    volumes:
+        - ./nginx/html:/usr/share/nginx/html
+        - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+        - ./nginx.crt:/nginx.crt
+        - ./nginx.key:/nginx.key
 
 volumes:
   postgres:
