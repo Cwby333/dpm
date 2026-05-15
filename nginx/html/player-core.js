@@ -6,7 +6,7 @@ const PlayerCore = (function () {
 	let currentArtistName = ''
 	let repeatEnabled = false
 	let updateInterval = null
-	const apiBaseUrl = 'http://localhost:3003'
+	const apiBaseUrl = 'https://172.17.110.58:443'
 
 	// Инициализация
 	function init() {
