@@ -30,12 +30,20 @@ const PlayerCore = (function () {
 			const data = await response.json()
 			const presignedUrl = data.presign_url || data.presigned_url || data.url
 
-			// Загружаем из сети (кеширование отключено)
-			console.log('Загрузка из сети...')
-			const fetchResponse = await fetch(presignedUrl)
-			const audioBlob = await fetchResponse.blob()
-			const blobUrl = URL.createObjectURL(audioBlob)
-			console.log('Загружено из сети')
+			// Кеширование
+			let blobUrl = null
+			const cachedBlob = await getCachedAudioById(musicId)
+
+			if (cachedBlob && cachedBlob.size > 0) {
+				blobUrl = URL.createObjectURL(cachedBlob)
+				console.log('Загружено из кеша')
+			} else {
+				const fetchResponse = await fetch(presignedUrl)
+				const audioBlob = await fetchResponse.blob()
+				await cacheAudioById(musicId, audioBlob)
+				blobUrl = URL.createObjectURL(audioBlob)
+				console.log('Загружено из сети и закешировано')
+			}
 
 			// Останавливаем старый трек
 			if (audioElement) {
@@ -147,6 +155,31 @@ const PlayerCore = (function () {
 
 	function notifyListeners(event, data) {
 		listeners.forEach(cb => cb(event, data))
+	}
+
+	// Кеширование
+	const CACHE_NAME = 'audio-cache-v2'
+
+	async function cacheAudioById(musicId, audioBlob) {
+		const cache = await caches.open(CACHE_NAME)
+		const cacheKey = `/audio/${musicId}`
+		const response = new Response(audioBlob, {
+			headers: {
+				'Content-Type': 'audio/mpeg',
+				'Content-Length': audioBlob.size.toString(),
+			},
+		})
+		await cache.put(cacheKey, response)
+	}
+
+	async function getCachedAudioById(musicId) {
+		const cache = await caches.open(CACHE_NAME)
+		const cacheKey = `/audio/${musicId}`
+		const cachedResponse = await cache.match(cacheKey)
+		if (cachedResponse && cachedResponse.ok) {
+			return await cachedResponse.blob()
+		}
+		return null
 	}
 
 	// Добавление в историю

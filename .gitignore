@@ -1,2 +1,4 @@
 *.env
 config/config.yaml
+nginx.key
+key.pem
