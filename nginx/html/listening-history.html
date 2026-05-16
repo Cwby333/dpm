@@ -888,63 +888,63 @@ async function removeFromHistory(musicId, musicName, listeningDate) {
         }
 
         function renderHistory() {
-            if (!listeningHistory || listeningHistory.length === 0) {
-                historyContainer.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🎧</div>
-                        <h3>История прослушиваний пуста</h3>
-                        <p>Слушайте музыку, чтобы она отображалась здесь</p>
-                        <button class="btn btn-primary" onclick="window.location.href='/music.html'">Перейти к музыке</button>
+    if (!listeningHistory || listeningHistory.length === 0) {
+        historyContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🎧</div>
+                <h3>История прослушиваний пуста</h3>
+                <p>Слушайте музыку, чтобы она отображалась здесь</p>
+                <button class="btn btn-primary" onclick="window.location.href='/music.html'">Перейти к музыке</button>
+            </div>
+        `;
+        return;
+    }
+
+    historyContainer.innerHTML = `
+        <div class="history-container">
+            <div class="history-header">
+                <span>Трек</span>
+                <span>Дата прослушивания</span>
+                <span>Длительность</span>
+                <span>Лайки</span>
+                <span>Действия</span>
+                <span></span>
+            </div>
+            ${listeningHistory.map(item => {
+                const musicId = item.music_id;
+                const musicName = item.music_name || 'Без названия';
+                const artist = item.uploader_username || item.uploader_id || 'Неизвестный исполнитель';
+                const likes = item.music_likes || 0;
+                const duration = item.music_duration || 0;
+                const listeningDate = item.listening_date || new Date().toISOString();
+                
+                return `
+                    <div class="history-item">
+                        <div class="history-item-info">
+                            <div class="history-item-image" onclick="window.location.href='music-id.html?id=${musicId}'">
+                                <span>🎵</span>
+                            </div>
+                            <div class="history-item-details">
+                                <h4 onclick="window.location.href='music-id.html?id=${musicId}'">${escapeHtml(musicName)}</h4>
+                                <div class="history-item-artist">${escapeHtml(artist)}</div>
+                            </div>
+                        </div>
+                        <div class="history-item-date">${formatDate(listeningDate)}</div>
+                        <div class="history-item-duration">${formatDuration(duration)}</div>
+                        <div class="history-item-likes">❤️ ${likes}</div>
+                        <div class="history-item-actions">
+                            <button class="remove-btn" onclick="removeFromHistory('${musicId}', '${escapeHtml(musicName).replace(/'/g, "\\'")}', '${listeningDate}')">✕</button>
+                        </div>
                     </div>
                 `;
-                return;
-            }
+            }).join('')}
+        </div>
+    `;
+}
 
-            historyContainer.innerHTML = `
-                <div class="history-container">
-                    <div class="history-header">
-                        <span>Трек</span>
-                        <span>Дата прослушивания</span>
-                        <span>Длительность</span>
-                        <span>Лайки</span>
-                        <span>Действия</span>
-                        <span></span>
-                    </div>
-                    ${listeningHistory.map(item => {
-                        const musicId = item.music_id;
-                        const musicName = item.music_name || 'Без названия';
-                        const artist = item.uploader_username || item.uploader_id || 'Неизвестный исполнитель';
-                        const likes = item.music_likes || 0;
-                        const duration = item.music_duration || 0;
-                        const listeningDate = item.listening_date || new Date().toISOString();
-                        
-                        // Экранируем данные для безопасного встраивания в JSON
-                        const itemJson = JSON.stringify(item).replace(/'/g, "\\'");
-                        
-                        return `
-                            <div class="history-item">
-                                <div class="history-item-info">
-                                    <div class="history-item-image" onclick="playMusic(${itemJson})">
-                                        <span>🎵</span>
-                                    </div>
-                                    <div class="history-item-details">
-                                        <h4 onclick="playMusic(${itemJson})">${escapeHtml(musicName)}</h4>
-                                        <div class="history-item-artist">${escapeHtml(artist)}</div>
-                                    </div>
-                                </div>
-                                <div class="history-item-date">${formatDate(listeningDate)}</div>
-                                <div class="history-item-duration">${formatDuration(duration)}</div>
-                                <div class="history-item-likes">❤️ ${likes}</div>
-                                <div class="history-item-actions">
-                                    <button class="play-btn" onclick="playMusic(${itemJson})">▶️</button>
-                                    <button class="remove-btn" onclick="removeFromHistory('${musicId}', '${escapeHtml(musicName).replace(/'/g, "\\'")}', '${listeningDate}')">✕</button>
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            `;
-        }
+// Удалите функцию playMusic
+// Удалите функцию closeAudioPlayer
+// Удалите audioPlayerModal связанные элементы (или скройте их)
 
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');

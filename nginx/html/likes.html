@@ -791,55 +791,53 @@
         }
 
         function renderLikes() {
-            if (!likedTracks || likedTracks.length === 0) {
-                likesContainer.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">❤️</div>
-                        <h3>Нет понравившихся треков</h3>
-                        <p>Ставьте лайки трекам, чтобы они отображались здесь</p>
-                        <button class="btn btn-primary" onclick="window.location.href='/music.html'">Перейти к музыке</button>
+    if (!likedTracks || likedTracks.length === 0) {
+        likesContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">❤️</div>
+                <h3>Нет понравившихся треков</h3>
+                <p>Ставьте лайки трекам, чтобы они отображались здесь</p>
+                <button class="btn btn-primary" onclick="window.location.href='/music.html'">Перейти к музыке</button>
+            </div>
+        `;
+        return;
+    }
+
+    likesContainer.innerHTML = `
+        <div class="likes-grid">
+            ${likedTracks.map(track => {
+                const musicId = track.music_id;
+                const musicName = escapeHtml(track.music_name || 'Без названия');
+                const artist = escapeHtml(track.uploader_username || track.uploader_id || 'Неизвестный исполнитель');
+                const likes = track.music_likes || 0;
+                const duration = track.music_duration || 0;
+                
+                return `
+                    <div class="like-card">
+                        <div class="like-cover" onclick="window.location.href='music-id.html?id=${musicId}'">
+                            <span>🎵</span>
+                            <div class="play-overlay">
+                                <div class="play-button">▶️</div>
+                            </div>
+                            <button class="remove-like-btn" onclick="event.stopPropagation(); removeLike('${musicId}', '${musicName.replace(/'/g, "\\'")}')" title="Удалить лайк">❤️</button>
+                        </div>
+                        <div class="like-info">
+                            <h3 class="like-name" onclick="window.location.href='music-id.html?id=${musicId}'">${musicName}</h3>
+                            <div class="like-artist">${artist}</div>
+                            <div class="like-meta">
+                                <span class="like-likes">❤️ ${likes}</span>
+                                <span class="like-duration">⏱️ ${formatDuration(duration)}</span>
+                            </div>
+                        </div>
                     </div>
                 `;
-                return;
-            }
+            }).join('')}
+        </div>
+    `;
+}
 
-            likesContainer.innerHTML = `
-                <div class="likes-grid">
-                    ${likedTracks.map(track => {
-                        const musicId = track.music_id;
-                        const musicName = escapeHtml(track.music_name || 'Без названия');
-                        const artist = escapeHtml(track.uploader_username || track.uploader_id || 'Неизвестный исполнитель');
-                        const likes = track.music_likes || 0;
-                        const duration = track.music_duration || 0;
-                        const songUrl = track.song_url || '';
-                        const cover = track.music_cover;
-                        
-                        return `
-                            <div class="like-card">
-                                <div class="like-cover" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artist.replace(/'/g, "\\'")}', '${songUrl}')">
-                                    <span>🎵</span>
-                                    <div class="play-overlay">
-                                        <div class="play-button">▶️</div>
-                                    </div>
-                                    <button class="remove-like-btn" onclick="event.stopPropagation(); removeLike('${musicId}', '${musicName.replace(/'/g, "\\'")}')" title="Удалить лайк">❤️</button>
-                                </div>
-                                <div class="like-info">
-                                    <h3 class="like-name" onclick="window.location.href='music-id.html?id=${musicId}'">${musicName}</h3>
-                                    <div class="like-artist">${artist}</div>
-                                    <div class="like-meta">
-                                        <span class="like-likes">❤️ ${likes}</span>
-                                        <span class="like-duration">⏱️ ${formatDuration(duration)}</span>
-                                    </div>
-                                    <div class="like-actions">
-                                        <button class="music-btn btn-play" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artist.replace(/'/g, "\\'")}', '${songUrl}')">▶️ Слушать</button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            `;
-        }
+// Удалите функцию playMusic, если она есть
+// Удалите функцию addToListeningHistory, если она не используется
 
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');

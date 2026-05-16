@@ -655,16 +655,10 @@
         }
 
         // Воспроизведение музыки
-        async function playMusic(musicId, musicName, artistName, songUrl) {
-            const added = await addToListeningHistory(musicId);
-            if (added) {
-                showNotification(`🎵 "${musicName}" добавлен в историю прослушиваний`, 'info');
-            } else {
-                console.log(`Трек "${musicName}" не добавлен в историю (возможно, пользователь не авторизован)`);
-            }
-            
-            showNotification(`🎵 Воспроизведение: ${musicName} - ${artistName || 'Неизвестный'} (демо-режим)`, 'info');
-        }
+        function openMusicDetail(musicId) {
+    window.location.href = `music-id.html?id=${musicId}`;
+}
+
 
         // Загрузка избранного (GET /favor) - исправлено для нового формата
         async function loadFavor() {
@@ -823,55 +817,52 @@
         }
 
         function renderFavor() {
-            if (!favorItems || favorItems.length === 0) {
-                favorContainer.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">⭐</div>
-                        <h3>Избранное пусто</h3>
-                        <p>Добавляйте треки в избранное, чтобы они отображались здесь</p>
-                        <button class="btn btn-primary" onclick="window.location.href='/music.html'">Перейти к музыке</button>
+    if (!favorItems || favorItems.length === 0) {
+        favorContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">⭐</div>
+                <h3>Избранное пусто</h3>
+                <p>Добавляйте треки в избранное, чтобы они отображались здесь</p>
+                <button class="btn btn-primary" onclick="window.location.href='/music.html'">Перейти к музыке</button>
+            </div>
+        `;
+        return;
+    }
+
+    favorContainer.innerHTML = `
+        <div class="favor-grid">
+            ${favorItems.map(item => {
+                const musicId = item.id;
+                const music = musicDetails.get(musicId) || item;
+                const name = music.name || item.name || 'Без названия';
+                const artist = music.uploader_username || music.uploader_id || item.uploader_username || item.uploader_id || 'Неизвестный исполнитель';
+                const likes = music.likes || item.likes || 0;
+                const duration = music.duration_seconds || item.duration_seconds || 0;
+                const songUrl = music.song_url || item.song_url || '';
+                
+                return `
+                    <div class="favor-card">
+                        <div class="favor-cover" onclick="window.location.href='music-id.html?id=${musicId}'">
+                            <span>🎵</span>
+                            <div class="play-overlay">
+                                <div class="play-button">▶️</div>
+                            </div>
+                            <button class="remove-favor-btn" onclick="event.stopPropagation(); removeFromFavor('${musicId}', '${escapeHtml(name).replace(/'/g, "\\'")}')" title="Удалить из избранного">✕</button>
+                        </div>
+                        <div class="favor-info">
+                            <h3 class="favor-name" onclick="window.location.href='music-id.html?id=${musicId}'">${escapeHtml(name)}</h3>
+                            <div class="favor-artist">${escapeHtml(artist)}</div>
+                            <div class="favor-meta">
+                                <span class="favor-likes">❤️ ${likes}</span>
+                                <span class="favor-duration">⏱️ ${formatDuration(duration)}</span>
+                            </div>
+                        </div>
                     </div>
                 `;
-                return;
-            }
-
-            favorContainer.innerHTML = `
-                <div class="favor-grid">
-                    ${favorItems.map(item => {
-                        const musicId = item.id;
-                        const music = musicDetails.get(musicId) || item;
-                        const name = music.name || item.name || 'Без названия';
-                        const artist = music.uploader_username || music.uploader_id || item.uploader_username || item.uploader_id || 'Неизвестный исполнитель';
-                        const likes = music.likes || item.likes || 0;
-                        const duration = music.duration_seconds || item.duration_seconds || 0;
-                        const songUrl = music.song_url || item.song_url || '';
-                        
-                        return `
-                            <div class="favor-card">
-                                <div class="favor-cover" onclick="playMusic('${musicId}', '${escapeHtml(name).replace(/'/g, "\\'")}', '${escapeHtml(artist).replace(/'/g, "\\'")}', '${songUrl}')">
-                                    <span>🎵</span>
-                                    <div class="play-overlay">
-                                        <div class="play-button">▶️</div>
-                                    </div>
-                                    <button class="remove-favor-btn" onclick="event.stopPropagation(); removeFromFavor('${musicId}', '${escapeHtml(name).replace(/'/g, "\\'")}')" title="Удалить из избранного">✕</button>
-                                </div>
-                                <div class="favor-info">
-                                    <h3 class="favor-name" onclick="window.location.href='music-id.html?id=${musicId}'">${escapeHtml(name)}</h3>
-                                    <div class="favor-artist">${escapeHtml(artist)}</div>
-                                    <div class="favor-meta">
-                                        <span class="favor-likes">❤️ ${likes}</span>
-                                        <span class="favor-duration">⏱️ ${formatDuration(duration)}</span>
-                                    </div>
-                                    <div class="favor-actions">
-                                        <button class="music-btn btn-play" onclick="playMusic('${musicId}', '${escapeHtml(name).replace(/'/g, "\\'")}', '${escapeHtml(artist).replace(/'/g, "\\'")}', '${songUrl}')">▶️ Слушать</button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            `;
-        }
+            }).join('')}
+        </div>
+    `;
+}
 
         function showNotification(message, type = 'success') {
             const notification = document.createElement('div');
