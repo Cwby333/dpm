@@ -10,6 +10,47 @@ info:
 #   - url: "https://music-microservice.mute-project/api/v1"
 #     description: "Base url"
 paths:
+  /album:
+    get:
+      description: "Get all albums"
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Album" 
+        500:
+          description: "Error"
+          content:
+            application/json:
+              schema:
+                type: string
+  /album/{album-id}:
+    description: "Actions with album"
+    get:
+      description: "Get albom"
+      parameters:
+        - name: album-id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Album"
+        500:
+          description: "Server error"
+          content:
+            application/json:
+              schema:
+                type: string
   /logout:
     description: "Logout from system"
     post:
@@ -850,6 +891,17 @@ components:
             type: string
 
   schemas:
+    Album:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        uploader_id:
+          type: string
+        uploader_username:
+          type: string
     LikedTrack:
       type: object
       properties:
