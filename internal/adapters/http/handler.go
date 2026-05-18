@@ -166,7 +166,7 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
-	h.Mux.Handle("POST /logout", corsMiddleware(wrapLogout(strict)))
+	h.Mux.Handle("POST /logout", corsMiddleware(http.HandlerFunc(h.Logout)))
 	h.Mux.Handle("OPTIONS /logout", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
@@ -193,30 +193,6 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
-}
-
-func wrapLogout(strict api.ServerInterface) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		c, err := r.Cookie("Access-Token")
-		if err != nil {
-			slog.Info("wrapLogout")
-			slog.Error(err.Error())
-			c = &http.Cookie{
-				Value: "",
-			}
-		}
-
-		c2, err := r.Cookie("Refresh-Token-Logout")
-		if err != nil {
-			slog.Info("wrapLogout refresh-token")
-			slog.Error(err.Error())
-			c2 = &http.Cookie{
-				Value: "",
-			}
-		}
-
-		strict.PostLogout(w, r, api.PostLogoutParams{AccessToken: c.Value, RefreshTokenLogout: c2.Value})
-	}
 }
 
 func wrapGetLikedTracks(strict api.ServerInterface) http.HandlerFunc {
@@ -446,6 +422,59 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 		Name:     "Refresh-Token-Logout",
 		Value:    refresh.Sign,
 		Expires:  time.Now().Add(time.Hour * 24),
+		Secure:   true,
+		HttpOnly: true,
+		Domain:   "",
+		Path:     "/logout",
+		SameSite: http.SameSiteNoneMode,
+	})
+
+	w.WriteHeader(200)
+}
+
+func (h Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	const op = "./internal/adapters/http/handler.go.Logout()"
+
+	slog.Info("Logout200NativeHandler")
+
+	_, err := r.Cookie("Access-Token")
+	if err != nil {
+		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	_, err = r.Cookie("Refresh-Token-Logout")
+	if err != nil {
+		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "Access-Token",
+		Value:    "",
+		Expires:  time.Now().Add(time.Second * 3),
+		Secure:   true,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+		Domain:   "",
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "Refresh-Token",
+		Value:    "",
+		Expires:  time.Now().Add(time.Second * 3),
+		Secure:   true,
+		HttpOnly: true,
+		Domain:   "",
+		Path:     "/refresh",
+		SameSite: http.SameSiteNoneMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "Refresh-Token-Logout",
+		Value:    "",
+		Expires:  time.Now().Add(time.Second * 3),
 		Secure:   true,
 		HttpOnly: true,
 		Domain:   "",
@@ -963,27 +992,6 @@ func (h Handler) GetLikes(ctx context.Context, request api.GetLikesRequestObject
 
 	return api.GetLikes200JSONResponse{
 		GetLikedTracksJSONResponse: lR,
-	}, nil
-}
-
-func (h Handler) PostLogout(ctx context.Context, request api.PostLogoutRequestObject) (api.PostLogoutResponseObject, error) {
-	const op = "./internal/adapters/http/handler.go.PostLogout"
-
-	rtl := request.Params.RefreshTokenLogout
-	if rtl == "" {
-		return api.PostLogout500JSONResponse("Refresh-Token-Logout empty"), fmt.Errorf("%s: %w", op, errors.New("Refresh-Token-Logout empty"))
-	}
-
-	at := request.Params.AccessToken
-	if at == "" {
-		return api.PostLogout500JSONResponse("Access-Token empty"), fmt.Errorf("%s: %w", op, errors.New("Access-Token empty"))
-	}
-
-	return api.PostLogout200Response{
-		Headers: api.PostLogout200ResponseHeaders{
-			AccessToken:        at,
-			RefreshTokenLogout: rtl,
-		},
 	}, nil
 }
 

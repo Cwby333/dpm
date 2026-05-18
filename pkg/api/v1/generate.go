@@ -169,12 +169,6 @@ type AddListeningToLHParams struct {
 	AccessToken string `form:"Access-Token" json:"Access-Token"`
 }
 
-// PostLogoutParams defines parameters for PostLogout.
-type PostLogoutParams struct {
-	AccessToken        string `form:"Access-Token" json:"Access-Token"`
-	RefreshTokenLogout string `form:"Refresh-Token-Logout" json:"Refresh-Token-Logout"`
-}
-
 // GetAllMusicParams defines parameters for GetAllMusic.
 type GetAllMusicParams struct {
 	AccessToken *string `form:"Access-Token,omitempty" json:"Access-Token,omitempty"`
@@ -269,9 +263,6 @@ type ServerInterface interface {
 
 	// (POST /listening-history)
 	AddListeningToLH(w http.ResponseWriter, r *http.Request, params AddListeningToLHParams)
-
-	// (POST /logout)
-	PostLogout(w http.ResponseWriter, r *http.Request, params PostLogoutParams)
 	// Get all music
 	// (GET /music)
 	GetAllMusic(w http.ResponseWriter, r *http.Request, params GetAllMusicParams)
@@ -557,61 +548,6 @@ func (siw *ServerInterfaceWrapper) AddListeningToLH(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AddListeningToLH(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// PostLogout operation middleware
-func (siw *ServerInterfaceWrapper) PostLogout(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params PostLogoutParams
-
-	{
-		var cookie *http.Cookie
-
-		if cookie, err = r.Cookie("Access-Token"); err == nil {
-			var value string
-			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
-			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
-				return
-			}
-			params.AccessToken = value
-
-		} else {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
-			return
-		}
-	}
-
-	{
-		var cookie *http.Cookie
-
-		if cookie, err = r.Cookie("Refresh-Token-Logout"); err == nil {
-			var value string
-			err = runtime.BindStyledParameterWithOptions("simple", "Refresh-Token-Logout", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
-			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Refresh-Token-Logout", Err: err})
-				return
-			}
-			params.RefreshTokenLogout = value
-
-		} else {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Refresh-Token-Logout"})
-			return
-		}
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostLogout(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -978,7 +914,6 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/listening-history", wrapper.DeleteListeningFromLH)
 	m.HandleFunc("GET "+options.BaseURL+"/listening-history", wrapper.GetLH)
 	m.HandleFunc("POST "+options.BaseURL+"/listening-history", wrapper.AddListeningToLH)
-	m.HandleFunc("POST "+options.BaseURL+"/logout", wrapper.PostLogout)
 	m.HandleFunc("GET "+options.BaseURL+"/music", wrapper.GetAllMusic)
 	m.HandleFunc("DELETE "+options.BaseURL+"/music/like", wrapper.DeleteMusicLike)
 	m.HandleFunc("POST "+options.BaseURL+"/music/like", wrapper.PostMusicLike)
@@ -1198,39 +1133,6 @@ func (response AddListeningToLH200JSONResponse) VisitAddListeningToLHResponse(w 
 type AddListeningToLH500JSONResponse string
 
 func (response AddListeningToLH500JSONResponse) VisitAddListeningToLHResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(500)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type PostLogoutRequestObject struct {
-	Params PostLogoutParams
-}
-
-type PostLogoutResponseObject interface {
-	VisitPostLogoutResponse(w http.ResponseWriter) error
-}
-
-type PostLogout200ResponseHeaders struct {
-	AccessToken        interface{}
-	RefreshTokenLogout interface{}
-}
-
-type PostLogout200Response struct {
-	Headers PostLogout200ResponseHeaders
-}
-
-func (response PostLogout200Response) VisitPostLogoutResponse(w http.ResponseWriter) error {
-	w.Header().Set("Access-Token", fmt.Sprint(response.Headers.AccessToken))
-	w.Header().Set("Refresh-Token-Logout", fmt.Sprint(response.Headers.RefreshTokenLogout))
-	w.WriteHeader(200)
-	return nil
-}
-
-type PostLogout500JSONResponse string
-
-func (response PostLogout500JSONResponse) VisitPostLogoutResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 
@@ -1478,9 +1380,6 @@ type StrictServerInterface interface {
 
 	// (POST /listening-history)
 	AddListeningToLH(ctx context.Context, request AddListeningToLHRequestObject) (AddListeningToLHResponseObject, error)
-
-	// (POST /logout)
-	PostLogout(ctx context.Context, request PostLogoutRequestObject) (PostLogoutResponseObject, error)
 	// Get all music
 	// (GET /music)
 	GetAllMusic(ctx context.Context, request GetAllMusicRequestObject) (GetAllMusicResponseObject, error)
@@ -1746,32 +1645,6 @@ func (sh *strictHandler) AddListeningToLH(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// PostLogout operation middleware
-func (sh *strictHandler) PostLogout(w http.ResponseWriter, r *http.Request, params PostLogoutParams) {
-	var request PostLogoutRequestObject
-
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostLogout(ctx, request.(PostLogoutRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostLogout")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostLogoutResponseObject); ok {
-		if err := validResponse.VisitPostLogoutResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // GetAllMusic operation middleware
 func (sh *strictHandler) GetAllMusic(w http.ResponseWriter, r *http.Request, params GetAllMusicParams) {
 	var request GetAllMusicRequestObject
@@ -2006,32 +1879,30 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"hGG9/j8AAP//UYKtKYErAAA=",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

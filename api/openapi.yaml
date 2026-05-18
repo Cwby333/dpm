@@ -57,6 +57,7 @@ paths:
     description: "Logout from system"
     post:
       description: "Logout"
+      operationId: "logout"
       parameters:
         - name: Access-Token
           in: cookie
@@ -213,7 +214,6 @@ paths:
             application/json:
               schema:
                 type: string
-
   /listening-history:
     description: "Actions with user's listening history"
     get:
