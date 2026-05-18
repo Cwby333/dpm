@@ -5,7 +5,7 @@ import (
 	"dpm/internal/models"
 	"dpm/internal/services"
 	"dpm/pkg/api/v1"
-	"encoding/json"
+	// "encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -13,7 +13,7 @@ import (
 	"math"
 	_ "mime/multipart"
 	"net/http"
-	"time"
+	// "time"
 
 	"github.com/tcolgate/mp3"
 )
@@ -393,64 +393,64 @@ type LoginReq struct {
 	Password string `json:"password"`
 }
 
-func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
-	const op = "./internal/adapters/http/handler.go.Login()"
+// func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
+// 	const op = "./internal/adapters/http/handler.go.Login()"
 
-	slog.Info("Login200Response")
+// 	slog.Info("Login200Response")
 
-	data, err := io.ReadAll(r.Body)
-	if err != nil {
-		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+// 	data, err := io.ReadAll(r.Body)
+// 	if err != nil {
+// 		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
 
-	user := LoginReq{}
-	err = json.Unmarshal(data, &user)
+// 	user := LoginReq{}
+// 	err = json.Unmarshal(data, &user)
 
-	access, refresh, err := h.uServices.Login(r.Context(), models.User{
-		Username: user.Username,
-		HashPsw: user.Password,
-	})
-	if err != nil {
-		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return		
-	}
+// 	access, refresh, err := h.uServices.Login(r.Context(), models.User{
+// 		Username: user.Username,
+// 		HashPsw: user.Password,
+// 	})
+// 	if err != nil {
+// 		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+// 		http.Error(w, err.Error(), http.StatusBadRequest)
+// 		return		
+// 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "Access-Token",
-		Value:    access.Sign,
-		Expires:  time.Now().Add(time.Hour * 1),
-		Secure:   true,
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
-		Domain:   "",
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:     "Refresh-Token",
-		Value:    refresh.Sign,
-		Expires:  time.Now().Add(time.Hour * 24),
-		Secure:   true,
-		HttpOnly: true,
-		Domain:   "",
-		Path:     "/refresh",
-		SameSite: http.SameSiteNoneMode,
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:     "Refresh-Token-Logout",
-		Value:    refresh.Sign,
-		Expires:  time.Now().Add(time.Hour * 24),
-		Secure:   true,
-		HttpOnly: true,
-		Domain:   "",
-		Path:     "/logout",
-		SameSite: http.SameSiteNoneMode,
-	})
+// 	http.SetCookie(w, &http.Cookie{
+// 		Name:     "Access-Token",
+// 		Value:    access.Sign,
+// 		Expires:  time.Now().Add(time.Hour * 1),
+// 		Secure:   true,
+// 		Path:     "/",
+// 		HttpOnly: true,
+// 		SameSite: http.SameSiteNoneMode,
+// 		Domain:   "",
+// 	})
+// 	http.SetCookie(w, &http.Cookie{
+// 		Name:     "Refresh-Token",
+// 		Value:    refresh.Sign,
+// 		Expires:  time.Now().Add(time.Hour * 24),
+// 		Secure:   true,
+// 		HttpOnly: true,
+// 		Domain:   "",
+// 		Path:     "/refresh",
+// 		SameSite: http.SameSiteNoneMode,
+// 	})
+// 	http.SetCookie(w, &http.Cookie{
+// 		Name:     "Refresh-Token-Logout",
+// 		Value:    refresh.Sign,
+// 		Expires:  time.Now().Add(time.Hour * 24),
+// 		Secure:   true,
+// 		HttpOnly: true,
+// 		Domain:   "",
+// 		Path:     "/logout",
+// 		SameSite: http.SameSiteNoneMode,
+// 	})
 
-	w.WriteHeader(200)
-}
+// 	w.WriteHeader(200)
+// }
 
 func (h Handler) GetPing(ctx context.Context, request api.GetPingRequestObject) (api.GetPingResponseObject, error) {
 	return api.GetPing200JSONResponse("Pong"), nil
