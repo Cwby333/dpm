@@ -83,7 +83,7 @@ func (s *AlbumsService) GetAlbumInfo(ctx context.Context, id string) (models.Alb
 func (s *AlbumsService) GetAlbumsInfo(ctx context.Context) ([]models.AlbumInfo, error) {
 	const op = "./internal/services/album.go.GetAlbumsInfo()"
 
-	a, err := s.GetAlbumsInfo(ctx)
+	a, err := s.repo.GetAlbumsInfo(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}

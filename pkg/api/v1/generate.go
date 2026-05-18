@@ -23,6 +23,14 @@ import (
 	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
 )
 
+// Album defines model for Album.
+type Album struct {
+	Id               *string `json:"id,omitempty"`
+	Name             *string `json:"name,omitempty"`
+	UploaderId       *string `json:"uploader_id,omitempty"`
+	UploaderUsername *string `json:"uploader_username,omitempty"`
+}
+
 // Favor defines model for Favor.
 type Favor struct {
 	DurationSeconds int     `json:"duration_seconds"`
@@ -243,6 +251,9 @@ type RegisterJSONRequestBody RegisterJSONBody
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
+	// (GET /album)
+	GetAlbums(w http.ResponseWriter, r *http.Request)
+
 	// (DELETE /favor)
 	DeleteFavor(w http.ResponseWriter, r *http.Request, params DeleteFavorParams)
 
@@ -297,6 +308,20 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// GetAlbums operation middleware
+func (siw *ServerInterfaceWrapper) GetAlbums(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAlbums(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // DeleteFavor operation middleware
 func (siw *ServerInterfaceWrapper) DeleteFavor(w http.ResponseWriter, r *http.Request) {
@@ -907,6 +932,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc("GET "+options.BaseURL+"/album", wrapper.GetAlbums)
 	m.HandleFunc("DELETE "+options.BaseURL+"/favor", wrapper.DeleteFavor)
 	m.HandleFunc("GET "+options.BaseURL+"/favor", wrapper.GetFavor)
 	m.HandleFunc("POST "+options.BaseURL+"/favor", wrapper.AddFavor)
@@ -949,6 +975,31 @@ type GetProfileJSONResponse struct {
 	ListeningCount *int    `json:"listening_count,omitempty"`
 	RegisterAt     *string `json:"register_at,omitempty"`
 	Username       *string `json:"username,omitempty"`
+}
+
+type GetAlbumsRequestObject struct {
+}
+
+type GetAlbumsResponseObject interface {
+	VisitGetAlbumsResponse(w http.ResponseWriter) error
+}
+
+type GetAlbums200JSONResponse []Album
+
+func (response GetAlbums200JSONResponse) VisitGetAlbumsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAlbums500JSONResponse string
+
+func (response GetAlbums500JSONResponse) VisitGetAlbumsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
 }
 
 type DeleteFavorRequestObject struct {
@@ -1360,6 +1411,9 @@ func (response Register500JSONResponse) VisitRegisterResponse(w http.ResponseWri
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
+	// (GET /album)
+	GetAlbums(ctx context.Context, request GetAlbumsRequestObject) (GetAlbumsResponseObject, error)
+
 	// (DELETE /favor)
 	DeleteFavor(ctx context.Context, request DeleteFavorRequestObject) (DeleteFavorResponseObject, error)
 
@@ -1433,6 +1487,30 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// GetAlbums operation middleware
+func (sh *strictHandler) GetAlbums(w http.ResponseWriter, r *http.Request) {
+	var request GetAlbumsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAlbums(ctx, request.(GetAlbumsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAlbums")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAlbumsResponseObject); ok {
+		if err := validResponse.VisitGetAlbumsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // DeleteFavor operation middleware
@@ -1879,30 +1957,31 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"7M6jp4pEHrdma7lc/hcAAP//A1dEM6UqAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

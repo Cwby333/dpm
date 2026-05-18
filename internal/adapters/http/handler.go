@@ -28,17 +28,19 @@ type Handler struct {
 	mService    *services.MusicService
 	lhService   *services.ListeningHistoryService
 	fService    *services.FavorService
-	likeService services.LikeService
+	likeService *services.LikeService
+	aService *services.AlbumsService
 }
 
-func NewHandler(uService *services.UserService, mService *services.MusicService, lhService *services.ListeningHistoryService, fService *services.FavorService, likeService *services.LikeService) Handler {
+func NewHandler(uService *services.UserService, mService *services.MusicService, lhService *services.ListeningHistoryService, fService *services.FavorService, likeService *services.LikeService, aService *services.AlbumsService) Handler {
 	return Handler{
 		Mux:         http.NewServeMux(),
 		uServices:   uService,
 		mService:    mService,
 		lhService:   lhService,
 		fService:    fService,
-		likeService: *likeService,
+		likeService: likeService,
+		aService: aService,
 	}
 }
 
@@ -186,6 +188,15 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	}))
 	h.Mux.Handle("POST /music/play", corsMiddleware(http.HandlerFunc(strict.PostMusicPlay)))
 	h.Mux.Handle("OPTIONS /music/play", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("GET /album", corsMiddleware(http.HandlerFunc(strict.GetAlbums)))
+	h.Mux.Handle("OPTIONS /album", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
@@ -1147,4 +1158,26 @@ func (h Handler) PostMusicPlay(ctx context.Context, request api.PostMusicPlayReq
 	return api.PostMusicPlay200JSONResponse{
 		PresignUrl: &url,
 	}, nil
+}
+
+func (h Handler) GetAlbums(ctx context.Context, request api.GetAlbumsRequestObject) (api.GetAlbumsResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetAlbums()"
+
+	a, err := h.aService.GetAlbumsInfo(ctx)
+	if err != nil {
+		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+		return api.GetAlbums500JSONResponse(err.Error()), err
+	}
+
+	al := make([]api.Album, 0, len(a))
+	for i := range a {
+		al = append(al, api.Album{
+			Id: &a[i].ID,
+			Name: &a[i].Name,
+			UploaderId: &a[i].UploaderID,
+			UploaderUsername: &a[i].Username,
+		})
+	}
+
+	return api.GetAlbums200JSONResponse(al), nil
 }
