@@ -29,13 +29,13 @@ paths:
             application/json:
               schema:
                 type: string
-  /album/{album-id}:
+  /album/{albumID}:
     description: "Actions with album"
     get:
       description: "Get albom"
       operationId: "getAlbumID"
       parameters:
-        - name: album-id
+        - name: albumID
           in: path
           required: true
           schema:
@@ -46,7 +46,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Album"
+                type: array
+                items:
+                  $ref: "#/components/schemas/LikedTrack"
         500:
           description: "Server error"
           content:

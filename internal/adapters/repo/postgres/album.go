@@ -83,24 +83,24 @@ func (pg *Postgres) GetAlbum(ctx context.Context, id string) (models.Album, erro
 	}, nil
 }
 
-func (pg *Postgres) GetAlbumsMusic(ctx context.Context, id string) ([]models.Music, error) {
+func (pg *Postgres) GetAlbumsMusic(ctx context.Context, id string) ([]models.LikedTrack, error) {
 	const op = "./internal/adapters/repo/postgres/album.go.GetAlbumsMusic()"
 
-	q := "SELECT m.id, m.name, m.uploader_id, m.likes, m.duration_seconds, m.song_url, m.music_cover FROM music m JOIN albums_music am ON m.id = am.music_id WHERE am.album_id = $1"
+	q := "SELECT m.id AS music_id, m.name AS music_name, m.uploader_id, u.username, m.likes, m.duration_seconds AS dur_sec, m.song_url, m.music_cover FROM music m JOIN albums_music am ON m.id = am.music_id JOIN users u ON u.id = m.uploader_id WHERE am.album_id = $1"
 	rows, err := pg.pool.Query(ctx, q, id)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	musicSlice, err := pgx.CollectRows(rows, pgx.RowToStructByName[Music])
+	musicSlice, err := pgx.CollectRows(rows, pgx.RowToStructByName[LikedTrack])
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	m := make([]models.Music, 0, len(musicSlice))
+	m := make([]models.LikedTrack, 0, len(musicSlice))
 
 	for i := range musicSlice {
-		m = append(m, MusicPgToMusic(musicSlice[i]))
+		m = append(m, LikedTrackDBToLT(musicSlice[i]))
 	}
 
 	return m, nil

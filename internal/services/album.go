@@ -10,7 +10,7 @@ type AlbumRepo interface {
 	CreateAlbum(ctx context.Context, album models.Album) error
 	GetAlbum(ctx context.Context, id string) (models.Album, error)
 	DeleteAlbum(ctx context.Context, id string) error
-	GetAlbumsMusic(ctx context.Context, id string) ([]models.Music, error)
+	GetAlbumsMusic(ctx context.Context, id string) ([]models.LikedTrack, error)
 	GetAlbumInfo(ctx context.Context, id string) (models.AlbumInfo, error)
 	GetAlbumsInfo(ctx context.Context) ([]models.AlbumInfo, error)
 }
@@ -58,7 +58,7 @@ func (s *AlbumsService) DeleteAlbum(ctx context.Context, id string) (error) {
 	return nil
 }
 
-func (s *AlbumsService) GetAlbumsMusic(ctx context.Context, id string) ([]models.Music, error) {
+func (s *AlbumsService) GetAlbumsMusic(ctx context.Context, id string) ([]models.LikedTrack, error) {
 	const op = "./internal/services/album.go.CreateAlbum()"
 
 	m, err := s.repo.GetAlbumsMusic(ctx, id)

@@ -229,6 +229,7 @@
 				overflow: hidden;
 				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 				transition: transform 0.3s ease, box-shadow 0.3s ease;
+				cursor: pointer;
 			}
 
 			.album-card:hover {
@@ -505,7 +506,7 @@
 				albumsContainer.innerHTML = `
 					<div class="albums-grid">
 						${albums.map(album => `
-							<div class="album-card">
+							<div class="album-card" onclick="window.location.href='album.html?id=${encodeURIComponent(album.id || '')}&name=${encodeURIComponent(album.name || 'Без названия')}&uploader=${encodeURIComponent(album.uploader_username || album.uploader_id || '')}'">
 								<div class="album-cover">💿</div>
 								<div class="album-info">
 									<div class="album-name">${escapeHtml(album.name || 'Без названия')}</div>

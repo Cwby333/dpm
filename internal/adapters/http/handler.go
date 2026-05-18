@@ -204,6 +204,21 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
+	h.Mux.Handle("GET /album/{albumID}", corsMiddleware(wrapGetAlbum(strict)))
+	h.Mux.Handle("OPTIONS /album/{albumID}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+}
+
+func wrapGetAlbum(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		strict.GetAlbumID(w, r, r.PathValue("albumID"))
+	}
 }
 
 func wrapGetLikedTracks(strict api.ServerInterface) http.HandlerFunc {
@@ -1180,4 +1195,30 @@ func (h Handler) GetAlbums(ctx context.Context, request api.GetAlbumsRequestObje
 	}
 
 	return api.GetAlbums200JSONResponse(al), nil
+}
+
+func (h Handler) GetAlbumID(ctx context.Context, request api.GetAlbumIDRequestObject) (api.GetAlbumIDResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetAlbumID()"
+
+	a, err := h.aService.GetAlbumsMusic(ctx, request.AlbumID)
+	if err != nil {
+		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+		return api.GetAlbumID500JSONResponse(err.Error()), err
+	}
+	
+	al := make([]api.LikedTrack, 0, len(a))
+	for i := range a {
+		al = append(al, api.LikedTrack{
+			MusicId: &a[i].MusicID,
+			MusicName: &a[i].MusicName,
+			UploaderId: &a[i].MusicUploaderID,
+			UploaderUsername: &a[i].UserUsername,
+			MusicLikes: &a[i].MusicLikes,
+			MusicCover: &a[i].MusicCover,
+			SongUrl: &a[i].MusicSongURL,
+			MusicDuration: &a[i].MusicDurationSeconds,
+		})
+	}
+
+	return api.GetAlbumID200JSONResponse(al), nil
 }

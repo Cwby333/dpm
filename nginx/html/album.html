@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="ru">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Mute - Альбом</title>
+		<style>
+			* { margin: 0; padding: 0; box-sizing: border-box; }
+			body {
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				min-height: 100vh;
+				color: #333;
+			}
+			.navbar {
+				background: rgba(255, 255, 255, 0.95);
+				backdrop-filter: blur(10px);
+				box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+				position: fixed;
+				width: 100%;
+				top: 0;
+				z-index: 1000;
+			}
+			.nav-container {
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: 1rem 2rem;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+			.logo { display: flex; align-items: center; gap: 10px; }
+			.logo-icon { font-size: 2rem; line-height: 1; }
+			.logo-text {
+				font-size: 1.5rem; font-weight: 700;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+			}
+			.nav-links { display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; }
+			.nav-links a {
+				text-decoration: none; color: #555; font-weight: 500;
+				transition: color 0.3s ease; padding: 0.5rem 1rem; border-radius: 6px;
+			}
+			.nav-links a:hover { color: #667eea; background: rgba(102,126,234,0.1); }
+			.nav-links .active { color: #667eea; background: rgba(102,126,234,0.1); }
+			.auth-buttons { display: flex; gap: 1rem; }
+			.btn {
+				padding: 0.5rem 1.5rem; border-radius: 6px; text-decoration: none;
+				font-weight: 500; transition: all 0.3s ease; border: none;
+				cursor: pointer; font-size: 1rem;
+			}
+			.btn-primary {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+			}
+			.btn-primary:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 5px 20px rgba(102,126,234,0.4);
+			}
+			.btn-outline {
+				border: 2px solid #667eea; color: #667eea; background: transparent;
+			}
+			.btn-outline:hover { background: #667eea; color: white; }
+			.main-content {
+				max-width: 1200px; margin: 80px auto 0; padding: 2rem;
+			}
+			.album-header {
+				background: white; border-radius: 16px; padding: 2rem;
+				margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+				display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;
+			}
+			.album-cover-large {
+				width: 180px; height: 180px;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				border-radius: 12px; display: flex; align-items: center;
+				justify-content: center; color: white; font-size: 5rem;
+				flex-shrink: 0;
+			}
+			.album-info h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #333; }
+			.album-info .album-uploader { color: #667eea; font-size: 1rem; margin-bottom: 0.25rem; }
+			.album-info .album-meta { color: #999; font-size: 0.9rem; }
+			.back-link {
+				display: inline-block; margin-bottom: 1rem; color: white;
+				text-decoration: none; font-size: 1rem; opacity: 0.8;
+				transition: opacity 0.3s ease;
+			}
+			.back-link:hover { opacity: 1; }
+			.section-title {
+				color: white; font-size: 1.5rem; margin-bottom: 1rem;
+				text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+			}
+			.loading-container {
+				display: none; flex-direction: column; align-items: center;
+				justify-content: center; padding: 4rem; background: white;
+				border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+			}
+			.loading-spinner {
+				width: 50px; height: 50px; border: 5px solid #f3f3f3;
+				border-top: 5px solid #667eea; border-radius: 50%;
+				animation: spin 1s linear infinite; margin-bottom: 1rem;
+			}
+			@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+			.tracks-list { display: flex; flex-direction: column; gap: 0.75rem; }
+			.track-card {
+				background: white; border-radius: 10px; padding: 1rem 1.5rem;
+				display: flex; align-items: center; gap: 1rem;
+				box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+				transition: transform 0.2s ease, box-shadow 0.2s ease;
+				cursor: pointer;
+			}
+			.track-card:hover {
+				transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+			}
+			.track-index {
+				width: 28px; color: #999; font-weight: 600; text-align: center;
+				flex-shrink: 0;
+			}
+			.track-cover-small {
+				width: 48px; height: 48px;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				border-radius: 8px; flex-shrink: 0; background-size: cover;
+				background-position: center;
+			}
+			.track-info { flex: 1; min-width: 0; }
+			.track-name { font-weight: 600; color: #333; margin-bottom: 0.2rem; }
+			.track-artist { font-size: 0.85rem; color: #667eea; }
+			.track-meta {
+				display: flex; align-items: center; gap: 1rem;
+				color: #999; font-size: 0.85rem; flex-shrink: 0;
+			}
+			.track-likes { color: #e53e3e; }
+			.empty-state {
+				text-align: center; padding: 4rem; background: white;
+				border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+			}
+			.empty-state-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
+			.empty-state h3 { color: #333; margin-bottom: 0.5rem; }
+			.empty-state p { color: #666; }
+			.footer {
+				background: #1a1a2e; color: white; padding: 3rem 2rem 1rem; margin-top: 4rem;
+			}
+			.footer-content {
+				max-width: 1200px; margin: 0 auto;
+				display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 3rem;
+			}
+			.footer-section h4 { margin-bottom: 1rem; color: #667eea; }
+			.footer-section ul { list-style: none; }
+			.footer-section ul li { margin-bottom: 0.5rem; }
+			.footer-section a { color: #999; text-decoration: none; transition: color 0.3s ease; }
+			.footer-section a:hover { color: #667eea; }
+			.footer-bottom {
+				max-width: 1200px; margin: 2rem auto 0; padding-top: 2rem;
+				border-top: 1px solid rgba(255,255,255,0.1);
+				text-align: center; color: #999; font-size: 0.9rem;
+			}
+			@media (max-width: 768px) {
+				.nav-container { flex-direction: column; gap: 1rem; }
+				.nav-links { flex-direction: column; width: 100%; }
+				.auth-buttons { width: 100%; justify-content: center; }
+				.album-header { flex-direction: column; text-align: center; }
+				.track-card { flex-wrap: wrap; }
+				.track-meta { width: 100%; justify-content: flex-end; }
+			}
+		</style>
+	</head>
+	<body>
+		<nav class="navbar">
+			<div class="nav-container">
+				<div class="logo">
+					<span class="logo-icon">🎵</span>
+					<span class="logo-text">Mute</span>
+				</div>
+				<div class="nav-links">
+					<a href="/">Главная</a>
+					<a href="/albums.html">Альбомы</a>
+				</div>
+			</div>
+		</nav>
+
+		<div class="main-content">
+			<a href="/albums.html" class="back-link">← Вернуться к альбомам</a>
+
+			<div class="album-header" id="albumHeader">
+				<div class="album-cover-large">💿</div>
+				<div class="album-info">
+					<h1 id="albumName">Загрузка...</h1>
+					<div class="album-uploader" id="albumUploader"></div>
+					<div class="album-meta" id="albumMeta"></div>
+				</div>
+			</div>
+
+			<h2 class="section-title">Треки</h2>
+
+			<div class="loading-container" id="loadingContainer">
+				<div class="loading-spinner"></div>
+				<p>Загрузка треков...</p>
+			</div>
+
+			<div id="tracksContainer"></div>
+		</div>
+
+		<footer class="footer">
+			<div class="footer-content">
+				<div class="footer-section">
+					<h4>Mute</h4>
+					<p>Бесплатная музыка для всех</p>
+				</div>
+				<div class="footer-section">
+					<h4>Навигация</h4>
+					<ul>
+						<li><a href="/">Главная</a></li>
+						<li><a href="/albums.html">Альбомы</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="footer-bottom">
+				<p>&copy; 2026 Mute. Все права защищены.</p>
+			</div>
+		</footer>
+
+		<script>
+			const apiBaseUrl = 'https://172.17.110.58:443'
+			let tracks = []
+
+			const loadingContainer = document.getElementById('loadingContainer')
+			const tracksContainer = document.getElementById('tracksContainer')
+
+			const params = new URLSearchParams(window.location.search)
+			const albumId = params.get('id')
+			const albumNameParam = params.get('name') || 'Альбом'
+			const albumUploaderParam = params.get('uploader') || ''
+
+			document.getElementById('albumName').textContent = albumNameParam
+			document.getElementById('albumUploader').textContent = albumUploaderParam
+			document.title = `Mute - ${albumNameParam}`
+
+			async function fetchAlbumTracks() {
+				if (!albumId) {
+					tracksContainer.innerHTML = `
+						<div class="empty-state">
+							<div class="empty-state-icon">💿</div>
+							<h3>Альбом не указан</h3>
+							<p>Перейдите к альбому со страницы <a href="/albums.html">списка альбомов</a></p>
+						</div>
+					`
+					return
+				}
+
+				loadingContainer.style.display = 'flex'
+				tracksContainer.style.display = 'none'
+
+				try {
+					const response = await fetch(`${apiBaseUrl}/album/${encodeURIComponent(albumId)}`, {
+						method: 'GET',
+						headers: { Accept: 'application/json' },
+						credentials: 'include',
+					})
+
+					if (!response.ok) {
+						throw new Error(`HTTP ошибка! Статус: ${response.status}`)
+					}
+
+					const data = await response.json()
+
+					if (Array.isArray(data)) {
+						tracks = data
+					} else if (data && data.tracks && Array.isArray(data.tracks)) {
+						tracks = data.tracks
+					} else {
+						tracks = []
+					}
+
+					document.getElementById('albumMeta').textContent = `${tracks.length} треков`
+					renderTracks()
+				} catch (error) {
+					console.error('Ошибка загрузки:', error)
+					tracksContainer.style.display = 'block'
+					tracksContainer.innerHTML = `
+						<div class="empty-state">
+							<div class="empty-state-icon">⚠️</div>
+							<h3>Ошибка загрузки треков</h3>
+							<p>${error.message}</p>
+							<button class="btn btn-primary" onclick="fetchAlbumTracks()" style="margin-top:1rem">Повторить</button>
+						</div>
+					`
+				} finally {
+					loadingContainer.style.display = 'none'
+					tracksContainer.style.display = 'block'
+				}
+			}
+
+			function formatDuration(seconds) {
+				if (!seconds) return '0:00'
+				const mins = Math.floor(seconds / 60)
+				const secs = seconds % 60
+				return `${mins}:${secs.toString().padStart(2, '0')}`
+			}
+
+			function escapeHtml(text) {
+				if (!text) return ''
+				const div = document.createElement('div')
+				div.textContent = text
+				return div.innerHTML
+			}
+
+			function attrEscape(text) {
+				if (!text) return ''
+				return text.replace(/'/g, '&#39;').replace(/\\/g, '\\\\').replace(/\n/g, ' ')
+			}
+
+			function renderTracks() {
+				if (tracks.length === 0) {
+					tracksContainer.innerHTML = `
+						<div class="empty-state">
+							<div class="empty-state-icon">🎵</div>
+							<h3>В альбоме пока нет треков</h3>
+							<p>Этот альбом пуст</p>
+						</div>
+					`
+					return
+				}
+
+				tracksContainer.innerHTML = `
+					<div class="tracks-list">
+						${tracks.map((track, i) => {
+							const coverStyle = track.music_cover
+								? `background-image: url('${attrEscape(track.music_cover)}')`
+								: ''
+							const duration = formatDuration(track.music_duration || track.dur_sec)
+							return `
+								<div class="track-card" onclick="window.location.href='music-id.html?id=${encodeURIComponent(track.music_id || '')}'">
+									<div class="track-index">${i + 1}</div>
+									<div class="track-cover-small" style="${coverStyle}"></div>
+									<div class="track-info">
+										<div class="track-name">${escapeHtml(track.music_name || 'Без названия')}</div>
+										<div class="track-artist">${escapeHtml(track.uploader_username || track.uploader_id || 'Неизвестный')}</div>
+									</div>
+									<div class="track-meta">
+										<span class="track-likes">❤️ ${track.music_likes || 0}</span>
+										<span>⏱️ ${duration}</span>
+									</div>
+								</div>
+							`
+						}).join('')}
+					</div>
+				`
+			}
+
+			document.addEventListener('DOMContentLoaded', fetchAlbumTracks)
+		</script>
+	</body>
+</html>
