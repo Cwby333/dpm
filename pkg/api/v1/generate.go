@@ -9,11 +9,9 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"dpm/internal/models"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"path"
@@ -108,12 +106,6 @@ type GetProfile struct {
 	Username       *string `json:"username,omitempty"`
 }
 
-// Login defines model for Login.
-type Login struct {
-	Password *string `json:"password,omitempty"`
-	Username *string `json:"username,omitempty"`
-}
-
 // Register defines model for Register.
 type Register struct {
 	Email    *string `json:"email,omitempty"`
@@ -175,12 +167,6 @@ type AddListeningToLHJSONBody struct {
 // AddListeningToLHParams defines parameters for AddListeningToLH.
 type AddListeningToLHParams struct {
 	AccessToken string `form:"Access-Token" json:"Access-Token"`
-}
-
-// LoginJSONBody defines parameters for Login.
-type LoginJSONBody struct {
-	Password *string `json:"password,omitempty"`
-	Username *string `json:"username,omitempty"`
 }
 
 // PostLogoutParams defines parameters for PostLogout.
@@ -248,9 +234,6 @@ type DeleteListeningFromLHJSONRequestBody DeleteListeningFromLHJSONBody
 // AddListeningToLHJSONRequestBody defines body for AddListeningToLH for application/json ContentType.
 type AddListeningToLHJSONRequestBody AddListeningToLHJSONBody
 
-// LoginJSONRequestBody defines body for Login for application/json ContentType.
-type LoginJSONRequestBody LoginJSONBody
-
 // DeleteMusicLikeJSONRequestBody defines body for DeleteMusicLike for application/json ContentType.
 type DeleteMusicLikeJSONRequestBody DeleteMusicLikeJSONBody
 
@@ -286,9 +269,6 @@ type ServerInterface interface {
 
 	// (POST /listening-history)
 	AddListeningToLH(w http.ResponseWriter, r *http.Request, params AddListeningToLHParams)
-
-	// (POST /login)
-	Login(w http.ResponseWriter, r *http.Request)
 
 	// (POST /logout)
 	PostLogout(w http.ResponseWriter, r *http.Request, params PostLogoutParams)
@@ -577,20 +557,6 @@ func (siw *ServerInterfaceWrapper) AddListeningToLH(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AddListeningToLH(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// Login operation middleware
-func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.Login(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1012,7 +978,6 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/listening-history", wrapper.DeleteListeningFromLH)
 	m.HandleFunc("GET "+options.BaseURL+"/listening-history", wrapper.GetLH)
 	m.HandleFunc("POST "+options.BaseURL+"/listening-history", wrapper.AddListeningToLH)
-	m.HandleFunc("POST "+options.BaseURL+"/login", wrapper.Login)
 	m.HandleFunc("POST "+options.BaseURL+"/logout", wrapper.PostLogout)
 	m.HandleFunc("GET "+options.BaseURL+"/music", wrapper.GetAllMusic)
 	m.HandleFunc("DELETE "+options.BaseURL+"/music/like", wrapper.DeleteMusicLike)
@@ -1239,85 +1204,6 @@ func (response AddListeningToLH500JSONResponse) VisitAddListeningToLHResponse(w 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type LoginRequestObject struct {
-	Body *LoginJSONRequestBody
-}
-
-type LoginResponseObject interface {
-	VisitLoginResponse(w http.ResponseWriter) error
-}
-
-type Login200ResponseHeaders struct {
-	AccessToken  interface{}
-	RefreshToken interface{}
-}
-
-type Login200JSONResponse struct {
-	Body struct {
-		Message *string `json:"message,omitempty"`
-	}
-	Headers Login200ResponseHeaders
-}
-
-func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
-	slog.Info("Login200Response")
-	access, ok := response.Headers.AccessToken.(models.JWTAccess)
-	if !ok {
-		slog.Error("not access")
-	}
-	slog.Info(access.Sign)
-	refresh, ok := response.Headers.RefreshToken.(models.JWTRefresh)
-	if !ok {
-		slog.Error("not refresh")
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "Access-Token",
-		Value:    access.Sign,
-		Expires:  time.Now().Add(time.Hour * 1),
-		Secure:   true,
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
-		Domain:   "",
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:     "Refresh-Token",
-		Value:    refresh.Sign,
-		Expires:  time.Now().Add(time.Hour * 24),
-		Secure:   true,
-		HttpOnly: true,
-		Domain:   "",
-		Path:     "/refresh",
-		SameSite: http.SameSiteNoneMode,
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:     "Refresh-Token-Logout",
-		Value:    refresh.Sign,
-		Expires:  time.Now().Add(time.Hour * 24),
-		Secure:   true,
-		HttpOnly: true,
-		Domain:   "",
-		Path:     "/logout",
-		SameSite: http.SameSiteNoneMode,
-	})
-
-	w.WriteHeader(200)
-
-	return nil
-}
-
-type Login500JSONResponse struct {
-	Message *string `json:"message,omitempty"`
-}
-
-func (response Login500JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(500)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
 type PostLogoutRequestObject struct {
 	Params PostLogoutParams
 }
@@ -1336,51 +1222,9 @@ type PostLogout200Response struct {
 }
 
 func (response PostLogout200Response) VisitPostLogoutResponse(w http.ResponseWriter) error {
-	slog.Info("Logout200Response")
-	access, ok := response.Headers.AccessToken.(models.JWTAccess)
-	if !ok {
-		slog.Error("not access")
-	}
-	slog.Info(access.Sign)
-	refresh, ok := response.Headers.RefreshTokenLogout.(models.JWTRefresh)
-	if !ok {
-		slog.Error("not refresh")
-	}
-	_ = refresh
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "Access-Token",
-		Value:    "",
-		Expires:  time.Now().Add(time.Second * 5),
-		Secure:   true,
-		Path:     "/",
-		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
-		Domain:   "",
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:     "Refresh-Token",
-		Value:    "",
-		Expires:  time.Now().Add(time.Second * 5),
-		Secure:   true,
-		HttpOnly: true,
-		Domain:   "",
-		Path:     "/refresh",
-		SameSite: http.SameSiteNoneMode,
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:     "Refresh-Token-Logout",
-		Value:    "",
-		Expires:  time.Now().Add(time.Second * 5),
-		Secure:   true,
-		HttpOnly: true,
-		Domain:   "",
-		Path:     "/logout",
-		SameSite: http.SameSiteNoneMode,
-	})
-
+	w.Header().Set("Access-Token", fmt.Sprint(response.Headers.AccessToken))
+	w.Header().Set("Refresh-Token-Logout", fmt.Sprint(response.Headers.RefreshTokenLogout))
 	w.WriteHeader(200)
-
 	return nil
 }
 
@@ -1634,9 +1478,6 @@ type StrictServerInterface interface {
 
 	// (POST /listening-history)
 	AddListeningToLH(ctx context.Context, request AddListeningToLHRequestObject) (AddListeningToLHResponseObject, error)
-
-	// (POST /login)
-	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
 
 	// (POST /logout)
 	PostLogout(ctx context.Context, request PostLogoutRequestObject) (PostLogoutResponseObject, error)
@@ -1905,37 +1746,6 @@ func (sh *strictHandler) AddListeningToLH(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// Login operation middleware
-func (sh *strictHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var request LoginRequestObject
-
-	var body LoginJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.Login(ctx, request.(LoginRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "Login")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(LoginResponseObject); ok {
-		if err := validResponse.VisitLoginResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // PostLogout operation middleware
 func (sh *strictHandler) PostLogout(w http.ResponseWriter, r *http.Request, params PostLogoutParams) {
 	var request PostLogoutRequestObject
@@ -2196,32 +2006,32 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"H4sIAAAAAAAC/+xaT2/bNhT/KgQ3YBclTlf04tO8pW0CuFiQpaeiCGjp2WIjiSxJJTAMf/eBpEhJFmUr",
+	"sR0kRU6W9cjHx9/7T2qFY5ZzVkChJB6vcAokAWEeJ3EMUt6wOyj035gVCgqlHwnnGY2JoqwY/ZDMkGWc",
+	"Qk70k1pywGMslaDFAq/X63WEr2EuQKaHYLaOsICfJUj1N0soGFGvYUGlAvEo1lwwDkJVLCAnNAusGGFO",
+	"pHxgIgkSSwmiIDmEZLWCUgEJHn/zI5Hjh+yS3yM3kc1+QKyw2WICMhaUa9HxGF/DTzRjyRLNmUAj4XZr",
+	"l5CcFdJu4jOoT+SePQ4HqiA3s38XMMdj/NuoNomRHSZHlu3ay0qEIMuQqJ8/3qDR3I3+DGpK7yC5ESS+",
+	"k4cXq2Y+WLaM3oH0skkFBS0WF1QqJpbHELC9wnWlrkHigkKZm4/SSkQr+ZdS0ngPc8/d/EG7sKt1RI4s",
+	"m1sL6aOYTZ0WNkBo+4yVcoiHaKxIlqHcSeow8oAfAKtBEFlI5s4NhyLx5J3/ayhIpUShB5plaAZIgCpF",
+	"AQmaLdGIC5aUsRqtqofL8zXSnqC3aACo4LoSbE4zOEoMNXDcxqy0TCs6LRQswAQKb0IhUuUC2+a7mHhL",
+	"1BPi9G7z0pGDVwBpcqVCzc5H3DYYSWnRvZUQsyLp2RwNp5UtcFj7itm9TXedqT27jLBkxeK2FGEFlTxj",
+	"OvPfBgXaME6a4Gqd9kQnd9TdfIStxA0xusYd4UY8D7vhlo1bult5G3g9oG8Es77ZxwC4QX+UpWrEehJM",
+	"B7/ajxKiDH3ORK79BesXJ4oahfbA8oZ7G3efgN+8fm+vb+TBHq/vky8QuGkxZy6HkVg18hLOSwVcMD32",
+	"r4V+dxqz3G1qjL+UClBFx50UYIREOY0FkyDuaQzo4ubmCk2uLk1Z3podYUVVBsFpOML3IKTl+u707PRM",
+	"L8Y4FIRTPMbvT89O32Hdd6jUQDAi2azM8Xi1jqrn0cr8nNBkbYyuJegk1g8SPVCVIjtVT/QVSQIZWP9v",
+	"zzs3720FhRRD2iH+kMjOMwJa7V4mfvCnisaJIDko0zh+W2Gq2cWM3VGo0bXt5IltAZuWpUQJ0ZaW73uz",
+	"4VvuW8ddnu+2dDcwVH5ttlx/np3t19Bu2tl/pQFK6+zDwXmDuAeBQAjdnnXpLdPZ0P8CVNdmdNm91U58",
+	"R/ocRtJVS6j69uNGXrjnwZozGYBwkiQDfW6SJG8O97odTgdin+V3+55LrLt8z43r+N60IrxI32ueDB0H",
+	"/AD2VQ18ktYnPjsSYn0EMxcsD5zIhHOjL8w/CZZPL16N0+7XJgwpJP3It/xqfLdrT73+vtv4tF9dvFyP",
+	"3zhvfRmJlxYDgJ0kiRf/hr0ih37LwsEszBbU8inznOhEgKf6lTaGB5gRznE1jJUB45ma9zYjyKVUoPvI",
+	"sJ3ZoR17umJSedJRLSnqYVhdylmOJ16WvcNAWLFR927xxN8HhiJHNXzUvIesrxLbUu9g0bp+NPo/uI19",
+	"bBqXvzGoAnknRE+yzB4gPUn1hw/M/vbi2L4XNfytc2dTkyaxsknS0yympngeULM16mLEiopLuE7zh0+/",
+	"RkD/tSL3x+2VVKdZaio7HI112B1mHnrkm3G8BuOowwPPyDKg84wsd5mFHxIhaUMWKeQDCMQFSFosvl5P",
+	"kWIo5++RuQTstRbNCR9Um8NPv/dVZ3txs/NF0XN7MOTa9LmLOmsE9nKiq+Ov5n0npawql1k3Ena387Kd",
+	"wmyJLs9DPVdPNm/zsTwMAxM9OFFpHTuc5x6itHuegqH5McuHvUwtBynJ4qm3892Or1VJ+ETBCmhon2v+",
+	"W2q0K03/tU4jalj+SSG+QymQTKXIXUwZVOqvQDa8x+ZMR999KFmP7ELrSS/ymMKJd/SkJRrfLYbzkkYd",
+	"aRJKqUTujjqy3w5G9beEpEgQ4Rw5jiiluW5lfW/a1oH/YLKTqMLgNL63HPm5h802e4aAp/vRc0Uih1vz",
+	"hGG9/j8AAP//UYKtKYErAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

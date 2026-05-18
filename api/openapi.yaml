@@ -13,6 +13,7 @@ paths:
   /album:
     get:
       description: "Get all albums"
+      operationId: "getAlbums"
       responses:
         200:
           description: "Success"
@@ -32,6 +33,7 @@ paths:
     description: "Actions with album"
     get:
       description: "Get albom"
+      operationId: "getAlbumID"
       parameters:
         - name: album-id
           in: path
