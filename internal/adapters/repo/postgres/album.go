@@ -25,6 +25,7 @@ func AlbumDBToAlbum(a Album) models.Album {
 		ID: a.ID,
 		Name: a.Name,
 		UploaderID: a.UploaderID,
+		Cover: a.Cover,
 	}
 }
 
@@ -82,8 +83,9 @@ func (pg *Postgres) GetAlbum(ctx context.Context, id string) (models.Album, erro
 
 	name := ""
 	uploaderID := ""
+	cover := ""
 	for rows.Next() {
-		err = rows.Scan(&name, &uploaderID)
+		err = rows.Scan(&name, &uploaderID, &cover)
 		if err != nil {
 			return models.Album{}, fmt.Errorf("%s: %w", op, err)
 		}
@@ -93,6 +95,7 @@ func (pg *Postgres) GetAlbum(ctx context.Context, id string) (models.Album, erro
 		ID: id,
 		Name: name,
 		UploaderID: uploaderID,
+		Cover: cover,
 	}, nil
 }
 

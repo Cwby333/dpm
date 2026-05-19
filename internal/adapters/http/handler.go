@@ -572,7 +572,7 @@ func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequest
 	for i := range p {
 		urlCover := p[i].CoverURL
 		if p[i].CoverURL != "" {
-			urlCover, err = h.mService.GetPresignURCover(ctx, p[i].ID)
+			urlCover, err = h.mService.GetPresignURLSong(ctx, p[i].CoverURL)
 			if err != nil {
 				slog.Error(err.Error())
 				return api.GetAllMusic500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
