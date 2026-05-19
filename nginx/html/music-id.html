@@ -363,7 +363,48 @@
 				}
 			}
 @media (max-width: 768px) { .main-content { margin-top: 260px; } }
-		</style>
+		
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    background: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    cursor: pointer;
+    padding: 8px;
+    width: auto !important;
+    height: auto !important;
+    font-size: inherit !important;
+    color: inherit !important;
+    box-shadow: none !important;
+}
+.hamburger span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background: #555;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+.hamburger:hover span {
+    background: #667eea;
+}
+
+@media (max-width: 797px) {
+    .nav-container { flex-direction: row !important; flex-wrap: wrap; }
+    .hamburger { display: flex; margin-left: auto; }
+    .nav-links { display: none; flex-basis: 100%; flex-direction: column; width: 100%; gap: 0.25rem; padding: 0.5rem 0; }
+    .nav-links.active { display: flex; }
+    .nav-links a { width: 100%; }
+    .auth-buttons { flex-direction: column; width: 100%; gap: 0.5rem; }
+    .auth-buttons .btn { text-align: center; }
+    .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .hamburger.active span:nth-child(2) { opacity: 0; }
+    .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+}
+</style>
 	</head>
 	<body>
 		<nav class="navbar">
@@ -371,6 +412,11 @@
 				<div class="logo">
 					<span class="logo-icon">🎵</span><span class="logo-text">Mute</span>
 				</div>
+				<button class="hamburger" id="hamburgerBtn" aria-label="Меню">
+					<span></span>
+					<span></span>
+					<span></span>
+				</button>
 				<div class="nav-links">
 					<a href="main.html">Главная</a>
 					<a href="music.html" class="active">Треки</a>
@@ -644,5 +690,23 @@
 
 			document.addEventListener('DOMContentLoaded', () => loadMusicDetail())
 		</script>
-	</body>
+	
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			var hb = document.getElementById('hamburgerBtn');
+			if (hb) {
+				hb.addEventListener('click', function() {
+					document.querySelector('.nav-links').classList.toggle('active');
+					this.classList.toggle('active');
+				});
+			}
+			document.querySelectorAll('.nav-links a').forEach(function(link) {
+				link.addEventListener('click', function() {
+					document.querySelector('.nav-links').classList.remove('active');
+					var h = document.getElementById('hamburgerBtn');
+					if (h) h.classList.remove('active');
+				});
+			});
+		});
+	</script></body>
 </html>
