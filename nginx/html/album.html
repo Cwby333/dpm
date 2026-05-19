@@ -183,7 +183,7 @@
 			<a href="/albums.html" class="back-link">← Вернуться к альбомам</a>
 
 			<div class="album-header" id="albumHeader">
-				<div class="album-cover-large">💿</div>
+				<div class="album-cover-large" id="albumCoverLarge">💿</div>
 				<div class="album-info">
 					<h1 id="albumName">Загрузка...</h1>
 					<div class="album-uploader" id="albumUploader"></div>
@@ -320,6 +320,14 @@
 						</div>
 					`
 					return
+				}
+
+				const coverEl = document.getElementById('albumCoverLarge')
+				if (tracks[0].music_cover) {
+					coverEl.style.backgroundImage = `url('${attrEscape(tracks[0].music_cover)}')`
+					coverEl.style.backgroundSize = 'cover'
+					coverEl.style.backgroundPosition = 'center'
+					coverEl.textContent = ''
 				}
 
 				tracksContainer.innerHTML = `

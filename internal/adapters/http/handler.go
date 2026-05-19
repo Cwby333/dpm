@@ -1298,12 +1298,20 @@ func (h Handler) GetAlbums(ctx context.Context, request api.GetAlbumsRequestObje
 
 	al := make([]api.Album, 0, len(a))
 	for i := range a {
+		coverURL := a[i].Cover
+		if a[i].Cover != "" {
+			url, err := h.aService.GetAlbumCoverPresignURL(ctx, a[i].Cover)
+			if err == nil {
+				coverURL = url
+			}
+		}
+
 		al = append(al, api.Album{
 			Id: &a[i].ID,
 			Name: &a[i].Name,
 			UploaderId: &a[i].UploaderID,
 			UploaderUsername: &a[i].Username,
-			Cover: &a[i].Cover,
+			Cover: &coverURL,
 		})
 	}
 
@@ -1318,16 +1326,24 @@ func (h Handler) GetAlbumID(ctx context.Context, request api.GetAlbumIDRequestOb
 		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
 		return api.GetAlbumID500JSONResponse(err.Error()), err
 	}
-	
+
 	al := make([]api.LikedTrack, 0, len(a))
 	for i := range a {
+		coverURL := a[i].MusicCover
+		if a[i].MusicCover != "" {
+			url, err := h.aService.GetAlbumCoverPresignURL(ctx, a[i].MusicCover)
+			if err == nil {
+				coverURL = url
+			}
+		}
+
 		al = append(al, api.LikedTrack{
 			MusicId: &a[i].MusicID,
 			MusicName: &a[i].MusicName,
 			UploaderId: &a[i].MusicUploaderID,
 			UploaderUsername: &a[i].UserUsername,
 			MusicLikes: &a[i].MusicLikes,
-			MusicCover: &a[i].MusicCover,
+			MusicCover: &coverURL,
 			SongUrl: &a[i].MusicSongURL,
 			MusicDuration: &a[i].MusicDurationSeconds,
 		})

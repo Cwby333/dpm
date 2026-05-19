@@ -507,7 +507,7 @@
 					<div class="albums-grid">
 						${albums.map(album => `
 							<div class="album-card" onclick="window.location.href='album.html?id=${encodeURIComponent(album.id || '')}&name=${encodeURIComponent(album.name || 'Без названия')}&uploader=${encodeURIComponent(album.uploader_username || album.uploader_id || '')}'">
-								<div class="album-cover">💿</div>
+								<div class="album-cover" style="${album.cover ? `background-image: url('${attrEscape(album.cover)}'); background-size: cover; background-position: center;` : ''}">${album.cover ? '' : '💿'}</div>
 								<div class="album-info">
 									<div class="album-name">${escapeHtml(album.name || 'Без названия')}</div>
 									<div class="album-uploader">${escapeHtml(album.uploader_username || album.uploader_id || 'Неизвестный')}</div>
@@ -524,6 +524,11 @@
 				const div = document.createElement('div')
 				div.textContent = text
 				return div.innerHTML
+			}
+
+			function attrEscape(text) {
+				if (!text) return ''
+				return text.replace(/'/g, '&#39;').replace(/\\/g, '\\\\').replace(/\n/g, ' ')
 			}
 
 			function showLoading() {

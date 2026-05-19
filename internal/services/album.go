@@ -5,6 +5,7 @@ import (
 	"context"
 	"dpm/internal/models"
 	"fmt"
+	"log/slog"
 	"math"
 
 	"github.com/google/uuid"
@@ -171,6 +172,23 @@ func (s *AlbumsService) UploadAlbum(ctx context.Context, albumName string, uploa
 	}
 
 	return albumID, nil
+}
+
+func (s *AlbumsService) GetAlbumCoverPresignURL(ctx context.Context, coverKey string) (string, error) {
+	const op = "./internal/services/album.go.GetAlbumCoverPresignURL()"
+
+	if coverKey == "" {
+		return "", nil
+	}
+
+	slog.Info(coverKey)
+
+	url, err := s.s3.GetPresignURL(ctx, coverKey)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	return url, nil
 }
 
 func parseMP3Duration(data []byte) int {
