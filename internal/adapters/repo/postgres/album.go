@@ -12,6 +12,7 @@ type Album struct {
 	ID string `db:"id"`
 	Name string `db:"name"`
 	UploaderID string `db:"uploader_id"`
+	Cover string `db:"cover"`
 }
 
 type AlbumInfo struct {
@@ -37,8 +38,20 @@ func AlbumInfoDBToai(a AlbumInfo) models.AlbumInfo {
 func (pg *Postgres) CreateAlbum(ctx context.Context, album models.Album) (error) {
 	const op = "./internal/adapters/repo/postgres/album.go.CreateAlbum()"
 
-	q := "INSERT INTO albums(name, uploader_id) VALUES ($1, $2)"
-	_, err := pg.pool.Exec(ctx, q, album.Name, album.UploaderID)
+	q := "INSERT INTO albums(id, name, uploader_id, cover) VALUES ($1, $2, $3, $4)"
+	_, err := pg.pool.Exec(ctx, q, album.ID, album.Name, album.UploaderID, album.Cover)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (pg *Postgres) AddMusicToAlbum(ctx context.Context, albumID string, musicID string) error {
+	const op = "./internal/adapters/repo/postgres/album.go.AddMusicToAlbum()"
+
+	q := "INSERT INTO albums_music(album_id, music_id) VALUES ($1, $2)"
+	_, err := pg.pool.Exec(ctx, q, albumID, musicID)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -61,7 +74,7 @@ func (pg *Postgres) DeleteAlbum(ctx context.Context, id string) (error) {
 func (pg *Postgres) GetAlbum(ctx context.Context, id string) (models.Album, error) {
 	const op = "./internal/adapters/repo/postgres/album.go.GetAlbum()"
 
-	q := "SELECT name, uploader_id FROM albums WHERE id = $1"
+	q := "SELECT name, uploader_id, cover FROM albums WHERE id = $1"
 	rows, err := pg.pool.Query(ctx, q, id)
 	if err != nil {
 		return models.Album{}, fmt.Errorf("%s: %w", op, err)
@@ -109,7 +122,7 @@ func (pg *Postgres) GetAlbumsMusic(ctx context.Context, id string) ([]models.Lik
 func (pg *Postgres) GetAlbumInfo(ctx context.Context, id string) (models.AlbumInfo, error) {
 	const op = "./internal/adapters/repo/postgres/album.go.GetAlbumInfo()"
 
-	q := "SELECT a.id, a.name, a.uploader_id, u.username FROM albums a JOIN users u ON a.uploader_id = u.id WHERE a.id = $1"
+	q := "SELECT a.id, a.name, a.uploader_id, a.cover, u.username FROM albums a JOIN users u ON a.uploader_id = u.id WHERE a.id = $1"
 	rows, err := pg.pool.Query(ctx, q, id)
 	if err != nil {
 		return models.AlbumInfo{}, fmt.Errorf("%s: %w", op, err)
@@ -126,7 +139,7 @@ func (pg *Postgres) GetAlbumInfo(ctx context.Context, id string) (models.AlbumIn
 func (pg *Postgres) GetAlbumsInfo(ctx context.Context) ([]models.AlbumInfo, error) {
 	const op = "./internal/adapters/repo/postgres/album.go.GetAlbumsInfo()"
 
-	q := "SELECT a.id, a.name, a.uploader_id, u.username FROM albums a JOIN users u ON a.uploader_id = u.id"
+	q := "SELECT a.id, a.name, a.uploader_id, a.cover, u.username FROM albums a JOIN users u ON a.uploader_id = u.id"
 	rows, err := pg.pool.Query(ctx, q)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)

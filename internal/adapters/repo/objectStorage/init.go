@@ -149,10 +149,14 @@ func (s3Client S3Client) GetPresignURL(ctx context.Context, id string) (string, 
 		Key:    &id,
 	}
 
+	slog.Info("ReqKey", *req.Key)
+
 	resp, err := presignClient.PresignGetObject(ctx, &req, s3.WithPresignExpires(expired))
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
+
+	slog.Info("Resp URL", resp.URL)
 
 	return resp.URL, nil
 }

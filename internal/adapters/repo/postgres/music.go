@@ -91,8 +91,10 @@ func (p *Postgres) GetMusic(ctx context.Context, id string, userID string) (mode
 
 	l, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[LikeDB])
 	if err != nil {
-		slog.Error(fmt.Sprintf("GetMusic CollectRows: %v", err.Error()))
-		return MusicPgToMusic(product), models.Like{}, nil
+		if !errors.Is(err, pgx.ErrNoRows) {
+			slog.Error(fmt.Sprintf("GetMusic Favor CollectRows: %v", err.Error()))
+			return MusicPgToMusic(product), models.Like{}, nil
+		}
 	}
 
 	like := LDBToLike(l)

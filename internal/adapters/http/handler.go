@@ -196,6 +196,7 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	h.Mux.Handle("GET /album", corsMiddleware(http.HandlerFunc(strict.GetAlbums)))
+	h.Mux.Handle("POST /album", corsMiddleware(http.HandlerFunc(h.UploadAlbum)))
 	h.Mux.Handle("OPTIONS /album", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
@@ -627,22 +628,27 @@ func (h Handler) GetMusic(ctx context.Context, request api.GetMusicRequestObject
 		}
 	}
 
-	slog.Info("GetMusic GET /music/{musicID} req")
+	slog.Info("GetMusic GET /music/{musicID} req", slog.String("reqID", request.MusicID))
 
 	product, like, err := h.mService.GetMusic(ctx, request.MusicID, u.ID)
 	if err != nil {
+		slog.Error(err.Error())
 		errMsg := err.Error()
 		return api.GetMusic500JSONResponse{
 			Message: &errMsg,
 		}, err
 	}
 
-	urlCover, err := h.mService.GetPresignURCover(ctx, request.MusicID)
+	slog.Info("GetMusic GET /music/{musicID}, Get music", slog.String("music_cover", product.CoverURL))
+
+	urlCover, err := h.mService.GetPresignURLSong(ctx, product.CoverURL)
 	if err != nil {
 		msg := err.Error()
 		slog.Error(err.Error())
 		return api.GetMusic500JSONResponse{Message: &msg}, fmt.Errorf("%s: %w", op, err)
 	}
+
+	slog.Info("GetMusic GET /music/{musicID}, get presign URL", slog.String("URL", urlCover))
 
 	return api.GetMusic200JSONResponse{
 		GetMusicResponseJSONResponse: api.GetMusicResponseJSONResponse{
@@ -1161,10 +1167,116 @@ func (h Handler) MusicUpload(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Success"))
 }
 
+func (h Handler) UploadAlbum(w http.ResponseWriter, r *http.Request) {
+	const op = "./internal/adapters/http/handler.go.UploadAlbum()"
+
+	t, err := r.Cookie("Access-Token")
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if t.Value == "" {
+		slog.Info("Token empty")
+		http.Error(w, "Empty token", http.StatusBadRequest)
+		return
+	}
+
+	claims, err := h.uServices.CheckAccessToken(r.Context(), t.Value)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, 50<<20)
+
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		slog.Error(fmt.Sprint(op, err.Error()))
+		http.Error(w, "Failed to parse form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	albumName := r.FormValue("album_name")
+	if albumName == "" {
+		slog.Warn("album_name field empty")
+		http.Error(w, "album_name field is required", http.StatusBadRequest)
+		return
+	}
+
+	uploaderID := claims["sub"].(string)
+
+	var coverData []byte
+	coverContentType := ""
+	coverFile, _, err := r.FormFile("album_cover")
+	if err == nil {
+		defer coverFile.Close()
+		coverData, err = io.ReadAll(coverFile)
+		if err != nil {
+			slog.Error(fmt.Sprint(op, err.Error()))
+			http.Error(w, "Failed to read cover file", http.StatusInternalServerError)
+			return
+		}
+		coverContentType = "image/jpeg"
+	} else if !errors.Is(err, http.ErrMissingFile) {
+		slog.Error(fmt.Sprint(op, err.Error()))
+		http.Error(w, "Failed to get cover file", http.StatusBadRequest)
+		return
+	}
+
+	var songs []services.SongUpload
+	for i := 0; ; i++ {
+		songName := r.FormValue(fmt.Sprintf("song_%d_name", i))
+		if songName == "" && i > 0 {
+			break
+		}
+		if songName == "" {
+			if i == 0 {
+				http.Error(w, "song_0_name is required", http.StatusBadRequest)
+				return
+			}
+			break
+		}
+
+		songFile, songHeader, err := r.FormFile(fmt.Sprintf("song_%d_music", i))
+		if err != nil {
+			slog.Error(fmt.Sprint(op, err.Error()))
+			http.Error(w, fmt.Sprintf("Failed to get song_%d_music: %s", i, err.Error()), http.StatusBadRequest)
+			return
+		}
+		defer songFile.Close()
+
+		songData, err := io.ReadAll(songFile)
+		if err != nil {
+			slog.Error(fmt.Sprint(op, err.Error()))
+			http.Error(w, "Failed to read song file", http.StatusInternalServerError)
+			return
+		}
+
+		songs = append(songs, services.SongUpload{
+			Name:        songName,
+			Data:        songData,
+			ContentType: songHeader.Header.Get("Content-Type"),
+		})
+	}
+
+	albumID, err := h.aService.UploadAlbum(r.Context(), albumName, uploaderID, coverData, coverContentType, songs)
+	if err != nil {
+		slog.Error(fmt.Sprint(op, err.Error()))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(map[string]string{"album_id": albumID})
+}
+
 func (h Handler) PostMusicPlay(ctx context.Context, request api.PostMusicPlayRequestObject) (api.PostMusicPlayResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.PlayMusic()"
 
-	url, err := h.mService.GetPresignURLSong(ctx, *request.Body.MusicId)
+	url, err := h.mService.GetPresignURLSong(ctx, *request.Body.MusicId+"-song")
 	if err != nil {
 		slog.Error(err.Error())
 		return api.PostMusicPlay500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
@@ -1191,6 +1303,7 @@ func (h Handler) GetAlbums(ctx context.Context, request api.GetAlbumsRequestObje
 			Name: &a[i].Name,
 			UploaderId: &a[i].UploaderID,
 			UploaderUsername: &a[i].Username,
+			Cover: &a[i].Cover,
 		})
 	}
 

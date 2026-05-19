@@ -142,9 +142,7 @@ func (s *MusicService) UploadMusic(ctx context.Context, musicData map[string]mod
 func (s *MusicService) GetPresignURLSong(ctx context.Context, id string) (string, error) {
 	const op = "./internal/services/music.go.GetPresignURL()"
 
-	slog.Info("Get req presingURL")
-
-	url, err := s.s3.GetPresignURL(ctx, id+songPostfix)
+	url, err := s.s3.GetPresignURL(ctx, id)
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", op, err)
 	}

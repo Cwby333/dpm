@@ -80,7 +80,7 @@ func main() {
 	slog.Info("Success connect to s3")
 
 	mService := services.NewMusicService(pg, s3)
-	aServices := services.NewAlbumServices(pg)
+	aServices := services.NewAlbumServices(pg, s3)
 
 	handler := http.NewHandler(uService, mService, lhService, fService, likeService, aServices)
 
