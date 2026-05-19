@@ -228,7 +228,7 @@
         </form>
 
         <div class="register-link">
-            Нет аккаунта? <a href="http://localhost:3003/register">Зарегистрироваться</a>
+            Нет аккаунта? <a href="register.html">Зарегистрироваться</a>
         </div>
 
         <div class="response-container" id="responseContainer" style="display: none;">
@@ -372,10 +372,9 @@
 
                 displayResponse(fullResponse, !response.ok);
 
-                // Если вход успешный, можно добавить редирект
                 if (response.ok) {
                     console.log('Вход выполнен успешно');
-                    // Пример: window.location.href = '/dashboard';
+                    window.location.href = 'music.html';
                 }
 
             } catch (error) {

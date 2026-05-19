@@ -546,25 +546,28 @@
 </head>
 <body>
     <!-- Навигация -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <span class="logo-icon">🎵</span>
-                <span class="logo-text">Mute</span>
-            </div>
-            <div class="nav-links">
-                <a href="main.html" class="active">Главная</a>
-                <a href="#">Треки</a>
-                <a href="#">Исполнители</a>
-                <a href="#">Плейлисты</a>
-                <a href="#">Загрузить</a>
-                <div class="auth-buttons">
-                    <a href="login.html" class="btn btn-outline">Войти</a>
-                    <a href="register.html" class="btn btn-primary">Регистрация</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+	    <nav class="navbar">
+	        <div class="nav-container">
+	            <div class="logo">
+	                <span class="logo-icon">🎵</span>
+	                <span class="logo-text">Mute</span>
+	            </div>      
+	            <div class="nav-links">
+	                <a href="main.html" class="active">Главная</a>
+	                <a href="music.html">Треки</a>
+	                <a href="albums.html">Альбомы</a>
+	                <a href="music-upload.html">Загрузить</a>
+	                <a href="favor.html">Избранное</a>
+	                <a href="listening-history.html">История</a>
+	                <a href="likes.html">Лайки</a>
+	                <a href="profile.html">Профиль</a>
+	                <div class="auth-buttons">
+	                    <a href="login.html" class="btn btn-outline">Войти</a>
+	                    <a href="register.html" class="btn btn-primary">Регистрация</a>
+	                </div>
+	            </div>
+	        </div>
+	    </nav>
 
     <!-- Основной контент -->
     <div class="main-content">
@@ -573,8 +576,8 @@
             <h1>Добро пожаловать в Mute</h1>
             <p>Бесплатная музыка от пользователей со всего мира. Слушайте, загружайте и делитесь своими треками.</p>
             <div class="hero-buttons">
-                <a href="#" class="btn btn-primary">Начать слушать</a>
-                <a href="#" class="btn btn-outline">Загрузить трек</a>
+                <a href="music.html" class="btn btn-primary">Начать слушать</a>
+                <a href="music-upload.html" class="btn btn-outline">Загрузить трек</a>
             </div>
         </section>
 
@@ -788,18 +791,6 @@
     </footer>
 
     <script>
-        // Подсветка активной ссылки в навигации
-        const navLinks = document.querySelectorAll('.nav-links a');
-        navLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                if (!this.href.includes('localhost')) {
-                    e.preventDefault();
-                }
-                navLinks.forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
-
         // Анимация появления элементов при скролле
         const observerOptions = {
             threshold: 0.1,
