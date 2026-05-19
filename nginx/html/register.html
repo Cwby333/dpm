@@ -289,6 +289,13 @@
 
                 displayResponse(fullResponse, !response.ok);
 
+                if (response.ok) {
+                    console.log('Регистрация успешна');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
+                }
+
             } catch (error) {
                 displayResponse({
                     error: true,
