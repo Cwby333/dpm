@@ -188,6 +188,11 @@
 					<h1 id="albumName">Загрузка...</h1>
 					<div class="album-uploader" id="albumUploader"></div>
 					<div class="album-meta" id="albumMeta"></div>
+					<div class="album-actions" style="margin-top: 1rem;">
+						<button class="btn btn-primary" id="playAllBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem;">
+							▶ Слушать все треки
+						</button>
+					</div>
 				</div>
 			</div>
 
@@ -291,6 +296,36 @@
 				}
 			}
 
+			let globalPlayerWindow = null
+
+			function playAllTracks(startIndex = 0) {
+				if (!tracks || tracks.length === 0) {
+					console.warn('[Album] Нет треков для воспроизведения')
+					return
+				}
+
+				const playlist = tracks.map(t => ({
+					musicId: t.music_id || t.id,
+					musicName: t.music_name || t.name || 'Без названия',
+					artistName: t.uploader_username || t.uploader_id || 'Неизвестный',
+				}))
+
+				console.log(`[Album] Сохранение плейлиста из ${playlist.length} треков в sessionStorage, startIndex=${startIndex}`)
+				sessionStorage.setItem('albumPlaylist', JSON.stringify(playlist))
+
+				const playerUrl = `player-window.html?playlist=album&startIndex=${startIndex}`
+
+				if (globalPlayerWindow && !globalPlayerWindow.closed) {
+					console.log('[Album] Фокус на существующем окне плеера')
+					globalPlayerWindow.focus()
+				} else {
+					console.log('[Album] Открытие нового окна плеера')
+					globalPlayerWindow = window.open(playerUrl, 'MusicPlayer', 'width=450,height=420,resizable=yes')
+				}
+			}
+
+			document.getElementById('playAllBtn').addEventListener('click', () => playAllTracks(0))
+
 			function formatDuration(seconds) {
 				if (!seconds) return '0:00'
 				const mins = Math.floor(seconds / 60)
@@ -338,7 +373,7 @@
 								: ''
 							const duration = formatDuration(track.music_duration || track.dur_sec)
 							return `
-								<div class="track-card" onclick="window.location.href='music-id.html?id=${encodeURIComponent(track.music_id || '')}'">
+								<div class="track-card" onclick="playAllTracks(${i})">
 									<div class="track-index">${i + 1}</div>
 									<div class="track-cover-small" style="${coverStyle}"></div>
 									<div class="track-info">

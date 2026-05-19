@@ -4,23 +4,38 @@ const PlayerCore = (function () {
 	let currentMusicId = null
 	let currentMusicName = ''
 	let currentArtistName = ''
-	let repeatEnabled = false
+	let repeatMode = 0 // 0=off, 1=repeat one, 2=repeat all
 	let updateInterval = null
+	let playlist = null
+	let currentIndex = -1
 	const apiBaseUrl = 'https://172.17.110.58:443'
+
+	function log(...args) {
+		console.log('[PlayerCore]', ...args)
+	}
+
+	function warn(...args) {
+		console.warn('[PlayerCore]', ...args)
+	}
+
+	function error(...args) {
+		console.error('[PlayerCore]', ...args)
+	}
 
 	// Инициализация
 	function init() {
-		console.log('PlayerCore инициализирован')
+		log('Инициализирован')
 	}
 
 	// Загрузка и воспроизведение трека
 	async function play(musicId, musicName, artistName, seekTime = 0) {
 		try {
+			log(`play: "${musicName}" (id=${musicId}, seek=${seekTime})`)
 			currentMusicId = musicId
 			currentMusicName = musicName
 			currentArtistName = artistName
 
-			// Получаем presigned URL
+			log('play: запрос presigned URL')
 			const response = await fetch(`${apiBaseUrl}/music/play`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -29,29 +44,29 @@ const PlayerCore = (function () {
 			})
 			const data = await response.json()
 			const presignedUrl = data.presign_url || data.presigned_url || data.url
+			log(`play: presigned URL ${presignedUrl ? 'получен' : 'пустой'}`)
 
-			// Кеширование
 			let blobUrl = null
 			const cachedBlob = await getCachedAudioById(musicId)
 
 			if (cachedBlob && cachedBlob.size > 0) {
 				blobUrl = URL.createObjectURL(cachedBlob)
-				console.log('Загружено из кеша')
+				log('play: загружено из кеша')
 			} else {
+				log('play: загрузка из сети')
 				const fetchResponse = await fetch(presignedUrl)
 				const audioBlob = await fetchResponse.blob()
 				await cacheAudioById(musicId, audioBlob)
 				blobUrl = URL.createObjectURL(audioBlob)
-				console.log('Загружено из сети и закешировано')
+				log(`play: загружено (${audioBlob.size} байт)`)
 			}
 
-			// Останавливаем старый трек
 			if (audioElement) {
+				log('play: остановка старого аудио')
 				audioElement.pause()
 				audioElement = null
 			}
 
-			// Создаём новый аудио элемент
 			audioElement = new Audio(blobUrl)
 
 			if (seekTime > 0) {
@@ -59,15 +74,23 @@ const PlayerCore = (function () {
 			}
 
 			audioElement.addEventListener('ended', () => {
-				if (repeatEnabled) {
+				log(`ended: "${currentMusicName}" завершился (repeatMode=${repeatMode}, playlist=${!!playlist}, index=${currentIndex}/${playlist ? playlist.length - 1 : 'n/a'})`)
+				if (repeatMode === 1) {
+					log('ended: повтор одного трека')
 					audioElement.currentTime = 0
 					audioElement.play()
+				} else if (playlist) {
+					log('ended: переключение на следующий трек')
+					next()
+				} else {
+					log('ended: воспроизведение завершено')
+					notifyListeners('ended', { musicId: currentMusicId })
 				}
-				notifyListeners('ended', { musicId: currentMusicId })
 			})
 
 			await audioElement.load()
 			await audioElement.play()
+			log('play: воспроизведение начато')
 
 			notifyListeners('play', {
 				musicId: currentMusicId,
@@ -79,7 +102,14 @@ const PlayerCore = (function () {
 				volume: audioElement.volume,
 			})
 
-			// Запускаем синхронизацию времени
+			notifyListeners('trackchange', {
+				musicId: currentMusicId,
+				musicName: currentMusicName,
+				artistName: currentArtistName,
+				currentIndex: currentIndex,
+				totalTracks: playlist ? playlist.length : 0,
+			})
+
 			if (updateInterval) clearInterval(updateInterval)
 			updateInterval = setInterval(() => {
 				if (audioElement && !audioElement.paused) {
@@ -90,19 +120,19 @@ const PlayerCore = (function () {
 				}
 			}, 500)
 
-			// Добавляем в историю
 			addToListeningHistory(musicId)
 
 			return true
-		} catch (error) {
-			console.error('Ошибка воспроизведения:', error)
-			notifyListeners('error', { message: error.message })
+		} catch (err) {
+			error('Ошибка воспроизведения:', err)
+			notifyListeners('error', { message: err.message })
 			return false
 		}
 	}
 
 	function pause() {
 		if (audioElement) {
+			log('pause')
 			audioElement.pause()
 			notifyListeners('pause', {})
 		}
@@ -110,6 +140,7 @@ const PlayerCore = (function () {
 
 	function resume() {
 		if (audioElement) {
+			log('resume')
 			audioElement.play()
 			notifyListeners('play', {})
 		}
@@ -117,7 +148,9 @@ const PlayerCore = (function () {
 
 	function seek(percent) {
 		if (audioElement && audioElement.duration) {
-			audioElement.currentTime = percent * audioElement.duration
+			const time = percent * audioElement.duration
+			log(`seek: ${(percent * 100).toFixed(1)}% -> ${time.toFixed(1)}с`)
+			audioElement.currentTime = time
 		}
 	}
 
@@ -129,9 +162,66 @@ const PlayerCore = (function () {
 	}
 
 	function toggleRepeat() {
-		repeatEnabled = !repeatEnabled
-		notifyListeners('repeatchange', { repeatEnabled: repeatEnabled })
-		return repeatEnabled
+		repeatMode = (repeatMode + 1) % 3
+		const labels = ['off', 'repeat one', 'repeat all']
+		log(`toggleRepeat: ${labels[repeatMode]} (${repeatMode})`)
+		notifyListeners('repeatchange', { repeatMode: repeatMode })
+		return repeatMode
+	}
+
+	function setPlaylist(tracks, startIndex) {
+		if (!tracks || tracks.length === 0) {
+			warn('setPlaylist: пустой плейлист')
+			return false
+		}
+		playlist = tracks
+		currentIndex = startIndex || 0
+		log(`setPlaylist: ${tracks.length} треков, startIndex=${currentIndex}`)
+		const track = playlist[currentIndex]
+		return play(track.musicId, track.musicName, track.artistName)
+	}
+
+	function next() {
+		if (!playlist) {
+			warn('next: нет плейлиста')
+			return false
+		}
+		if (currentIndex >= playlist.length - 1) {
+			if (repeatMode === 2) {
+				log('next: последний трек, repeat all — переход к первому')
+				currentIndex = 0
+			} else {
+				log('next: последний трек в плейлисте')
+				pause()
+				return false
+			}
+		} else {
+			currentIndex++
+		}
+		const track = playlist[currentIndex]
+		log(`next: → трек ${currentIndex + 1}/${playlist.length} — "${track.musicName}"`)
+		return play(track.musicId, track.musicName, track.artistName)
+	}
+
+	function prev() {
+		if (!playlist) {
+			warn('prev: нет плейлиста')
+			return false
+		}
+		if (currentIndex <= 0) {
+			log('prev: первый трек, перемотка в начало')
+			seek(0)
+			return true
+		}
+		if (audioElement && audioElement.currentTime > 3) {
+			log('prev: перемотка текущего трека (прошло >3с)')
+			seek(0)
+			return true
+		}
+		currentIndex--
+		const track = playlist[currentIndex]
+		log(`prev: ← трек ${currentIndex + 1}/${playlist.length} — "${track.musicName}"`)
+		return play(track.musicId, track.musicName, track.artistName)
 	}
 
 	function getState() {
@@ -143,11 +233,13 @@ const PlayerCore = (function () {
 			currentTime: audioElement ? audioElement.currentTime : 0,
 			duration: audioElement ? audioElement.duration : 0,
 			volume: audioElement ? audioElement.volume : 1,
-			repeatEnabled: repeatEnabled,
+			repeatMode: repeatMode,
+			hasPlaylist: playlist !== null,
+			currentIndex: currentIndex,
+			totalTracks: playlist ? playlist.length : 0,
 		}
 	}
 
-	// Слушатели для синхронизации с UI
 	let listeners = []
 	function addListener(callback) {
 		listeners.push(callback)
@@ -157,7 +249,6 @@ const PlayerCore = (function () {
 		listeners.forEach(cb => cb(event, data))
 	}
 
-	// Кеширование
 	const CACHE_NAME = 'audio-cache-v2'
 
 	async function cacheAudioById(musicId, audioBlob) {
@@ -182,17 +273,23 @@ const PlayerCore = (function () {
 		return null
 	}
 
-	// Добавление в историю
 	async function addToListeningHistory(musicId) {
 		try {
+			log(`addToListeningHistory: ${musicId}`)
 			const response = await fetch(`${apiBaseUrl}/listening-history`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ musicID: musicId }),
 				credentials: 'include',
 			})
+			if (response.ok) {
+				log('addToListeningHistory: OK')
+			} else {
+				warn(`addToListeningHistory: статус ${response.status}`)
+			}
 			return response.ok
-		} catch (error) {
+		} catch (err) {
+			warn('addToListeningHistory: ошибка:', err)
 			return false
 		}
 	}
@@ -205,6 +302,9 @@ const PlayerCore = (function () {
 		seek,
 		setVolume,
 		toggleRepeat,
+		setPlaylist,
+		next,
+		prev,
 		getState,
 		addListener,
 	}

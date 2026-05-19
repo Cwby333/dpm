@@ -145,6 +145,10 @@
     transform: scale(1.2);
 }
         .close-btn:hover { background: #c53030; transform: none; }
+        .track-counter {
+            font-size: 0.8rem; opacity: 0.6; margin-bottom: 0.5rem;
+            min-height: 1.2rem;
+        }
     </style>
 </head>
 <body>
@@ -152,6 +156,7 @@
         <div class="album-art">🎵</div>
         <div class="track-name" id="globalTrackName">—</div>
         <div class="track-artist" id="globalTrackArtist">—</div>
+        <div class="track-counter" id="trackCounter"></div>
         <div class="controls">
             <button id="prevBtn">⏮️</button>
             <button id="playPauseBtn">▶️</button>
@@ -179,7 +184,10 @@
         // DOM элементы
         const trackNameSpan = document.getElementById('globalTrackName');
         const trackArtistSpan = document.getElementById('globalTrackArtist');
+        const trackCounterSpan = document.getElementById('trackCounter');
         const playPauseBtn = document.getElementById('playPauseBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
         const repeatBtn = document.getElementById('repeatBtn');
         const progressSlider = document.getElementById('progressSlider');
         const currentTimeSpan = document.getElementById('currentTime');
@@ -217,6 +225,16 @@
             statusBadge.textContent = state.isPlaying ? '● Сейчас играет' : '● Пауза';
             currentTimeSpan.textContent = formatTime(state.currentTime);
             durationSpan.textContent = formatTime(state.duration);
+            
+            if (state.hasPlaylist && state.totalTracks > 0) {
+                trackCounterSpan.textContent = `${state.currentIndex + 1} / ${state.totalTracks}`;
+            } else {
+                trackCounterSpan.textContent = '';
+            }
+            
+            if (state.repeatMode !== undefined) {
+                updateRepeatBtn(state.repeatMode);
+            }
             
             const percent = (state.currentTime / (state.duration || 1)) * 100;
             if (!isSeeking) {
@@ -273,10 +291,35 @@
             else PlayerCore.resume();
         };
         
+        function updateRepeatBtn(mode) {
+            if (mode === 0) {
+                repeatBtn.textContent = '🔁';
+                repeatBtn.style.opacity = '0.6';
+                repeatBtn.style.color = 'white';
+            } else if (mode === 1) {
+                repeatBtn.textContent = '🔂';
+                repeatBtn.style.opacity = '1';
+                repeatBtn.style.color = '#667eea';
+            } else {
+                repeatBtn.textContent = '🔁';
+                repeatBtn.style.opacity = '1';
+                repeatBtn.style.color = '#667eea';
+            }
+        }
+        
         repeatBtn.onclick = () => {
-            const enabled = PlayerCore.toggleRepeat();
-            repeatBtn.style.opacity = enabled ? '1' : '0.6';
-            repeatBtn.style.color = enabled ? '#667eea' : 'white';
+            const mode = PlayerCore.toggleRepeat();
+            updateRepeatBtn(mode);
+        };
+        
+        prevBtn.onclick = () => {
+            console.log('[PlayerWindow] prevBtn нажат');
+            PlayerCore.prev();
+        };
+        
+        nextBtn.onclick = () => {
+            console.log('[PlayerWindow] nextBtn нажат');
+            PlayerCore.next();
         };
         
         volumeSlider.style.background = `linear-gradient(90deg, #667eea 100%, rgba(255,255,255,0.2) 100%)`;
@@ -291,9 +334,33 @@
         const musicId = urlParams.get('id');
         const musicName = urlParams.get('name') || '';
         const artistName = urlParams.get('artist') || '';
+        const playlistMode = urlParams.get('playlist');
         
-        if (musicId) {
+        if (playlistMode === 'album') {
+            console.log('[PlayerWindow] Инициализация с плейлистом из sessionStorage');
+            try {
+                const stored = sessionStorage.getItem('albumPlaylist');
+                const startIndex = parseInt(urlParams.get('startIndex') || '0', 10);
+                if (stored) {
+                    const tracks = JSON.parse(stored);
+                    console.log(`[PlayerWindow] Плейлист: ${tracks.length} треков, startIndex=${startIndex}`);
+                    PlayerCore.setPlaylist(tracks, startIndex).catch(err => {
+                        console.error('[PlayerWindow] Ошибка setPlaylist:', err);
+                        trackCounterSpan.textContent = 'Ошибка загрузки';
+                    });
+                } else {
+                    console.warn('[PlayerWindow] Плейлист не найден в sessionStorage');
+                    trackCounterSpan.textContent = 'Ошибка: нет данных';
+                }
+            } catch (e) {
+                console.error('[PlayerWindow] Ошибка загрузки плейлиста:', e);
+                trackCounterSpan.textContent = 'Ошибка: ' + e.message;
+            }
+        } else if (musicId) {
+            console.log(`[PlayerWindow] Инициализация одиночного трека: ${musicId}`);
             PlayerCore.play(musicId, decodeURIComponent(musicName), decodeURIComponent(artistName));
+        } else {
+            console.log('[PlayerWindow] Нет параметров для воспроизведения');
         }
     </script>
 </body>
