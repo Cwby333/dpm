@@ -81,8 +81,9 @@ func main() {
 
 	mService := services.NewMusicService(pg, s3)
 	aServices := services.NewAlbumServices(pg, s3)
+	pServices := services.NewPlaylistService(pg, s3)
 
-	handler := http.NewHandler(uService, mService, lhService, fService, likeService, aServices)
+	handler := http.NewHandler(uService, mService, lhService, fService, likeService, aServices, pServices)
 
 	server := http.NewServer(handler)
 

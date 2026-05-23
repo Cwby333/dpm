@@ -29,10 +29,11 @@ type Handler struct {
 	lhService   *services.ListeningHistoryService
 	fService    *services.FavorService
 	likeService *services.LikeService
-	aService *services.AlbumsService
+	aService    *services.AlbumsService
+	pService    *services.PlaylistService
 }
 
-func NewHandler(uService *services.UserService, mService *services.MusicService, lhService *services.ListeningHistoryService, fService *services.FavorService, likeService *services.LikeService, aService *services.AlbumsService) Handler {
+func NewHandler(uService *services.UserService, mService *services.MusicService, lhService *services.ListeningHistoryService, fService *services.FavorService, likeService *services.LikeService, aService *services.AlbumsService, pService *services.PlaylistService) Handler {
 	return Handler{
 		Mux:         http.NewServeMux(),
 		uServices:   uService,
@@ -40,7 +41,8 @@ func NewHandler(uService *services.UserService, mService *services.MusicService,
 		lhService:   lhService,
 		fService:    fService,
 		likeService: likeService,
-		aService: aService,
+		aService:    aService,
+		pService:    pService,
 	}
 }
 
@@ -207,6 +209,51 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	}))
 	h.Mux.Handle("GET /album/{albumID}", corsMiddleware(wrapGetAlbum(strict)))
 	h.Mux.Handle("OPTIONS /album/{albumID}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("POST /playlist", corsMiddleware(http.HandlerFunc(h.UploadPlaylist)))
+	h.Mux.Handle("OPTIONS /playlist", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("GET /playlist/my", corsMiddleware(wrapGetMyPlaylists(strict)))
+	h.Mux.Handle("OPTIONS /playlist/my", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("GET /playlist/public", corsMiddleware(http.HandlerFunc(strict.GetPublicPlaylists)))
+	h.Mux.Handle("OPTIONS /playlist/public", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("GET /playlist/{playlistID}", corsMiddleware(wrapGetPlaylistTracks(strict)))
+	h.Mux.Handle("OPTIONS /playlist/{playlistID}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("POST /playlist/{playlistID}/add", corsMiddleware(wrapAddMusicToPlaylist(strict)))
+	h.Mux.Handle("OPTIONS /playlist/{playlistID}/add", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
@@ -392,6 +439,34 @@ func wrapGetMusic(strict api.ServerInterface) http.HandlerFunc {
 			}
 		}
 		strict.GetMusic(w, r, r.PathValue("musicID"), api.GetMusicParams{AccessToken: &c.Value})
+	}
+}
+
+func wrapGetMyPlaylists(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Error(err.Error())
+			c = &http.Cookie{}
+		}
+		strict.GetMyPlaylists(w, r, api.GetMyPlaylistsParams{AccessToken: c.Value})
+	}
+}
+
+func wrapGetPlaylistTracks(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		strict.GetPlaylistTracks(w, r, r.PathValue("playlistID"))
+	}
+}
+
+func wrapAddMusicToPlaylist(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Error(err.Error())
+			c = &http.Cookie{}
+		}
+		strict.AddMusicToPlaylist(w, r, r.PathValue("playlistID"), api.AddMusicToPlaylistParams{AccessToken: c.Value})
 	}
 }
 
@@ -1285,6 +1360,201 @@ func (h Handler) PostMusicPlay(ctx context.Context, request api.PostMusicPlayReq
 	return api.PostMusicPlay200JSONResponse{
 		PresignUrl: &url,
 	}, nil
+}
+
+func (h Handler) UploadPlaylist(w http.ResponseWriter, r *http.Request) {
+	const op = "./internal/adapters/http/handler.go.UploadPlaylist()"
+
+	t, err := r.Cookie("Access-Token")
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if t.Value == "" {
+		slog.Info("Token empty")
+		http.Error(w, "Empty token", http.StatusBadRequest)
+		return
+	}
+
+	claims, err := h.uServices.CheckAccessToken(r.Context(), t.Value)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, 50<<20)
+
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		slog.Error(fmt.Sprint(op, err.Error()))
+		http.Error(w, "Failed to parse form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	playlistName := r.FormValue("playlist_name")
+	if playlistName == "" {
+		slog.Warn("playlist_name field empty")
+		http.Error(w, "playlist_name field is required", http.StatusBadRequest)
+		return
+	}
+
+	private := r.FormValue("private") == "true"
+
+	uploaderID := claims["sub"].(string)
+
+	var coverData []byte
+	coverContentType := ""
+	coverFile, _, err := r.FormFile("playlist_cover")
+	if err == nil {
+		defer coverFile.Close()
+		coverData, err = io.ReadAll(coverFile)
+		if err != nil {
+			slog.Error(fmt.Sprint(op, err.Error()))
+			http.Error(w, "Failed to read cover file", http.StatusInternalServerError)
+			return
+		}
+		coverContentType = "image/jpeg"
+	} else if !errors.Is(err, http.ErrMissingFile) {
+		slog.Error(fmt.Sprint(op, err.Error()))
+		http.Error(w, "Failed to get cover file", http.StatusBadRequest)
+		return
+	}
+
+	playlistID, err := h.pService.Create(r.Context(), playlistName, uploaderID, coverData, coverContentType, private)
+	if err != nil {
+		slog.Error(fmt.Sprint(op, err.Error()))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(map[string]string{"playlist_id": playlistID})
+}
+
+func (h Handler) GetMyPlaylists(ctx context.Context, request api.GetMyPlaylistsRequestObject) (api.GetMyPlaylistsResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetMyPlaylists()"
+
+	claims, err := h.uServices.CheckAccessToken(ctx, request.Params.AccessToken)
+	if err != nil {
+		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+		return api.GetMyPlaylists500JSONResponse(err.Error()), nil
+	}
+
+	userID := claims["sub"].(string)
+
+	pl, err := h.pService.GetMyPlaylists(ctx, userID)
+	if err != nil {
+		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+		return api.GetMyPlaylists500JSONResponse(err.Error()), err
+	}
+
+	resp := make(api.GetMyPlaylists200JSONResponse, 0, len(pl))
+	for i := range pl {
+		id := pl[i].ID
+		name := pl[i].Name
+		uploaderID := pl[i].UploaderID
+		cover := pl[i].Cover
+		private := pl[i].Private
+		username := pl[i].Username
+		resp = append(resp, api.PlaylistInfo{
+			Id:         &id,
+			Name:       &name,
+			UploaderId: &uploaderID,
+			Cover:      &cover,
+			Private:    &private,
+			Username:   &username,
+		})
+	}
+
+	return resp, nil
+}
+
+func (h Handler) GetPublicPlaylists(ctx context.Context, request api.GetPublicPlaylistsRequestObject) (api.GetPublicPlaylistsResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetPublicPlaylists()"
+
+	pl, err := h.pService.GetPublicPlaylists(ctx)
+	if err != nil {
+		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+		return api.GetPublicPlaylists500JSONResponse(err.Error()), err
+	}
+
+	resp := make(api.GetPublicPlaylists200JSONResponse, 0, len(pl))
+	for i := range pl {
+		id := pl[i].ID
+		name := pl[i].Name
+		uploaderID := pl[i].UploaderID
+		cover := pl[i].Cover
+		private := pl[i].Private
+		username := pl[i].Username
+		resp = append(resp, api.PlaylistInfo{
+			Id:         &id,
+			Name:       &name,
+			UploaderId: &uploaderID,
+			Cover:      &cover,
+			Private:    &private,
+			Username:   &username,
+		})
+	}
+
+	return resp, nil
+}
+
+func (h Handler) GetPlaylistTracks(ctx context.Context, request api.GetPlaylistTracksRequestObject) (api.GetPlaylistTracksResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetPlaylistTracks()"
+
+	tracks, err := h.pService.GetPlaylistMusic(ctx, request.PlaylistID)
+	if err != nil {
+		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+		return api.GetPlaylistTracks500JSONResponse(err.Error()), err
+	}
+
+	resp := make(api.GetPlaylistTracks200JSONResponse, 0, len(tracks))
+	for i := range tracks {
+		mid := tracks[i].MusicID
+		mname := tracks[i].MusicName
+		mcover := tracks[i].MusicCover
+		mlikes := tracks[i].MusicLikes
+		mdur := tracks[i].MusicDurationSeconds
+		surl := tracks[i].MusicSongURL
+		uid := tracks[i].MusicUploaderID
+		uuname := tracks[i].UserUsername
+		resp = append(resp, api.LikedTrack{
+			MusicId:          &mid,
+			MusicName:        &mname,
+			MusicCover:       &mcover,
+			MusicLikes:       &mlikes,
+			MusicDuration:    &mdur,
+			SongUrl:          &surl,
+			UploaderId:       &uid,
+			UploaderUsername: &uuname,
+		})
+	}
+
+	return resp, nil
+}
+
+func (h Handler) AddMusicToPlaylist(ctx context.Context, request api.AddMusicToPlaylistRequestObject) (api.AddMusicToPlaylistResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.AddMusicToPlaylist()"
+
+	claims, err := h.uServices.CheckAccessToken(ctx, request.Params.AccessToken)
+	if err != nil {
+		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+		return api.AddMusicToPlaylist500JSONResponse(err.Error()), nil
+	}
+
+	_ = claims
+
+	err = h.pService.AddMusic(ctx, request.PlaylistID, request.Body.MusicId)
+	if err != nil {
+		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+		return api.AddMusicToPlaylist500JSONResponse(err.Error()), err
+	}
+
+	status := "ok"
+	return api.AddMusicToPlaylist200JSONResponse{Status: &status}, nil
 }
 
 func (h Handler) GetAlbums(ctx context.Context, request api.GetAlbumsRequestObject) (api.GetAlbumsResponseObject, error) {

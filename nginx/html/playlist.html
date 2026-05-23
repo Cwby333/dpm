@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="ru">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Mute - Плейлист</title>
+		<style>
+			* { margin: 0; padding: 0; box-sizing: border-box; }
+			body {
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				min-height: 100vh; color: #333;
+			}
+			.navbar {
+				background: rgba(255, 255, 255, 0.95);
+				backdrop-filter: blur(10px);
+				box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+				position: fixed; width: 100%; top: 0; z-index: 1000;
+			}
+			.nav-container {
+				max-width: 1200px; margin: 0 auto;
+				padding: 1rem 2rem; display: flex;
+				justify-content: space-between; align-items: center;
+			}
+			.logo { display: flex; align-items: center; gap: 10px; }
+			.logo-icon { font-size: 2rem; line-height: 1; }
+			.logo-text {
+				font-size: 1.5rem; font-weight: 700;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+			}
+			.nav-links { display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; }
+			.nav-links a {
+				text-decoration: none; color: #555; font-weight: 500;
+				transition: color 0.3s ease; padding: 0.5rem 1rem; border-radius: 6px;
+			}
+			.nav-links a:hover { color: #667eea; background: rgba(102,126,234,0.1); }
+			.nav-links .active { color: #667eea; background: rgba(102,126,234,0.1); }
+			.auth-buttons { display: flex; gap: 1rem; }
+			.btn {
+				padding: 0.5rem 1.5rem; border-radius: 6px; text-decoration: none;
+				font-weight: 500; transition: all 0.3s ease; border: none;
+				cursor: pointer; font-size: 1rem;
+			}
+			.btn-primary {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+			}
+			.btn-primary:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 5px 20px rgba(102,126,234,0.4);
+			}
+			.btn-outline {
+				border: 2px solid #667eea; color: #667eea; background: transparent;
+			}
+			.btn-outline:hover { background: #667eea; color: white; }
+			.main-content {
+				max-width: 1200px; margin: 140px auto 0; padding: 2rem;
+			}
+			.playlist-header {
+				background: white; border-radius: 16px; padding: 2rem;
+				margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+				display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;
+			}
+			.playlist-cover-large {
+				width: 180px; height: 180px;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				border-radius: 12px; display: flex; align-items: center;
+				justify-content: center; color: white; font-size: 5rem;
+				flex-shrink: 0;
+			}
+			.playlist-info h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #333; }
+			.playlist-info .playlist-uploader { color: #667eea; font-size: 1rem; margin-bottom: 0.25rem; }
+			.playlist-info .playlist-meta { color: #999; font-size: 0.9rem; }
+			.back-link {
+				display: inline-block; margin-bottom: 1rem; color: white;
+				text-decoration: none; font-size: 1rem; opacity: 0.8;
+				transition: opacity 0.3s ease;
+			}
+			.back-link:hover { opacity: 1; }
+			.section-title {
+				color: white; font-size: 1.5rem; margin-bottom: 1rem;
+				text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+			}
+			.loading-container {
+				display: none; flex-direction: column; align-items: center;
+				justify-content: center; padding: 4rem; background: white;
+				border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+			}
+			.loading-spinner {
+				width: 50px; height: 50px; border: 5px solid #f3f3f3;
+				border-top: 5px solid #667eea; border-radius: 50%;
+				animation: spin 1s linear infinite; margin-bottom: 1rem;
+			}
+			@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+			.tracks-list { display: flex; flex-direction: column; gap: 0.75rem; }
+			.track-card {
+				background: white; border-radius: 10px; padding: 1rem 1.5rem;
+				display: flex; align-items: center; gap: 1rem;
+				box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+				transition: transform 0.2s ease, box-shadow 0.2s ease;
+				cursor: pointer;
+			}
+			.track-card:hover {
+				transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+			}
+			.track-index {
+				width: 28px; color: #999; font-weight: 600; text-align: center;
+				flex-shrink: 0;
+			}
+			.track-cover-small {
+				width: 48px; height: 48px;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				border-radius: 8px; flex-shrink: 0; background-size: cover;
+				background-position: center;
+			}
+			.track-info { flex: 1; min-width: 0; }
+			.track-name { font-weight: 600; color: #333; margin-bottom: 0.2rem; }
+			.track-artist { font-size: 0.85rem; color: #667eea; }
+			.track-meta {
+				display: flex; align-items: center; gap: 1rem;
+				color: #999; font-size: 0.85rem; flex-shrink: 0;
+			}
+			.track-likes { color: #e53e3e; }
+			.section-header {
+				display: flex; justify-content: space-between; align-items: center;
+				margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;
+			}
+			.btn-add-track {
+				padding: 0.5rem 1.2rem; font-size: 0.95rem;
+			}
+			.modal-overlay {
+				display: none; position: fixed; inset: 0;
+				background: rgba(0,0,0,0.5); z-index: 2000;
+				justify-content: center; align-items: center;
+			}
+			.modal-overlay.active { display: flex; }
+			.modal-content {
+				background: white; border-radius: 16px; width: 90%;
+				max-width: 600px; max-height: 80vh; overflow: hidden;
+				display: flex; flex-direction: column; box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+			}
+			.modal-header {
+				padding: 1.5rem; border-bottom: 1px solid #e2e8f0;
+				display: flex; justify-content: space-between; align-items: center;
+			}
+			.modal-header h3 { font-size: 1.3rem; color: #333; }
+			.modal-close {
+				background: none; border: none; font-size: 1.5rem;
+				cursor: pointer; color: #999; padding: 0.25rem;
+			}
+			.modal-close:hover { color: #333; }
+			.modal-body {
+				padding: 1rem; overflow-y: auto; flex: 1;
+			}
+			.modal-track {
+				display: flex; align-items: center; gap: 0.75rem;
+				padding: 0.75rem; border-radius: 8px; cursor: pointer;
+				transition: background 0.2s ease; border-bottom: 1px solid #f0f0f0;
+			}
+			.modal-track:hover { background: #f0f0ff; }
+			.modal-track-cover {
+				width: 40px; height: 40px; border-radius: 6px; flex-shrink: 0;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				background-size: cover; background-position: center;
+			}
+			.modal-track-info { flex: 1; min-width: 0; }
+			.modal-track-name { font-weight: 600; font-size: 0.95rem; color: #333; }
+			.modal-track-artist { font-size: 0.8rem; color: #667eea; }
+			.modal-search {
+				width: 100%; padding: 0.6rem 1rem; border: 2px solid #e2e8f0;
+				border-radius: 8px; font-size: 0.95rem; margin-bottom: 0.75rem;
+			}
+			.modal-search:focus { outline: none; border-color: #667eea; }
+			.modal-empty {
+				text-align: center; padding: 2rem; color: #999;
+			}
+			.empty-state {
+				text-align: center; padding: 4rem; background: white;
+				border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+			}
+			.empty-state-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
+			.empty-state h3 { color: #333; margin-bottom: 0.5rem; }
+			.empty-state p { color: #666; }
+			.footer {
+				background: #1a1a2e; color: white; padding: 3rem 2rem 1rem; margin-top: 4rem;
+			}
+			.footer-content {
+				max-width: 1200px; margin: 0 auto;
+				display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 3rem;
+			}
+			.footer-section h4 { margin-bottom: 1rem; color: #667eea; }
+			.footer-section ul { list-style: none; }
+			.footer-section ul li { margin-bottom: 0.5rem; }
+			.footer-section a { color: #999; text-decoration: none; transition: color 0.3s ease; }
+			.footer-section a:hover { color: #667eea; }
+			.footer-bottom {
+				max-width: 1200px; margin: 2rem auto 0; padding-top: 2rem;
+				border-top: 1px solid rgba(255,255,255,0.1);
+				text-align: center; color: #999; font-size: 0.9rem;
+			}
+			@media (max-width: 768px) {
+				.nav-container { flex-direction: column; gap: 1rem; }
+				.nav-links { flex-direction: column; width: 100%; }
+				.auth-buttons { width: 100%; justify-content: center; }
+				.playlist-header { flex-direction: column; text-align: center; }
+				.track-card { flex-wrap: wrap; }
+				.track-meta { width: 100%; justify-content: flex-end; }
+			}
+@media (max-width: 768px) { .main-content { margin-top: 260px; } }
+
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    background: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    cursor: pointer;
+    padding: 8px;
+    width: auto !important;
+    height: auto !important;
+    font-size: inherit !important;
+    color: inherit !important;
+    box-shadow: none !important;
+}
+.hamburger span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background: #555;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+.hamburger:hover span { background: #667eea; }
+
+@media (max-width: 797px) {
+    .nav-container { flex-direction: row !important; flex-wrap: wrap; }
+    .hamburger { display: flex; margin-left: auto; }
+    .nav-links { display: none; flex-basis: 100%; flex-direction: column; width: 100%; gap: 0.25rem; padding: 0.5rem 0; }
+    .nav-links.active { display: flex; }
+    .nav-links a { width: 100%; }
+    .auth-buttons { flex-direction: column; width: 100%; gap: 0.5rem; }
+    .auth-buttons .btn { text-align: center; }
+    .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .hamburger.active span:nth-child(2) { opacity: 0; }
+    .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+}
+</style>
+	</head>
+	<body>
+		<nav class="navbar">
+			<div class="nav-container">
+				<div class="logo">
+					<span class="logo-icon">🎵</span>
+					<span class="logo-text">Mute</span>
+				</div>
+				<button class="hamburger" id="hamburgerBtn" aria-label="Меню">
+					<span></span>
+					<span></span>
+					<span></span>
+				</button>
+				<div class="nav-links">
+					<a href="main.html">Главная</a>
+					<a href="music.html">Треки</a>
+					<a href="albums.html">Альбомы</a>
+					<a href="playlists.html">Плейлисты</a>
+					<a href="album-upload.html">Загрузить альбом</a>
+					<a href="favor.html">Избранное</a>
+					<a href="listening-history.html">История</a>
+					<a href="likes.html">Лайки</a>
+					<a href="profile.html">Профиль</a>
+					<div class="auth-buttons" id="authButtons">
+						<a href="login.html" class="btn btn-outline">Войти</a>
+						<a href="register.html" class="btn btn-primary">Регистрация</a>
+					</div>
+				</div>
+			</div>
+		</nav>
+
+		<div class="main-content">
+			<a href="playlists.html" class="back-link">← Вернуться к плейлистам</a>
+
+			<div class="playlist-header" id="playlistHeader">
+				<div class="playlist-cover-large" id="playlistCoverLarge">📋</div>
+				<div class="playlist-info">
+					<h1 id="playlistName">Загрузка...</h1>
+					<div class="playlist-uploader" id="playlistUploader"></div>
+					<div class="playlist-meta" id="playlistMeta"></div>
+					<div class="playlist-actions" style="margin-top: 1rem;">
+						<button class="btn btn-primary" id="playAllBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem;">
+							▶ Слушать все треки
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="section-header">
+				<h2 class="section-title" style="margin-bottom:0;">Треки</h2>
+				<button class="btn btn-primary btn-add-track" onclick="showAddTrackModal()">➕ Добавить трек</button>
+			</div>
+
+			<div class="loading-container" id="loadingContainer">
+				<div class="loading-spinner"></div>
+				<p>Загрузка треков...</p>
+			</div>
+
+			<div id="tracksContainer"></div>
+		</div>
+
+		<div class="modal-overlay" id="addTrackModal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3>➕ Добавить трек в плейлист</h3>
+					<button class="modal-close" onclick="closeAddTrackModal()">✕</button>
+				</div>
+				<div class="modal-body">
+					<input type="text" class="modal-search" id="modalSearch" placeholder="Поиск треков..." oninput="filterModalTracks()" />
+					<div id="modalTracksList"></div>
+				</div>
+			</div>
+		</div>
+
+		<footer class="footer">
+			<div class="footer-content">
+				<div class="footer-section">
+					<h4>Mute</h4>
+					<p>Бесплатная музыка для всех</p>
+				</div>
+				<div class="footer-section">
+					<h4>Навигация</h4>
+					<ul>
+						<li><a href="/">Главная</a></li>
+						<li><a href="/playlists.html">Плейлисты</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="footer-bottom">
+				<p>&copy; 2026 Mute. Все права защищены.</p>
+			</div>
+		</footer>
+
+		<script>
+			const apiBaseUrl = 'https://172.17.110.58:443'
+			let tracks = []
+
+			const loadingContainer = document.getElementById('loadingContainer')
+			const tracksContainer = document.getElementById('tracksContainer')
+
+			const params = new URLSearchParams(window.location.search)
+			const playlistId = params.get('id')
+	const playlistNameParam = params.get('name') || 'Плейлист'
+	const playlistUploaderParam = params.get('uploader') || ''
+	const playlistCoverParam = params.get('cover') || ''
+
+	document.getElementById('playlistName').textContent = playlistNameParam
+	document.getElementById('playlistUploader').textContent = playlistUploaderParam
+	document.title = `Mute - ${playlistNameParam}`
+
+	if (playlistCoverParam) {
+		const coverEl = document.getElementById('playlistCoverLarge')
+		coverEl.style.backgroundImage = `url('${attrEscape(playlistCoverParam)}')`
+		coverEl.style.backgroundSize = 'cover'
+		coverEl.style.backgroundPosition = 'center'
+		coverEl.textContent = ''
+	}
+
+			async function fetchPlaylistTracks() {
+				if (!playlistId) {
+					tracksContainer.innerHTML = `
+						<div class="empty-state">
+							<div class="empty-state-icon">📋</div>
+							<h3>Плейлист не указан</h3>
+							<p>Перейдите к плейлисту со страницы <a href="/playlists.html">списка плейлистов</a></p>
+						</div>
+					`
+					return
+				}
+
+				loadingContainer.style.display = 'flex'
+				tracksContainer.style.display = 'none'
+
+				try {
+					const response = await fetch(`${apiBaseUrl}/playlist/${encodeURIComponent(playlistId)}`, {
+						method: 'GET',
+						headers: { Accept: 'application/json' },
+						credentials: 'include',
+					})
+
+					if (!response.ok) {
+						throw new Error(`HTTP ошибка! Статус: ${response.status}`)
+					}
+
+					const data = await response.json()
+
+					if (Array.isArray(data)) {
+						tracks = data
+					} else {
+						tracks = []
+					}
+
+					document.getElementById('playlistMeta').textContent = `${tracks.length} треков`
+					renderTracks()
+				} catch (error) {
+					console.error('Ошибка загрузки:', error)
+					tracksContainer.style.display = 'block'
+					tracksContainer.innerHTML = `
+						<div class="empty-state">
+							<div class="empty-state-icon">⚠️</div>
+							<h3>Ошибка загрузки треков</h3>
+							<p>${error.message}</p>
+							<button class="btn btn-primary" onclick="fetchPlaylistTracks()" style="margin-top:1rem">Повторить</button>
+						</div>
+					`
+				} finally {
+					loadingContainer.style.display = 'none'
+					tracksContainer.style.display = 'block'
+				}
+			}
+
+			let globalPlayerWindow = null
+
+			function playAllTracks(startIndex = 0) {
+				if (!tracks || tracks.length === 0) {
+					console.warn('[Playlist] Нет треков для воспроизведения')
+					return
+				}
+
+				const playlist = tracks.map(t => ({
+					musicId: t.music_id || t.id,
+					musicName: t.music_name || t.name || 'Без названия',
+					artistName: t.uploader_username || t.uploader_id || 'Неизвестный',
+				}))
+
+				console.log(`[Playlist] Сохранение плейлиста из ${playlist.length} треков в sessionStorage, startIndex=${startIndex}`)
+				sessionStorage.setItem('albumPlaylist', JSON.stringify(playlist))
+
+				const playerUrl = `player-window.html?playlist=album&startIndex=${startIndex}`
+
+				if (globalPlayerWindow && !globalPlayerWindow.closed) {
+					console.log('[Playlist] Фокус на существующем окне плеера')
+					globalPlayerWindow.focus()
+				} else {
+					console.log('[Playlist] Открытие нового окна плеера')
+					globalPlayerWindow = window.open(playerUrl, 'MusicPlayer', 'width=450,height=420,resizable=yes')
+				}
+			}
+
+			document.getElementById('playAllBtn').addEventListener('click', () => playAllTracks(0))
+
+			function formatDuration(seconds) {
+				if (!seconds) return '0:00'
+				const mins = Math.floor(seconds / 60)
+				const secs = seconds % 60
+				return `${mins}:${secs.toString().padStart(2, '0')}`
+			}
+
+			function escapeHtml(text) {
+				if (!text) return ''
+				const div = document.createElement('div')
+				div.textContent = text
+				return div.innerHTML
+			}
+
+			function attrEscape(text) {
+				if (!text) return ''
+				return text.replace(/'/g, '&#39;').replace(/\\/g, '\\\\').replace(/\n/g, ' ')
+			}
+
+			function renderTracks() {
+				if (tracks.length === 0) {
+					tracksContainer.innerHTML = `
+						<div class="empty-state">
+							<div class="empty-state-icon">🎵</div>
+							<h3>В плейлисте пока нет треков</h3>
+							<p>Этот плейлист пуст</p>
+						</div>
+					`
+					return
+				}
+
+				tracksContainer.innerHTML = `
+					<div class="tracks-list">
+						${tracks.map((track, i) => {
+							const coverStyle = track.music_cover
+								? `background-image: url('${attrEscape(track.music_cover)}')`
+								: ''
+							const duration = formatDuration(track.music_duration || track.dur_sec)
+							return `
+								<div class="track-card" onclick="playAllTracks(${i})">
+									<div class="track-index">${i + 1}</div>
+									<div class="track-cover-small" style="${coverStyle}"></div>
+									<div class="track-info">
+										<div class="track-name">${escapeHtml(track.music_name || 'Без названия')}</div>
+										<div class="track-artist">${escapeHtml(track.uploader_username || track.uploader_id || 'Неизвестный')}</div>
+									</div>
+									<div class="track-meta">
+										<span class="track-likes">❤️ ${track.music_likes || 0}</span>
+										<span>⏱️ ${duration}</span>
+									</div>
+								</div>
+							`
+						}).join('')}
+					</div>
+				`
+			}
+
+			document.addEventListener('DOMContentLoaded', fetchPlaylistTracks)
+
+			let allModalTracks = []
+
+			async function showAddTrackModal() {
+				document.getElementById('addTrackModal').classList.add('active')
+				document.getElementById('modalTracksList').innerHTML = '<div class="modal-empty">Загрузка...</div>'
+
+				try {
+					const resp = await fetch(`${apiBaseUrl}/music`, {
+						headers: { Accept: 'application/json' },
+						credentials: 'include',
+					})
+					const data = await resp.json()
+					if (data && data.music && Array.isArray(data.music)) {
+						allModalTracks = data.music
+					} else if (Array.isArray(data)) {
+						allModalTracks = data
+					} else {
+						allModalTracks = []
+					}
+					document.getElementById('modalSearch').value = ''
+					filterModalTracks()
+				} catch (e) {
+					console.error(e)
+					document.getElementById('modalTracksList').innerHTML = '<div class="modal-empty">Ошибка загрузки треков</div>'
+				}
+			}
+
+			function closeAddTrackModal() {
+				document.getElementById('addTrackModal').classList.remove('active')
+			}
+
+			function filterModalTracks() {
+				const q = document.getElementById('modalSearch').value.toLowerCase().trim()
+				const filtered = allModalTracks.filter(t =>
+					!q || (t.name && t.name.toLowerCase().includes(q)) ||
+					(t.uploader_username && t.uploader_username.toLowerCase().includes(q))
+				)
+				if (filtered.length === 0) {
+					document.getElementById('modalTracksList').innerHTML = '<div class="modal-empty">Треки не найдены</div>'
+					return
+				}
+				document.getElementById('modalTracksList').innerHTML = filtered.map(t => {
+					const cover = t.music_cover || ''
+					const coverStyle = cover ? `background-image: url('${attrEscape(cover)}')` : ''
+					return `
+						<div class="modal-track" onclick="addTrackToPlaylist('${t.id}')">
+							<div class="modal-track-cover" style="${coverStyle}"></div>
+							<div class="modal-track-info">
+								<div class="modal-track-name">${escapeHtml(t.name || 'Без названия')}</div>
+								<div class="modal-track-artist">${escapeHtml(t.uploader_username || 'Неизвестный')}</div>
+							</div>
+						</div>
+					`
+				}).join('')
+			}
+
+			async function addTrackToPlaylist(musicId) {
+				try {
+					const resp = await fetch(`${apiBaseUrl}/playlist/${playlistId}/add`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ music_id: musicId }),
+						credentials: 'include',
+					})
+					if (resp.ok) {
+						closeAddTrackModal()
+						fetchPlaylistTracks()
+					} else {
+						throw new Error('Ошибка')
+					}
+				} catch (e) {
+					console.error(e)
+				}
+			}
+
+			document.getElementById('addTrackModal').addEventListener('click', function(e) {
+				if (e.target === this) closeAddTrackModal()
+			})
+		</script>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			var hb = document.getElementById('hamburgerBtn');
+			if (hb) {
+				hb.addEventListener('click', function() {
+					document.querySelector('.nav-links').classList.toggle('active');
+					this.classList.toggle('active');
+				});
+			}
+			document.querySelectorAll('.nav-links a').forEach(function(link) {
+				link.addEventListener('click', function() {
+					document.querySelector('.nav-links').classList.remove('active');
+					var h = document.getElementById('hamburgerBtn');
+					if (h) h.classList.remove('active');
+				});
+			});
+		});
+	</script></body>
+</html>

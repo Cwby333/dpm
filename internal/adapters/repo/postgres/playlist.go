@@ -1,0 +1,156 @@
+package postgres
+
+import (
+	"context"
+	"dpm/internal/models"
+	"fmt"
+
+	"github.com/jackc/pgx/v5"
+)
+
+type PlaylistDB struct {
+	ID         string `db:"id"`
+	Name       string `db:"name"`
+	UploaderID string `db:"uploader_id"`
+	Cover      string `db:"cover"`
+	Private    bool   `db:"private"`
+}
+
+type PlaylistInfoDB struct {
+	ID         string `db:"id"`
+	Name       string `db:"name"`
+	UploaderID string `db:"uploader_id"`
+	Cover      string `db:"cover"`
+	Private    bool   `db:"private"`
+	Username   string `db:"username"`
+}
+
+func PlaylistDBToP(p PlaylistDB) models.Playlist {
+	return models.Playlist{
+		ID:         p.ID,
+		Name:       p.Name,
+		Cover:      p.Cover,
+		UploaderID: p.UploaderID,
+		Private:    p.Private,
+	}
+}
+
+func PlaylistInfoDBToPI(p PlaylistInfoDB) models.PlaylistInfo {
+	return models.PlaylistInfo{
+		Playlist: PlaylistDBToP(PlaylistDB{
+			ID:         p.ID,
+			Name:       p.Name,
+			UploaderID: p.UploaderID,
+			Cover:      p.Cover,
+			Private:    p.Private,
+		}),
+		Username: p.Username,
+	}
+}
+
+func (pg *Postgres) CreatePlaylist(ctx context.Context, p models.Playlist) error {
+	const op = "./internal/adapters/repo/postgres/playlist.go.CreatePlaylist()"
+
+	q := "INSERT INTO playlists(id, name, uploader_id, cover, private) VALUES ($1,$2,$3,$4,$5)"
+	_, err := pg.pool.Exec(ctx, q, p.ID, p.Name, p.UploaderID, p.Cover, p.Private)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (pg *Postgres) GetPlaylist(ctx context.Context, id string) (models.Playlist, error) {
+	const op = "./internal/adapters/repo/postgres/playlist.go.GetPlaylist"
+
+	q := "SELECT id, name, uploader_id, cover, private FROM playlists WHERE id = $1"
+	rows, err := pg.pool.Query(ctx, q, id)
+	if err != nil {
+		return models.Playlist{}, fmt.Errorf("%s: SELECT %w", op, err)
+	}
+
+	p, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[PlaylistDB])
+	if err != nil {
+		return models.Playlist{}, fmt.Errorf("%s: CollectRows %w", op, err)
+	}
+
+	return PlaylistDBToP(p), nil
+}
+
+func (pg *Postgres) GetUserPlaylists(ctx context.Context, userID string) ([]models.PlaylistInfo, error) {
+	const op = "./internal/adapters/repo/postgres/playlist.go.GetUserPlaylists()"
+
+	q := "SELECT p.id, p.name, p.uploader_id, p.cover, p.private, u.username FROM playlists p JOIN users u ON p.uploader_id = u.id WHERE p.uploader_id = $1"
+	rows, err := pg.pool.Query(ctx, q, userID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: SELECT: %w", op, err)
+	}
+
+	p, err := pgx.CollectRows(rows, pgx.RowToStructByName[PlaylistInfoDB])
+	if err != nil {
+		return nil, fmt.Errorf("%s: CollectRows: %w", op, err)
+	}
+
+	pl := make([]models.PlaylistInfo, 0, len(p))
+	for i := range p {
+		pl = append(pl, PlaylistInfoDBToPI(p[i]))
+	}
+
+	return pl, nil
+}
+
+func (pg *Postgres) GetPublicPlaylists(ctx context.Context) ([]models.PlaylistInfo, error) {
+	const op = "./internal/adapters/repo/postgres/playlist.go.GetPublicPlaylists()"
+
+	q := "SELECT p.id, p.name, p.uploader_id, p.cover, p.private, u.username FROM playlists p JOIN users u ON p.uploader_id = u.id WHERE p.private = false"
+	rows, err := pg.pool.Query(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("%s: SELECT: %w", op, err)
+	}
+
+	p, err := pgx.CollectRows(rows, pgx.RowToStructByName[PlaylistInfoDB])
+	if err != nil {
+		return nil, fmt.Errorf("%s: CollectRows: %w", op, err)
+	}
+
+	pl := make([]models.PlaylistInfo, 0, len(p))
+	for i := range p {
+		pl = append(pl, PlaylistInfoDBToPI(p[i]))
+	}
+
+	return pl, nil
+}
+
+func (pg *Postgres) GetPlaylistMusic(ctx context.Context, id string) ([]models.LikedTrack, error) {
+	const op = "./internal/adapters/repo/postgres/playlist.go.GetPlaylistMusic"
+
+	q := "SELECT m.id AS music_id, m.name AS music_name, m.uploader_id, u.username, m.likes, m.duration_seconds AS dur_sec, m.song_url, m.music_cover FROM music m JOIN playlists_music pm ON m.id = pm.music_id JOIN users u ON u.id = m.uploader_id WHERE pm.playlist_id = $1"
+	rows, err := pg.pool.Query(ctx, q, id)
+	if err != nil {
+		return nil, fmt.Errorf("%s: SELECT %w", op, err)
+	}
+
+	m, err := pgx.CollectRows(rows, pgx.RowToStructByName[LikedTrack])
+	if err != nil {
+		return nil, fmt.Errorf("%s: CollectRows %w", op, err)
+	}
+
+	mu := make([]models.LikedTrack, 0, len(m))
+	for i := range m {
+		mu = append(mu, LikedTrackDBToLT(m[i]))
+	}
+
+	return mu, nil
+}
+
+func (pg *Postgres) AddMusicToPlaylist(ctx context.Context, playlistID string, musicID string) error {
+	const op = "./internal/adapters/repo/postgres/playlist.go.AddMusicToPlaylist()"
+
+	q := "INSERT INTO playlists_music(playlist_id, music_id) VALUES ($1, $2)"
+	_, err := pg.pool.Exec(ctx, q, playlistID, musicID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
