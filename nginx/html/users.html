@@ -336,7 +336,7 @@
 						${users.map(user => {
 							const initial = (user.username || '?')[0].toUpperCase()
 							return `
-								<div class="user-card">
+								<div class="user-card" onclick="window.location.href='user.html?id=${encodeURIComponent(user.id || '')}'" style="cursor:pointer;">
 									<div class="user-avatar">${escapeHtml(initial)}</div>
 									<div class="user-name">${escapeHtml(user.username || 'Без имени')}</div>
 									<div class="user-stats">

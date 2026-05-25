@@ -16,6 +16,7 @@ type PlaylistRepo interface {
 	GetUserPlaylists(ctx context.Context, userID string) ([]models.PlaylistInfo, error)
 	GetPublicPlaylists(ctx context.Context) ([]models.PlaylistInfo, error)
 	AddMusicToPlaylist(ctx context.Context, playlistID string, musicID string) error
+	GetPublicPlaylistsByID(ctx context.Context, id string) ([]models.PlaylistInfo, error)
 }
 
 type PlaylistService struct {
@@ -112,6 +113,26 @@ func (s *PlaylistService) GetPlaylist(ctx context.Context, id string) (models.Pl
 		url, err := s.GetPlaylistCoverPresignURL(ctx, p.Cover)
 		if err == nil {
 			p.Cover = url
+		}
+	}
+
+	return p, nil
+}
+
+func (s *PlaylistService) GetPublicPlaylistsByID(ctx context.Context, id string) ([]models.PlaylistInfo, error) {
+	const op = "./internal/services/playlist.go.GetPublicPlaylistsByID"
+
+	p, err := s.repo.GetPublicPlaylistsByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	for i := range p {
+		if p[i].Cover != "" {
+			url, err := s.GetPlaylistCoverPresignURL(ctx, p[i].Cover)
+			if err == nil {
+				p[i].Cover = url
+			}
 		}
 	}
 

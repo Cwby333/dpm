@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="ru">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Mute - Пользователь</title>
+		<style>
+			* { margin: 0; padding: 0; box-sizing: border-box; }
+			body {
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				min-height: 100vh; color: #333;
+			}
+			.navbar {
+				background: rgba(255, 255, 255, 0.95);
+				backdrop-filter: blur(10px);
+				box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+				position: fixed; width: 100%; top: 0; z-index: 1000;
+			}
+			.nav-container {
+				max-width: 1200px; margin: 0 auto;
+				padding: 1rem 2rem; display: flex;
+				justify-content: space-between; align-items: center;
+			}
+			.logo { display: flex; align-items: center; gap: 10px; }
+			.logo-icon { font-size: 2rem; line-height: 1; }
+			.logo-text {
+				font-size: 1.5rem; font-weight: 700;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+			}
+			.nav-links { display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; }
+			.nav-links a {
+				text-decoration: none; color: #555; font-weight: 500;
+				transition: color 0.3s ease; padding: 0.5rem 1rem; border-radius: 6px;
+			}
+			.nav-links a:hover { color: #667eea; background: rgba(102,126,234,0.1); }
+			.nav-links .active { color: #667eea; background: rgba(102,126,234,0.1); }
+			.auth-buttons { display: flex; gap: 1rem; }
+			.btn {
+				padding: 0.5rem 1.5rem; border-radius: 6px; text-decoration: none;
+				font-weight: 500; transition: all 0.3s ease; border: none;
+				cursor: pointer; font-size: 1rem;
+			}
+			.btn-primary {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+			}
+			.btn-primary:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 5px 20px rgba(102,126,234,0.4);
+			}
+			.btn-outline {
+				border: 2px solid #667eea; color: #667eea; background: transparent;
+			}
+			.btn-outline:hover { background: #667eea; color: white; }
+			.main-content {
+				max-width: 1200px; margin: 140px auto 0; padding: 2rem;
+			}
+			.profile-header {
+				background: white; border-radius: 16px; padding: 2rem;
+				margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+				display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;
+			}
+			.user-avatar-large {
+				width: 120px; height: 120px; border-radius: 50%;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				display: flex; align-items: center; justify-content: center;
+				color: white; font-size: 3rem; font-weight: 700;
+				flex-shrink: 0;
+			}
+			.user-info h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #333; }
+			.user-stats {
+				display: flex; gap: 1.5rem; flex-wrap: wrap; color: #999; font-size: 0.9rem;
+			}
+			.user-stat { display: flex; align-items: center; gap: 0.3rem; }
+			.back-link {
+				display: inline-block; margin-bottom: 1rem; color: white;
+				text-decoration: none; font-size: 1rem; opacity: 0.8;
+				transition: opacity 0.3s ease;
+			}
+			.back-link:hover { opacity: 1; }
+			.section-title {
+				color: white; font-size: 1.5rem; margin-bottom: 1rem;
+				text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+			}
+			.loading-container {
+				display: none; flex-direction: column; align-items: center;
+				justify-content: center; padding: 4rem; background: white;
+				border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+			}
+			.loading-spinner {
+				width: 50px; height: 50px; border: 5px solid #f3f3f3;
+				border-top: 5px solid #667eea; border-radius: 50%;
+				animation: spin 1s linear infinite; margin-bottom: 1rem;
+			}
+			@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+			.tracks-list { display: flex; flex-direction: column; gap: 0.75rem; }
+			.track-card {
+				background: white; border-radius: 10px; padding: 1rem 1.5rem;
+				display: flex; align-items: center; gap: 1rem;
+				box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+				transition: transform 0.2s ease, box-shadow 0.2s ease;
+				cursor: pointer;
+			}
+			.track-card:hover {
+				transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+			}
+			.track-index {
+				width: 28px; color: #999; font-weight: 600; text-align: center;
+				flex-shrink: 0;
+			}
+			.track-cover-small {
+				width: 48px; height: 48px;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				border-radius: 8px; flex-shrink: 0; background-size: cover;
+				background-position: center;
+			}
+			.track-info { flex: 1; min-width: 0; }
+			.track-name { font-weight: 600; color: #333; margin-bottom: 0.2rem; }
+			.track-artist { font-size: 0.85rem; color: #667eea; }
+			.track-meta {
+				display: flex; align-items: center; gap: 1rem;
+				color: #999; font-size: 0.85rem; flex-shrink: 0;
+			}
+			.track-likes { color: #e53e3e; }
+			.empty-state {
+				text-align: center; padding: 4rem; background: white;
+				border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+			}
+			.empty-state-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
+			.empty-state h3 { color: #333; margin-bottom: 0.5rem; }
+			.empty-state p { color: #666; }
+			.error-container {
+				background: white; border-radius: 10px; padding: 2rem;
+				text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+			}
+			.error-icon { font-size: 4rem; margin-bottom: 1rem; }
+			.error-container h3 { color: #c53030; margin-bottom: 0.5rem; }
+			.error-container p { color: #666; margin-bottom: 1.5rem; }
+			.footer {
+				background: #1a1a2e; color: white; padding: 3rem 2rem 1rem; margin-top: 4rem;
+			}
+			.footer-content {
+				max-width: 1200px; margin: 0 auto;
+				display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 3rem;
+			}
+			.footer-section h4 { margin-bottom: 1rem; color: #667eea; }
+			.footer-section ul { list-style: none; }
+			.footer-section ul li { margin-bottom: 0.5rem; }
+			.footer-section a { color: #999; text-decoration: none; transition: color 0.3s ease; }
+			.footer-section a:hover { color: #667eea; }
+			.footer-bottom {
+				max-width: 1200px; margin: 2rem auto 0; padding-top: 2rem;
+				border-top: 1px solid rgba(255,255,255,0.1);
+				text-align: center; color: #999; font-size: 0.9rem;
+			}
+			@media (max-width: 768px) {
+				.nav-container { flex-direction: column; gap: 1rem; }
+				.nav-links { flex-direction: column; width: 100%; }
+				.auth-buttons { width: 100%; justify-content: center; }
+				.profile-header { flex-direction: column; text-align: center; }
+				.track-card { flex-wrap: wrap; }
+				.track-meta { width: 100%; justify-content: flex-end; }
+			}
+@media (max-width: 768px) { .main-content { margin-top: 260px; } }
+
+.albums-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 1rem;
+	margin-bottom: 2rem;
+}
+.album-card {
+	background: white;
+	border-radius: 12px;
+	padding: 1rem;
+	box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+	cursor: pointer;
+	text-align: center;
+}
+.album-card:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+.album-cover {
+	width: 100%;
+	aspect-ratio: 1;
+	border-radius: 8px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	background-size: cover;
+	background-position: center;
+	margin-bottom: 0.75rem;
+}
+.album-card-name {
+	font-weight: 600;
+	color: #333;
+	font-size: 0.95rem;
+	margin-bottom: 0.25rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.album-card-artist {
+	font-size: 0.8rem;
+	color: #667eea;
+}
+
+.playlist-private-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    color: #999;
+    margin-top: 0.25rem;
+}
+
+.hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    background: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    cursor: pointer;
+    padding: 8px;
+    width: auto !important;
+    height: auto !important;
+    font-size: inherit !important;
+    color: inherit !important;
+    box-shadow: none !important;
+}
+.hamburger span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background: #555;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+.hamburger:hover span { background: #667eea; }
+
+@media (max-width: 797px) {
+    .nav-container { flex-direction: row !important; flex-wrap: wrap; }
+    .hamburger { display: flex; margin-left: auto; }
+    .nav-links { display: none; flex-basis: 100%; flex-direction: column; width: 100%; gap: 0.25rem; padding: 0.5rem 0; }
+    .nav-links.active { display: flex; }
+    .nav-links a { width: 100%; }
+    .auth-buttons { flex-direction: column; width: 100%; gap: 0.5rem; }
+    .auth-buttons .btn { text-align: center; }
+    .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .hamburger.active span:nth-child(2) { opacity: 0; }
+    .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+}
+		</style>
+	</head>
+	<body>
+		<nav class="navbar">
+			<div class="nav-container">
+				<div class="logo">
+					<span class="logo-icon">🎵</span>
+					<span class="logo-text">Mute</span>
+				</div>
+				<button class="hamburger" id="hamburgerBtn" aria-label="Меню">
+					<span></span>
+					<span></span>
+					<span></span>
+				</button>
+				<div class="nav-links">
+					<a href="main.html">Главная</a>
+					<a href="music.html">Треки</a>
+					<a href="albums.html">Альбомы</a>
+					<a href="playlists.html">Плейлисты</a>
+					<a href="users.html">Пользователи</a>
+					<a href="album-upload.html">Загрузить альбом</a>
+					<a href="favor.html">Избранное</a>
+					<a href="listening-history.html">История</a>
+					<a href="likes.html">Лайки</a>
+					<a href="profile.html">Профиль</a>
+					<div class="auth-buttons" id="authButtons">
+						<a href="login.html" class="btn btn-outline">Войти</a>
+						<a href="register.html" class="btn btn-primary">Регистрация</a>
+					</div>
+				</div>
+			</div>
+		</nav>
+
+		<div class="main-content">
+			<a href="users.html" class="back-link">← Вернуться к пользователям</a>
+
+			<div class="profile-header" id="profileHeader">
+				<div class="user-avatar-large" id="userAvatarLarge">?</div>
+				<div class="user-info">
+					<h1 id="userName">Загрузка...</h1>
+					<div class="user-stats" id="userStats"></div>
+					<div class="profile-actions" style="margin-top: 1rem;">
+						<button class="btn btn-primary" id="playAllBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem;">
+							▶ Слушать все треки
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<h2 class="section-title">Треки</h2>
+
+			<div class="loading-container" id="loadingContainer">
+				<div class="loading-spinner"></div>
+				<p>Загрузка треков...</p>
+			</div>
+
+			<div id="tracksContainer"></div>
+
+			<h2 class="section-title" id="albumsSectionTitle" style="display:none">Альбомы</h2>
+
+			<div id="albumsContainer"></div>
+
+			<h2 class="section-title" id="playlistsSectionTitle" style="display:none">Плейлисты</h2>
+
+			<div id="playlistsContainer"></div>
+		</div>
+
+		<footer class="footer">
+			<div class="footer-content">
+				<div class="footer-section">
+					<h4>Mute</h4>
+					<p>Бесплатная музыка для всех</p>
+				</div>
+				<div class="footer-section">
+					<h4>Навигация</h4>
+					<ul>
+						<li><a href="/">Главная</a></li>
+						<li><a href="/users.html">Пользователи</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="footer-bottom">
+				<p>&copy; 2026 Mute. Все права защищены.</p>
+			</div>
+		</footer>
+
+		<script>
+			const apiBaseUrl = 'https://172.17.110.58:443'
+			let tracks = []
+			let userData = null
+
+			const loadingContainer = document.getElementById('loadingContainer')
+			const tracksContainer = document.getElementById('tracksContainer')
+
+			const params = new URLSearchParams(window.location.search)
+			const userId = params.get('id')
+
+			async function fetchUserProfile() {
+				if (!userId) {
+					tracksContainer.innerHTML = `
+						<div class="error-container">
+							<div class="error-icon">⚠️</div>
+							<h3>Пользователь не указан</h3>
+							<p>Перейдите к профилю со страницы <a href="/users.html">списка пользователей</a></p>
+						</div>
+					`
+					return
+				}
+
+				loadingContainer.style.display = 'flex'
+				tracksContainer.style.display = 'none'
+
+				try {
+					const response = await fetch(`${apiBaseUrl}/users/${encodeURIComponent(userId)}`, {
+						method: 'GET',
+						headers: { Accept: 'application/json' },
+						credentials: 'include',
+					})
+
+					if (response.status === 404) {
+						throw new Error('Пользователь не найден или профиль закрыт')
+					}
+
+					if (!response.ok) {
+						throw new Error(`HTTP ошибка! Статус: ${response.status}`)
+					}
+
+					const data = await response.json()
+					userData = data.user || null
+					tracks = data.tracks || []
+
+					renderProfile()
+					renderTracks()
+				} catch (error) {
+					console.error('Ошибка загрузки:', error)
+					tracksContainer.style.display = 'block'
+					tracksContainer.innerHTML = `
+						<div class="error-container">
+							<div class="error-icon">⚠️</div>
+							<h3>Ошибка загрузки</h3>
+							<p>${error.message}</p>
+							<button class="btn btn-primary" onclick="fetchUserProfile()" style="margin-top:1rem">Повторить</button>
+						</div>
+					`
+				} finally {
+					loadingContainer.style.display = 'none'
+					tracksContainer.style.display = 'block'
+				}
+			}
+
+			function renderProfile() {
+				if (!userData) return
+
+				const uname = userData.username || 'Без имени'
+				document.getElementById('userName').textContent = uname
+				document.title = `Mute - ${uname}`
+
+				const avatarEl = document.getElementById('userAvatarLarge')
+				avatarEl.textContent = uname[0].toUpperCase()
+
+				const stats = document.getElementById('userStats')
+				stats.innerHTML = `
+					<span class="user-stat">❤️ ${userData.likes || 0}</span>
+					<span class="user-stat">🎧 ${userData.listening_count || 0}</span>
+					<span class="user-stat">⭐ ${userData.favor_count || 0}</span>
+				`
+			}
+
+			let globalPlayerWindow = null
+
+			function playAllTracks(startIndex = 0) {
+				if (!tracks || tracks.length === 0) return
+
+				const playlist = tracks.map(t => ({
+					musicId: t.music_id || t.id,
+					musicName: t.music_name || t.name || 'Без названия',
+					artistName: t.uploader_username || t.uploader_id || 'Неизвестный',
+				}))
+
+				sessionStorage.setItem('albumPlaylist', JSON.stringify(playlist))
+
+				const playerUrl = `player-window.html?playlist=album&startIndex=${startIndex}`
+				if (globalPlayerWindow && !globalPlayerWindow.closed) {
+					globalPlayerWindow.focus()
+				} else {
+					globalPlayerWindow = window.open(playerUrl, 'MusicPlayer', 'width=450,height=420,resizable=yes')
+				}
+			}
+
+			document.getElementById('playAllBtn').addEventListener('click', () => playAllTracks(0))
+
+			function formatDuration(seconds) {
+				if (!seconds) return '0:00'
+				const mins = Math.floor(seconds / 60)
+				const secs = seconds % 60
+				return `${mins}:${secs.toString().padStart(2, '0')}`
+			}
+
+			function escapeHtml(text) {
+				if (!text) return ''
+				const div = document.createElement('div')
+				div.textContent = text
+				return div.innerHTML
+			}
+
+			function attrEscape(text) {
+				if (!text) return ''
+				return text.replace(/'/g, '&#39;').replace(/\\/g, '\\\\').replace(/\n/g, ' ')
+			}
+
+			function renderTracks() {
+				if (tracks.length === 0) {
+					tracksContainer.innerHTML = `
+						<div class="empty-state">
+							<div class="empty-state-icon">🎵</div>
+							<h3>У пользователя пока нет треков</h3>
+							<p>Треки не найдены</p>
+						</div>
+					`
+					return
+				}
+
+				tracksContainer.innerHTML = `
+					<div class="tracks-list">
+						${tracks.map((track, i) => {
+							const coverStyle = track.music_cover
+								? `background-image: url('${attrEscape(track.music_cover)}')`
+								: ''
+							const duration = formatDuration(track.music_duration || track.dur_sec)
+							return `
+								<div class="track-card" onclick="playAllTracks(${i})">
+									<div class="track-index">${i + 1}</div>
+									<div class="track-cover-small" style="${coverStyle}"></div>
+									<div class="track-info">
+										<div class="track-name">${escapeHtml(track.music_name || 'Без названия')}</div>
+										<div class="track-artist">${escapeHtml(track.uploader_username || 'Неизвестный')}</div>
+									</div>
+									<div class="track-meta">
+										<span class="track-likes">❤️ ${track.music_likes || 0}</span>
+										<span>⏱️ ${duration}</span>
+									</div>
+								</div>
+							`
+						}).join('')}
+					</div>
+				`
+			}
+
+			async function fetchUserAlbums() {
+				if (!userId) return
+
+				try {
+					const response = await fetch(`${apiBaseUrl}/users/${encodeURIComponent(userId)}/albums`, {
+						method: 'GET',
+						headers: { Accept: 'application/json' },
+						credentials: 'include',
+					})
+					if (response.status === 404) return
+					if (!response.ok) return
+
+					const albums = await response.json()
+					if (!albums || albums.length === 0) return
+
+					document.getElementById('albumsSectionTitle').style.display = 'block'
+
+					const container = document.getElementById('albumsContainer')
+					container.innerHTML = `
+						<div class="albums-grid">
+							${albums.map(a => {
+								const coverStyle = a.cover
+									? `background-image: url('${attrEscape(a.cover)}')`
+									: ''
+								const name = escapeHtml(a.name || 'Без названия')
+								const artist = escapeHtml(a.uploader_username || '')
+								return `
+									<div class="album-card" onclick="window.location.href='album.html?id=${encodeURIComponent(a.id)}'">
+										<div class="album-cover" style="${coverStyle}"></div>
+										<div class="album-card-name">${name}</div>
+										<div class="album-card-artist">${artist}</div>
+									</div>
+								`
+							}).join('')}
+						</div>
+					`
+				} catch (e) {
+					console.error('Ошибка загрузки альбомов:', e)
+				}
+			}
+
+			async function fetchUserPlaylists() {
+				if (!userId) return
+
+				try {
+					const response = await fetch(`${apiBaseUrl}/users/${encodeURIComponent(userId)}/playlists`, {
+						method: 'GET',
+						headers: { Accept: 'application/json' },
+						credentials: 'include',
+					})
+					if (response.status === 404) return
+					if (!response.ok) return
+
+					const playlists = await response.json()
+					if (!playlists || playlists.length === 0) return
+
+					document.getElementById('playlistsSectionTitle').style.display = 'block'
+
+					const container = document.getElementById('playlistsContainer')
+					container.innerHTML = `
+						<div class="albums-grid">
+							${playlists.map(p => {
+								const coverStyle = p.cover
+									? `background-image: url('${attrEscape(p.cover)}')`
+									: ''
+								const name = escapeHtml(p.name || 'Без названия')
+								const artist = escapeHtml(p.username || '')
+								const isPrivate = p.private ? '<div class="playlist-private-badge">🔒 Приватный</div>' : ''
+								return `
+									<div class="album-card" onclick="window.location.href='playlist.html?id=${encodeURIComponent(p.id)}&name=${encodeURIComponent(p.name || '')}&uploader=${encodeURIComponent(p.username || p.uploader_id || '')}&cover=${encodeURIComponent(p.cover || '')}'">
+										<div class="album-cover" style="${coverStyle}"></div>
+										<div class="album-card-name">${name}</div>
+										<div class="album-card-artist">${artist}</div>
+										${isPrivate}
+									</div>
+								`
+							}).join('')}
+						</div>
+					`
+				} catch (e) {
+					console.error('Ошибка загрузки плейлистов:', e)
+				}
+			}
+
+			document.addEventListener('DOMContentLoaded', () => {
+				fetchUserProfile()
+				fetchUserAlbums()
+				fetchUserPlaylists()
+			})
+		</script>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			var hb = document.getElementById('hamburgerBtn');
+			if (hb) {
+				hb.addEventListener('click', function() {
+					document.querySelector('.nav-links').classList.toggle('active');
+					this.classList.toggle('active');
+				});
+			}
+			document.querySelectorAll('.nav-links a').forEach(function(link) {
+				link.addEventListener('click', function() {
+					document.querySelector('.nav-links').classList.remove('active');
+					var h = document.getElementById('hamburgerBtn');
+					if (h) h.classList.remove('active');
+				});
+			});
+		});
+	</script></body>
+</html>

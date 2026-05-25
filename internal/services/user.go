@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"dpm/internal/models"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -17,16 +18,19 @@ type Pg interface {
 	ReadUserID(ctx context.Context, user models.User) (string, error)
 	ReadUser(ctx context.Context, user models.User) (models.User, error)
 	GetPublicUsers(ctx context.Context) ([]models.User, error)
+	GetUserTracks(ctx context.Context, userID string) ([]models.LikedTrack, error)
 }
 
 type UserService struct {
 	Pg  Pg
+	S3  S3
 	Key string
 }
 
-func NewUser(pg Pg, k string) *UserService {
+func NewUser(pg Pg, s3 S3, k string) *UserService {
 	return &UserService{
 		Pg:  pg,
+		S3:  s3,
 		Key: k,
 	}
 }
@@ -99,4 +103,39 @@ func (s *UserService) GetPublicUsers(ctx context.Context) ([]models.User, error)
 	}
 
 	return users, nil
+}
+
+func (s *UserService) GetPublicUserProfile(ctx context.Context, userID string) (*models.User, []models.LikedTrack, error) {
+	const op = "./internal/services/user.go.GetPublicUserProfile()"
+
+	u, err := s.Pg.ReadUser(ctx, models.User{ID: userID})
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	if u.PrivateProfile {
+		return nil, nil, fmt.Errorf("%s: %w", op, errors.New("profile is private"))
+	}
+
+	tracks, err := s.Pg.GetUserTracks(ctx, userID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	for i := range tracks {
+		if tracks[i].MusicCover != "" {
+			url, err := s.S3.GetPresignURL(ctx, tracks[i].MusicCover)
+			if err == nil {
+				tracks[i].MusicCover = url
+			}
+		}
+		if tracks[i].MusicSongURL != "" {
+			url, err := s.S3.GetPresignURL(ctx, tracks[i].MusicSongURL)
+			if err == nil {
+				tracks[i].MusicSongURL = url
+			}
+		}
+	}
+
+	return &u, tracks, nil
 }

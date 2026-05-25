@@ -121,6 +121,28 @@ func (pg *Postgres) GetPublicPlaylists(ctx context.Context) ([]models.PlaylistIn
 	return pl, nil
 }
 
+func (pg *Postgres) GetPublicPlaylistsByID(ctx context.Context, id string) ([]models.PlaylistInfo, error) {
+	const op = "./internal/adapters/repo/postgres/playlist.go.GetPublicPlaylists()"
+
+	q := "SELECT p.id, p.name, p.uploader_id, p.cover, p.private, u.username FROM playlists p JOIN users u ON p.uploader_id = u.id WHERE p.private = $1 AND p.uploader_id = $2"
+	rows, err := pg.pool.Query(ctx, q, false, id)
+	if err != nil {
+		return nil, fmt.Errorf("%s: SELECT: %w", op, err)
+	}
+
+	p, err := pgx.CollectRows(rows, pgx.RowToStructByName[PlaylistInfoDB])
+	if err != nil {
+		return nil, fmt.Errorf("%s: CollectRows: %w", op, err)
+	}
+
+	pl := make([]models.PlaylistInfo, 0, len(p))
+	for i := range p {
+		pl = append(pl, PlaylistInfoDBToPI(p[i]))
+	}
+
+	return pl, nil
+}
+
 func (pg *Postgres) GetPlaylistMusic(ctx context.Context, id string) ([]models.LikedTrack, error) {
 	const op = "./internal/adapters/repo/postgres/playlist.go.GetPlaylistMusic"
 

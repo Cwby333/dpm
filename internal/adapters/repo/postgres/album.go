@@ -160,3 +160,25 @@ func (pg *Postgres) GetAlbumsInfo(ctx context.Context) ([]models.AlbumInfo, erro
 
 	return al, nil
 }
+
+func (pg *Postgres) GetUserAlbums(ctx context.Context, userID string) ([]models.AlbumInfo, error) {
+	const op = "./internal/adapters/repo/postgres/album.go.GetUserAlbums()"
+
+	q := "SELECT a.id, a.name, a.uploader_id, a.cover, u.username FROM albums a JOIN users u ON a.uploader_id = u.id WHERE a.uploader_id = $1"
+	rows, err := pg.pool.Query(ctx, q, userID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	a, err := pgx.CollectRows(rows, pgx.RowToStructByName[AlbumInfo])
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	al := make([]models.AlbumInfo, 0, len(a))
+	for i := range a {
+		al = append(al, AlbumInfoDBToai(a[i]))
+	}
+
+	return al, nil
+}

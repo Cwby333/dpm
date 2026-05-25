@@ -94,6 +94,12 @@ type PlaylistInfo struct {
 	Username   *string `json:"username,omitempty"`
 }
 
+// UserProfileResponse defines model for UserProfileResponse.
+type UserProfileResponse struct {
+	Tracks *[]LikedTrack `json:"tracks,omitempty"`
+	User   *UserPublic   `json:"user,omitempty"`
+}
+
 // UserPublic defines model for UserPublic.
 type UserPublic struct {
 	FavorCount     *int    `json:"favor_count,omitempty"`
@@ -137,9 +143,10 @@ type GetProfile struct {
 
 // Register defines model for Register.
 type Register struct {
-	Email    *string `json:"email,omitempty"`
-	Password *string `json:"password,omitempty"`
-	Username *string `json:"username,omitempty"`
+	Email          *string `json:"email,omitempty"`
+	Password       *string `json:"password,omitempty"`
+	PrivateProfile *bool   `json:"private_profile,omitempty"`
+	Username       *string `json:"username,omitempty"`
 }
 
 // DeleteFavorJSONBody defines parameters for DeleteFavor.
@@ -255,9 +262,10 @@ type GetProfileParams struct {
 
 // RegisterJSONBody defines parameters for Register.
 type RegisterJSONBody struct {
-	Email    *string `json:"email,omitempty"`
-	Password *string `json:"password,omitempty"`
-	Username *string `json:"username,omitempty"`
+	Email          *string `json:"email,omitempty"`
+	Password       *string `json:"password,omitempty"`
+	PrivateProfile *bool   `json:"private_profile,omitempty"`
+	Username       *string `json:"username,omitempty"`
 }
 
 // DeleteFavorJSONRequestBody defines body for DeleteFavor for application/json ContentType.
@@ -355,6 +363,15 @@ type ServerInterface interface {
 
 	// (GET /users)
 	GetUsers(w http.ResponseWriter, r *http.Request)
+
+	// (GET /users/{userID})
+	GetUserProfile(w http.ResponseWriter, r *http.Request, userID string)
+
+	// (GET /users/{userID}/albums)
+	GetUserAlbums(w http.ResponseWriter, r *http.Request, userID string)
+
+	// (GET /users/{userID}/playlists)
+	GetUserPlaylists(w http.ResponseWriter, r *http.Request, userID string)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -1030,6 +1047,81 @@ func (siw *ServerInterfaceWrapper) GetUsers(w http.ResponseWriter, r *http.Reque
 	handler.ServeHTTP(w, r)
 }
 
+// GetUserProfile operation middleware
+func (siw *ServerInterfaceWrapper) GetUserProfile(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "userID" -------------
+	var userID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userID", r.PathValue("userID"), &userID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetUserProfile(w, r, userID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetUserAlbums operation middleware
+func (siw *ServerInterfaceWrapper) GetUserAlbums(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "userID" -------------
+	var userID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userID", r.PathValue("userID"), &userID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetUserAlbums(w, r, userID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetUserPlaylists operation middleware
+func (siw *ServerInterfaceWrapper) GetUserPlaylists(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "userID" -------------
+	var userID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userID", r.PathValue("userID"), &userID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetUserPlaylists(w, r, userID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -1172,6 +1264,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/profile", wrapper.GetProfile)
 	m.HandleFunc("POST "+options.BaseURL+"/register", wrapper.Register)
 	m.HandleFunc("GET "+options.BaseURL+"/users", wrapper.GetUsers)
+	m.HandleFunc("GET "+options.BaseURL+"/users/{userID}", wrapper.GetUserProfile)
+	m.HandleFunc("GET "+options.BaseURL+"/users/{userID}/albums", wrapper.GetUserAlbums)
+	m.HandleFunc("GET "+options.BaseURL+"/users/{userID}/playlists", wrapper.GetUserPlaylists)
 
 	return m
 }
@@ -1789,6 +1884,105 @@ func (response GetUsers500Response) VisitGetUsersResponse(w http.ResponseWriter)
 	return nil
 }
 
+type GetUserProfileRequestObject struct {
+	UserID string `json:"userID"`
+}
+
+type GetUserProfileResponseObject interface {
+	VisitGetUserProfileResponse(w http.ResponseWriter) error
+}
+
+type GetUserProfile200JSONResponse UserProfileResponse
+
+func (response GetUserProfile200JSONResponse) VisitGetUserProfileResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserProfile404Response struct {
+}
+
+func (response GetUserProfile404Response) VisitGetUserProfileResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
+type GetUserProfile500Response struct {
+}
+
+func (response GetUserProfile500Response) VisitGetUserProfileResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
+type GetUserAlbumsRequestObject struct {
+	UserID string `json:"userID"`
+}
+
+type GetUserAlbumsResponseObject interface {
+	VisitGetUserAlbumsResponse(w http.ResponseWriter) error
+}
+
+type GetUserAlbums200JSONResponse []Album
+
+func (response GetUserAlbums200JSONResponse) VisitGetUserAlbumsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserAlbums404Response struct {
+}
+
+func (response GetUserAlbums404Response) VisitGetUserAlbumsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
+type GetUserAlbums500Response struct {
+}
+
+func (response GetUserAlbums500Response) VisitGetUserAlbumsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
+type GetUserPlaylistsRequestObject struct {
+	UserID string `json:"userID"`
+}
+
+type GetUserPlaylistsResponseObject interface {
+	VisitGetUserPlaylistsResponse(w http.ResponseWriter) error
+}
+
+type GetUserPlaylists200JSONResponse []PlaylistInfo
+
+func (response GetUserPlaylists200JSONResponse) VisitGetUserPlaylistsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserPlaylists404Response struct {
+}
+
+func (response GetUserPlaylists404Response) VisitGetUserPlaylistsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
+type GetUserPlaylists500Response struct {
+}
+
+func (response GetUserPlaylists500Response) VisitGetUserPlaylistsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
@@ -1857,6 +2051,15 @@ type StrictServerInterface interface {
 
 	// (GET /users)
 	GetUsers(ctx context.Context, request GetUsersRequestObject) (GetUsersResponseObject, error)
+
+	// (GET /users/{userID})
+	GetUserProfile(ctx context.Context, request GetUserProfileRequestObject) (GetUserProfileResponseObject, error)
+
+	// (GET /users/{userID}/albums)
+	GetUserAlbums(ctx context.Context, request GetUserAlbumsRequestObject) (GetUserAlbumsResponseObject, error)
+
+	// (GET /users/{userID}/playlists)
+	GetUserPlaylists(ctx context.Context, request GetUserPlaylistsRequestObject) (GetUserPlaylistsResponseObject, error)
 }
 
 type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
@@ -2513,38 +2716,119 @@ func (sh *strictHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetUserProfile operation middleware
+func (sh *strictHandler) GetUserProfile(w http.ResponseWriter, r *http.Request, userID string) {
+	var request GetUserProfileRequestObject
+
+	request.UserID = userID
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUserProfile(ctx, request.(GetUserProfileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUserProfile")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetUserProfileResponseObject); ok {
+		if err := validResponse.VisitGetUserProfileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetUserAlbums operation middleware
+func (sh *strictHandler) GetUserAlbums(w http.ResponseWriter, r *http.Request, userID string) {
+	var request GetUserAlbumsRequestObject
+
+	request.UserID = userID
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUserAlbums(ctx, request.(GetUserAlbumsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUserAlbums")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetUserAlbumsResponseObject); ok {
+		if err := validResponse.VisitGetUserAlbumsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetUserPlaylists operation middleware
+func (sh *strictHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Request, userID string) {
+	var request GetUserPlaylistsRequestObject
+
+	request.UserID = userID
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUserPlaylists(ctx, request.(GetUserPlaylistsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUserPlaylists")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetUserPlaylistsResponseObject); ok {
+		if err := validResponse.VisitGetUserPlaylistsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

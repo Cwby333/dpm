@@ -51,21 +51,6 @@ func main() {
 		Email:    "email@gmail.com",
 	}
 
-	uService := services.NewUser(pg, cfg.JWT.Key)
-
-	err = uService.RegisterUser(context.Background(), u)
-
-	// err = uService.RegisterUser(context.Background(), u)
-	// if err != nil {
-	// 	slog.Error(err.Error())
-	// }
-
-	// token, err := uService.Login(context.Background(), u)
-	// if err != nil {
-	// 	slog.Error(err.Error())
-	// }
-	// slog.Info(token)
-
 	lhService := services.NewListeningHistoryService(pg)
 
 	fService := services.NewFavorService(pg)
@@ -82,6 +67,10 @@ func main() {
 	mService := services.NewMusicService(pg, s3)
 	aServices := services.NewAlbumServices(pg, s3)
 	pServices := services.NewPlaylistService(pg, s3)
+
+	uService := services.NewUser(pg, s3, cfg.JWT.Key)
+
+	err = uService.RegisterUser(context.Background(), u)
 
 	handler := http.NewHandler(uService, mService, lhService, fService, likeService, aServices, pServices)
 

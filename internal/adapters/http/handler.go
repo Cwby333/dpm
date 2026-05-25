@@ -151,6 +151,33 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
+	h.Mux.Handle("GET /users/{userID}", corsMiddleware(wrapGetUserProfile(strict)))
+	h.Mux.Handle("OPTIONS /users/{userID}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("GET /users/{userID}/albums", corsMiddleware(wrapGetUserAlbums(strict)))
+	h.Mux.Handle("OPTIONS /users/{userID}/albums", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("GET /users/{userID}/playlists", corsMiddleware(wrapGetUserPlaylists(strict)))
+	h.Mux.Handle("OPTIONS /users/{userID}/playlists", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
 	h.Mux.Handle("GET /profile", corsMiddleware(wrapGetProfile(strict)))
 	h.Mux.Handle("OPTIONS /profile", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
@@ -451,6 +478,24 @@ func wrapGetMusic(strict api.ServerInterface) http.HandlerFunc {
 	}
 }
 
+func wrapGetUserProfile(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		strict.GetUserProfile(w, r, r.PathValue("userID"))
+	}
+}
+
+func wrapGetUserAlbums(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		strict.GetUserAlbums(w, r, r.PathValue("userID"))
+	}
+}
+
+func wrapGetUserPlaylists(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		strict.GetUserPlaylists(w, r, r.PathValue("userID"))
+	}
+}
+
 func wrapGetUsers(strict api.ServerInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		strict.GetUsers(w, r)
@@ -610,9 +655,10 @@ func (h Handler) Register(ctx context.Context, request api.RegisterRequestObject
 	const op = "./internal/adapters/http/handlers.go.Login()"
 
 	u := models.User{
-		Username: *request.Body.Username,
-		Email:    *request.Body.Email,
-		HashPsw:  *request.Body.Password,
+		Username:       *request.Body.Username,
+		Email:          *request.Body.Email,
+		HashPsw:        *request.Body.Password,
+		PrivateProfile: request.Body.PrivateProfile != nil && *request.Body.PrivateProfile,
 	}
 
 	err := h.uServices.RegisterUser(ctx, u)
@@ -999,6 +1045,130 @@ func (h Handler) GetUsers(ctx context.Context, request api.GetUsersRequestObject
 		})
 	}
 
+	return resp, nil
+}
+
+func (h Handler) GetUserProfile(ctx context.Context, request api.GetUserProfileRequestObject) (api.GetUserProfileResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetUserProfile()"
+
+	slog.Info("GetUserProfile")
+
+	user, tracks, err := h.uServices.GetPublicUserProfile(ctx, request.UserID)
+	if err != nil {
+		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+		return api.GetUserProfile404Response{}, nil
+	}
+
+	sTime := fmt.Sprint(user.RegisterAt)
+	apiUser := api.UserPublic{
+		Id:             &user.ID,
+		Username:       &user.Username,
+		RegisterAt:     &sTime,
+		Likes:          &user.Likes,
+		ListeningCount: &user.ListeningCount,
+		FavorCount:     &user.FavorCount,
+	}
+
+	apiTracks := make([]api.LikedTrack, 0, len(tracks))
+	for i := range tracks {
+		mid := tracks[i].MusicID
+		mname := tracks[i].MusicName
+		mcover := tracks[i].MusicCover
+		mlikes := tracks[i].MusicLikes
+		mdur := tracks[i].MusicDurationSeconds
+		surl := tracks[i].MusicSongURL
+		uid := tracks[i].MusicUploaderID
+		uuname := tracks[i].UserUsername
+		apiTracks = append(apiTracks, api.LikedTrack{
+			MusicId:          &mid,
+			MusicName:        &mname,
+			MusicCover:       &mcover,
+			MusicLikes:       &mlikes,
+			MusicDuration:    &mdur,
+			SongUrl:          &surl,
+			UploaderId:       &uid,
+			UploaderUsername: &uuname,
+		})
+	}
+
+	return api.GetUserProfile200JSONResponse{
+		User:   &apiUser,
+		Tracks: &apiTracks,
+	}, nil
+}
+
+func (h Handler) GetUserAlbums(ctx context.Context, request api.GetUserAlbumsRequestObject) (api.GetUserAlbumsResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetUserAlbums()"
+
+	slog.Info("GetUserAlbums", "userID", request.UserID)
+
+	u, err := h.uServices.Pg.ReadUser(ctx, models.User{ID: request.UserID})
+	if err != nil {
+		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+		return api.GetUserAlbums404Response{}, nil
+	}
+	if u.PrivateProfile {
+		return api.GetUserAlbums404Response{}, nil
+	}
+
+	albums, err := h.aService.GetUserAlbums(ctx, request.UserID)
+	if err != nil {
+		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+		return api.GetUserAlbums500Response{}, nil
+	}
+
+	apiAlbums := make([]api.Album, 0, len(albums))
+	for i := range albums {
+		name := albums[i].Name
+		id := albums[i].ID
+		uid := albums[i].UploaderID
+		uname := albums[i].Username
+		cover := albums[i].Cover
+		apiAlbums = append(apiAlbums, api.Album{
+			Id:               &id,
+			Name:             &name,
+			UploaderId:       &uid,
+			UploaderUsername: &uname,
+			Cover:            &cover,
+		})
+	}
+
+	return api.GetUserAlbums200JSONResponse(apiAlbums), nil
+}
+
+func (h Handler) GetUserPlaylists(ctx context.Context, request api.GetUserPlaylistsRequestObject) (api.GetUserPlaylistsResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetUserPlaylists()"
+
+	u, err := h.uServices.Pg.ReadUser(ctx, models.User{ID: request.UserID})
+	if err != nil {
+		return api.GetUserPlaylists404Response{}, nil
+	}
+	if u.PrivateProfile {
+		return api.GetUserPlaylists404Response{}, nil
+	}
+
+	pl, err := h.pService.GetPublicPlaylistsByID(ctx, request.UserID)
+	if err != nil {
+		return api.GetUserPlaylists500Response{}, nil
+	}
+
+	resp := make(api.GetUserPlaylists200JSONResponse, 0, len(pl))
+	for i := range pl {
+		id := pl[i].ID
+		name := pl[i].Name
+		uploaderID := pl[i].UploaderID
+		cover := pl[i].Cover
+		private := pl[i].Private
+		username := pl[i].Username
+		resp = append(resp, api.PlaylistInfo{
+			Id:         &id,
+			Name:       &name,
+			UploaderId: &uploaderID,
+			Cover:      &cover,
+			Private:    &private,
+			Username:   &username,
+		})
+	}
 	return resp, nil
 }
 

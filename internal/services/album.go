@@ -19,6 +19,7 @@ type AlbumRepo interface {
 	GetAlbumsMusic(ctx context.Context, id string) ([]models.LikedTrack, error)
 	GetAlbumInfo(ctx context.Context, id string) (models.AlbumInfo, error)
 	GetAlbumsInfo(ctx context.Context) ([]models.AlbumInfo, error)
+	GetUserAlbums(ctx context.Context, userID string) ([]models.AlbumInfo, error)
 	AddMusicToAlbum(ctx context.Context, albumID string, musicID string) error
 	CreateMusic(ctx context.Context, product models.Music) error
 }
@@ -172,6 +173,26 @@ func (s *AlbumsService) UploadAlbum(ctx context.Context, albumName string, uploa
 	}
 
 	return albumID, nil
+}
+
+func (s *AlbumsService) GetUserAlbums(ctx context.Context, userID string) ([]models.AlbumInfo, error) {
+	const op = "./internal/services/album.go.GetUserAlbums()"
+
+	a, err := s.repo.GetUserAlbums(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	for i := range a {
+		if a[i].Cover != "" {
+			url, err := s.GetAlbumCoverPresignURL(ctx, a[i].Cover)
+			if err == nil {
+				a[i].Cover = url
+			}
+		}
+	}
+
+	return a, nil
 }
 
 func (s *AlbumsService) GetAlbumCoverPresignURL(ctx context.Context, coverKey string) (string, error) {

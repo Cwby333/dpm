@@ -41,8 +41,8 @@ func UDBToUser(u UserDB) models.User {
 func (pg *Postgres) CreateUser(ctx context.Context, user models.User) error {
 	const op = "./internal/adapters/repo/postgres/user.go.CreateUser()"
 
-	q := "INSERT INTO users(username, hash_psw, email) VALUES ($1, $2, $3) RETURNING id"
-	rows, err := pg.pool.Query(ctx, q, user.Username, user.HashPsw, user.Email)
+	q := "INSERT INTO users(username, hash_psw, email, private_profile) VALUES ($1, $2, $3, $4) RETURNING id"
+	rows, err := pg.pool.Query(ctx, q, user.Username, user.HashPsw, user.Email, user.PrivateProfile)
 	if err != nil {
 		return fmt.Errorf("%s %s: %w", op, q, err)
 	}
@@ -161,4 +161,44 @@ func (pg *Postgres) GetPublicUsers(ctx context.Context) ([]models.User, error) {
 	}
 
 	return res, nil
+}
+
+func (pg *Postgres) GetUserTracks(ctx context.Context, userID string) ([]models.LikedTrack, error) {
+	const op = "./internal/adapters/repo/postgres/user.go.GetUserTracks()"
+
+	q := "SELECT m.id AS music_id, m.name AS music_name, m.music_cover AS music_cover, m.song_url AS song_url, m.uploader_id AS uploader_id, u.username AS username, m.likes AS likes, m.duration_seconds AS dur_sec FROM music m JOIN users u ON u.id = m.uploader_id WHERE m.uploader_id = $1"
+	rows, err := pg.pool.Query(ctx, q, userID)
+	if err != nil {
+		return nil, fmt.Errorf("%s %s: %w", op, q, err)
+	}
+
+	lt, err := pgx.CollectRows(rows, pgx.RowToStructByName[LikedTrack])
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	lSlice := make([]models.LikedTrack, 0, len(lt))
+	for i := range lt {
+		if lt[i].MusicCover == nil {
+			s := ""
+			lt[i].MusicCover = &s
+		}
+		if lt[i].MusicSongURL == nil {
+			s := ""
+			lt[i].MusicSongURL = &s
+		}
+
+		lSlice = append(lSlice, models.LikedTrack{
+			MusicID:              lt[i].MusicID,
+			MusicName:            lt[i].MusicName,
+			MusicCover:           *lt[i].MusicCover,
+			MusicSongURL:         *lt[i].MusicSongURL,
+			MusicUploaderID:      lt[i].MusicUploaderID,
+			UserUsername:         lt[i].UserUsername,
+			MusicLikes:           lt[i].MusicLikes,
+			MusicDurationSeconds: lt[i].MusicDurationSeconds,
+		})
+	}
+
+	return lSlice, nil
 }

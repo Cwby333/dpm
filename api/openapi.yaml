@@ -10,6 +10,73 @@ info:
 #   - url: "https://music-microservice.mute-project/api/v1"
 #     description: "Base url"
 paths:
+  /users/{userID}/playlists:
+   description: "Get all playlists created by a specific user"
+   get:
+     operationId: "getUserPlaylists"
+     parameters:
+       - name: userID
+         in: path
+         required: true
+         schema:
+           type: string
+     responses:
+       200:
+         description: "Success"
+         content:
+           application/json:
+             schema:
+               type: array
+               items:
+                 $ref: "#/components/schemas/PlaylistInfo"
+       404:
+         description: "User not found or profile is private"
+       500:
+         description: "Server error"
+  /users/{userID}/albums:
+    description: "Get all albums uploaded by a specific user"
+    get:
+      operationId: "getUserAlbums"
+      parameters:
+        - name: userID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Album"
+        404:
+          description: "User not found or profile is private"
+        500:
+          description: "Server error"
+  /users/{userID}:
+    description: "Get user's public profile with their uploaded tracks"
+    get:
+      operationId: "getUserProfile"
+      parameters:
+        - name: userID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+        404:
+          description: "User not found or profile is private"
+        500:
+          description: "Server error"
   /users:
     description: "Get all users with public profiles"
     get:
@@ -957,6 +1024,8 @@ components:
                 type: string
               email:
                 type: string
+              private_profile:
+                type: boolean
     Login:
       description: 'Req body for /login'
       content:
@@ -983,6 +1052,15 @@ components:
           schema:
             type: string
   schemas:
+    UserProfileResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/UserPublic"
+        tracks:
+          type: array
+          items:
+            $ref: "#/components/schemas/LikedTrack"
     UserPublic:
       type: object
       properties:

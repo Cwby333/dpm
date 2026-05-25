@@ -185,6 +185,16 @@
                 </small>
             </div>
 
+            <div class="form-group">
+                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+                    <input type="checkbox" id="privateProfile" name="private_profile" />
+                    <span>Приватный профиль</span>
+                </label>
+                <small style="color:#666;font-size:12px;display:block;margin-top:4px;">
+                    Ваш профиль не будет виден другим пользователям
+                </small>
+            </div>
+
             <button type="submit" id="submitBtn">
                 <span id="buttonText">Зарегистрироваться</span>
             </button>
@@ -238,7 +248,8 @@
             const formData = {
                 username: document.getElementById('username').value.trim(),
                 email: document.getElementById('email').value.trim(),
-                password: document.getElementById('password').value
+                password: document.getElementById('password').value,
+                private_profile: document.getElementById('privateProfile').checked
             };
 
             // Простая валидация на клиенте
