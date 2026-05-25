@@ -10,6 +10,21 @@ info:
 #   - url: "https://music-microservice.mute-project/api/v1"
 #     description: "Base url"
 paths:
+  /users:
+    description: "Get all users with public profiles"
+    get:
+      operationId: "getUsers"
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserPublic"
+        500:
+          description: "Server error"
   /album:
     post:
       description: "Upload album"
@@ -968,6 +983,21 @@ components:
           schema:
             type: string
   schemas:
+    UserPublic:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        register_at:
+          type: string
+        likes:
+          type: integer
+        listening_count:
+          type: integer
+        favor_count:
+          type: integer
     MusicUpload:
       type: object
       description: "Object that must provide in upload song operation"

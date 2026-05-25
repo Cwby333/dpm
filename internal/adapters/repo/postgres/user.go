@@ -21,6 +21,7 @@ type UserDB struct {
 	Likes          int       `db:"likes"`
 	ListeningCount int       `db:"listening_count"`
 	FavorCount     int       `db:"favor_count"`
+	PrivateProfile bool      `db:"private_profile"`
 }
 
 func UDBToUser(u UserDB) models.User {
@@ -33,6 +34,7 @@ func UDBToUser(u UserDB) models.User {
 		Likes:          u.Likes,
 		ListeningCount: u.ListeningCount,
 		FavorCount:     u.FavorCount,
+		PrivateProfile: u.PrivateProfile,
 	}
 }
 
@@ -108,7 +110,7 @@ func (pg *Postgres) ReadPsw(ctx context.Context, user models.User) (string, erro
 func (pg *Postgres) ReadUser(ctx context.Context, user models.User) (models.User, error) {
 	const op = "./internal/adapters/repo/postgres/user.go.ReadUser()"
 
-	q := "SELECT id, username, email, register_at, hash_psw, likes, listening_count, favor_count FROM users WHERE id = $1"
+	q := "SELECT id, username, email, register_at, hash_psw, likes, listening_count, favor_count, private_profile FROM users WHERE id = $1"
 	rows, err := pg.pool.Query(ctx, q, user.ID)
 	if err != nil {
 		return models.User{}, fmt.Errorf("%s: %w", op, err)
@@ -120,4 +122,43 @@ func (pg *Postgres) ReadUser(ctx context.Context, user models.User) (models.User
 	}
 
 	return UDBToUser(u), nil
+}
+
+func (pg *Postgres) GetPublicUsers(ctx context.Context) ([]models.User, error) {
+	const op = "./internal/adapters/repo/postgres/user.go.GetPublicUsers()"
+
+	q := "SELECT id, username, register_at, likes, listening_count, favor_count FROM users WHERE private_profile = false"
+	rows, err := pg.pool.Query(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("%s %s: %w", op, q, err)
+	}
+	defer rows.Close()
+
+	type PublicUserDB struct {
+		ID             string    `db:"id"`
+		Username       string    `db:"username"`
+		RegisterAt     time.Time `db:"register_at"`
+		Likes          int       `db:"likes"`
+		ListeningCount int       `db:"listening_count"`
+		FavorCount     int       `db:"favor_count"`
+	}
+
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByName[PublicUserDB])
+	if err != nil {
+		return nil, fmt.Errorf("%s: RowToStruct: %w", op, err)
+	}
+
+	res := make([]models.User, 0, len(users))
+	for _, u := range users {
+		res = append(res, models.User{
+			ID:             u.ID,
+			Username:       u.Username,
+			RegisterAt:     u.RegisterAt,
+			Likes:          u.Likes,
+			ListeningCount: u.ListeningCount,
+			FavorCount:     u.FavorCount,
+		})
+	}
+
+	return res, nil
 }

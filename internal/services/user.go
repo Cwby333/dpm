@@ -16,6 +16,7 @@ type Pg interface {
 	ReadPsw(ctx context.Context, user models.User) (string, error)
 	ReadUserID(ctx context.Context, user models.User) (string, error)
 	ReadUser(ctx context.Context, user models.User) (models.User, error)
+	GetPublicUsers(ctx context.Context) ([]models.User, error)
 }
 
 type UserService struct {
@@ -87,4 +88,15 @@ func (s *UserService) ReadUser(ctx context.Context, user models.User) (models.Us
 	}
 
 	return u, nil
+}
+
+func (s *UserService) GetPublicUsers(ctx context.Context) ([]models.User, error) {
+	const op = "./internal/services/user.go.GetPublicUsers()"
+
+	users, err := s.Pg.GetPublicUsers(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return users, nil
 }

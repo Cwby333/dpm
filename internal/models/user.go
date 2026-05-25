@@ -11,4 +11,5 @@ type User struct {
 	Likes          int
 	ListeningCount int
 	FavorCount     int
+	PrivateProfile bool
 }

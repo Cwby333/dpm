@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Mute - Плейлисты</title>
+		<title>Mute - Пользователи</title>
 		<style>
 			* { margin: 0; padding: 0; box-sizing: border-box; }
 			body {
@@ -34,8 +34,8 @@
 				text-decoration: none; color: #555; font-weight: 500;
 				transition: color 0.3s ease; padding: 0.5rem 1rem; border-radius: 6px;
 			}
-			.nav-links a:hover { color: #667eea; background: rgba(102,126,234,0.1); }
-			.nav-links .active { color: #667eea; background: rgba(102,126,234,0.1); }
+			.nav-links a:hover { color: #667eea; background: rgba(102, 126, 234, 0.1); }
+			.nav-links .active { color: #667eea; background: rgba(102, 126, 234, 0.1); }
 			.auth-buttons { display: flex; gap: 1rem; }
 			.btn {
 				padding: 0.5rem 1.5rem; border-radius: 6px; text-decoration: none;
@@ -48,7 +48,7 @@
 			}
 			.btn-primary:hover {
 				transform: translateY(-2px);
-				box-shadow: 0 5px 20px rgba(102,126,234,0.4);
+				box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
 			}
 			.btn-outline {
 				border: 2px solid #667eea; color: #667eea; background: transparent;
@@ -62,53 +62,13 @@
 				margin-bottom: 2rem; color: white; flex-wrap: wrap; gap: 1rem;
 			}
 			.page-header h1 {
-				font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-			}
-			.tabs {
-				display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;
-			}
-			.tab-btn {
-				padding: 0.75rem 1.5rem; border: 2px solid rgba(255,255,255,0.5);
-				background: transparent; color: white; border-radius: 8px;
-				cursor: pointer; font-size: 1rem; font-weight: 500;
-				transition: all 0.3s ease;
-			}
-			.tab-btn:hover { background: rgba(255,255,255,0.1); }
-			.tab-btn.active { background: white; color: #667eea; border-color: white; }
-			.playlists-grid {
-				display: grid;
-				grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-				gap: 1.5rem; margin-top: 1rem;
-			}
-			.playlist-card {
-				background: white; border-radius: 12px; overflow: hidden;
-				box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-				transition: transform 0.3s ease, box-shadow 0.3s ease;
-				cursor: pointer;
-			}
-			.playlist-card:hover {
-				transform: translateY(-5px);
-				box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-			}
-			.playlist-cover {
-				height: 200px;
-				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-				display: flex; align-items: center; justify-content: center;
-				color: white; font-size: 4rem;
-			}
-			.playlist-info { padding: 1.5rem; }
-			.playlist-name { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; color: #333; }
-			.playlist-uploader { font-size: 0.9rem; color: #667eea; margin-bottom: 0.25rem; }
-			.playlist-meta { font-size: 0.85rem; color: #999; display: flex; gap: 0.5rem; align-items: center; }
-			.private-badge {
-				font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px;
-				background: #fefcbf; color: #975a16; font-weight: 600;
+				font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 			}
 			.refresh-btn {
 				padding: 0.75rem 1.5rem; background: white; color: #667eea;
 				border: none; border-radius: 8px; cursor: pointer; font-size: 1rem;
 				display: flex; align-items: center; gap: 0.5rem;
-				transition: all 0.3s ease; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+				transition: all 0.3s ease; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 			}
 			.refresh-btn:hover { background: #f0f0f0; transform: rotate(180deg); }
 			.status-bar {
@@ -122,7 +82,7 @@
 			.loading-container {
 				display: none; flex-direction: column; align-items: center;
 				justify-content: center; padding: 4rem; background: white;
-				border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+				border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 			}
 			.loading-spinner {
 				width: 50px; height: 50px; border: 5px solid #f3f3f3;
@@ -130,16 +90,44 @@
 				animation: spin 1s linear infinite; margin-bottom: 1rem;
 			}
 			@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+			.users-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+				gap: 1.5rem; margin-top: 1rem;
+			}
+			.user-card {
+				background: white; border-radius: 12px; padding: 2rem;
+				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+				transition: transform 0.3s ease, box-shadow 0.3s ease;
+				text-align: center;
+			}
+			.user-card:hover {
+				transform: translateY(-5px);
+				box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+			}
+			.user-avatar {
+				width: 80px; height: 80px; border-radius: 50%;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				display: flex; align-items: center; justify-content: center;
+				color: white; font-size: 2rem; font-weight: 700;
+				margin: 0 auto 1rem;
+			}
+			.user-name { font-size: 1.2rem; font-weight: 600; color: #333; margin-bottom: 0.5rem; }
+			.user-stats {
+				display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;
+				color: #999; font-size: 0.85rem;
+			}
+			.user-stat { display: flex; align-items: center; gap: 0.3rem; }
 			.empty-state {
 				text-align: center; padding: 4rem; background: white;
-				border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+				border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 			}
 			.empty-state-icon { font-size: 5rem; margin-bottom: 1rem; opacity: 0.5; }
 			.empty-state h3 { color: #333; margin-bottom: 0.5rem; }
 			.empty-state p { color: #666; }
 			.error-container {
 				background: white; border-radius: 10px; padding: 2rem;
-				text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+				text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 			}
 			.error-icon { font-size: 4rem; margin-bottom: 1rem; }
 			.error-container h3 { color: #c53030; margin-bottom: 0.5rem; }
@@ -159,7 +147,7 @@
 			.footer-section a:hover { color: #667eea; }
 			.footer-bottom {
 				max-width: 1200px; margin: 2rem auto 0; padding-top: 2rem;
-				border-top: 1px solid rgba(255,255,255,0.1);
+				border-top: 1px solid rgba(255, 255, 255, 0.1);
 				text-align: center; color: #999; font-size: 0.9rem;
 			}
 			@media (max-width: 768px) {
@@ -167,8 +155,7 @@
 				.nav-links { flex-direction: column; width: 100%; }
 				.auth-buttons { width: 100%; justify-content: center; }
 				.page-header { flex-direction: column; align-items: stretch; }
-				.playlists-grid { grid-template-columns: 1fr; }
-				.tabs { justify-content: center; }
+				.users-grid { grid-template-columns: 1fr; }
 			}
 @media (max-width: 768px) { .main-content { margin-top: 260px; } }
 
@@ -210,7 +197,7 @@
     .hamburger.active span:nth-child(2) { opacity: 0; }
     .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
 }
-</style>
+		</style>
 	</head>
 	<body>
 		<nav class="navbar">
@@ -228,8 +215,8 @@
 					<a href="main.html">Главная</a>
 					<a href="music.html">Треки</a>
 					<a href="albums.html">Альбомы</a>
-					<a href="playlists.html" class="active">Плейлисты</a>
-					<a href="users.html">Пользователи</a>
+					<a href="playlists.html">Плейлисты</a>
+					<a href="users.html" class="active">Пользователи</a>
 					<a href="album-upload.html">Загрузить альбом</a>
 					<a href="favor.html">Избранное</a>
 					<a href="listening-history.html">История</a>
@@ -245,32 +232,24 @@
 
 		<div class="main-content">
 			<div class="page-header">
-				<h1>📋 Плейлисты</h1>
-				<div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-					<button class="btn btn-primary" onclick="window.location.href='playlist-create.html'">➕ Создать плейлист</button>
-					<button class="refresh-btn" id="refreshBtn">🔄</button>
-				</div>
-			</div>
-
-			<div class="tabs">
-				<button class="tab-btn active" data-tab="my">Мои плейлисты</button>
-				<button class="tab-btn" data-tab="public">Публичные плейлисты</button>
+				<h1>👥 Пользователи</h1>
+				<button class="refresh-btn" id="refreshBtn">🔄</button>
 			</div>
 
 			<div class="status-bar">
 				<div class="status-info">
 					<span class="status-dot" id="statusDot"></span>
-					<span id="statusText">Загрузка плейлистов...</span>
+					<span id="statusText">Загрузка пользователей...</span>
 				</div>
-				<span id="playlistsCount">0 плейлистов</span>
+				<span id="usersCount">0 пользователей</span>
 			</div>
 
 			<div class="loading-container" id="loadingContainer">
 				<div class="loading-spinner"></div>
-				<p>Загрузка плейлистов...</p>
+				<p>Загрузка пользователей...</p>
 			</div>
 
-			<div id="playlistsContainer"></div>
+			<div id="usersContainer"></div>
 		</div>
 
 		<footer class="footer">
@@ -283,7 +262,7 @@
 					<h4>Навигация</h4>
 					<ul>
 						<li><a href="/">Главная</a></li>
-						<li><a href="#">Плейлисты</a></li>
+						<li><a href="#">Пользователи</a></li>
 					</ul>
 				</div>
 			</div>
@@ -294,24 +273,23 @@
 
 		<script>
 			const apiBaseUrl = 'https://172.17.110.58:443'
-			let currentTab = 'my'
+			let users = []
 			let isLoading = false
 
 			const loadingContainer = document.getElementById('loadingContainer')
-			const playlistsContainer = document.getElementById('playlistsContainer')
+			const usersContainer = document.getElementById('usersContainer')
 			const refreshBtn = document.getElementById('refreshBtn')
 			const statusDot = document.getElementById('statusDot')
 			const statusText = document.getElementById('statusText')
-			const playlistsCount = document.getElementById('playlistsCount')
+			const usersCount = document.getElementById('usersCount')
 
-			async function fetchPlaylists(tab) {
+			async function fetchUsers() {
 				if (isLoading) return
 				showLoading()
-				updateStatus('loading', 'Загрузка плейлистов...')
+				updateStatus('loading', 'Загрузка пользователей...')
 
 				try {
-					const endpoint = tab === 'my' ? '/playlist/my' : '/playlist/public'
-					const response = await fetch(`${apiBaseUrl}${endpoint}`, {
+					const response = await fetch(`${apiBaseUrl}/users`, {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',
@@ -322,11 +300,16 @@
 					}
 
 					const data = await response.json()
-					const playlists = Array.isArray(data) ? data : []
 
-					updateStatus('success', 'Плейлисты загружены')
-					playlistsCount.textContent = `${playlists.length} плейлистов`
-					renderPlaylists(playlists)
+					if (Array.isArray(data)) {
+						users = data
+					} else {
+						users = []
+					}
+
+					updateStatus('success', 'Пользователи загружены')
+					usersCount.textContent = `${users.length} пользователей`
+					renderUsers()
 				} catch (error) {
 					console.error('Ошибка загрузки:', error)
 					updateStatus('error', 'Ошибка загрузки')
@@ -336,32 +319,30 @@
 				}
 			}
 
-			function renderPlaylists(playlists) {
-				if (playlists.length === 0) {
-					const label = currentTab === 'my' ? 'своих' : 'публичных'
-					playlistsContainer.innerHTML = `
+			function renderUsers() {
+				if (users.length === 0) {
+					usersContainer.innerHTML = `
 						<div class="empty-state">
-							<div class="empty-state-icon">📋</div>
-							<h3>Нет ${label} плейлистов</h3>
-							<p>${currentTab === 'my' ? 'Создайте свой первый плейлист!' : 'Публичных плейлистов пока нет'}</p>
+							<div class="empty-state-icon">👥</div>
+							<h3>Пользователи не найдены</h3>
+							<p>Пока нет пользователей с публичными профилями</p>
 						</div>
 					`
 					return
 				}
 
-				playlistsContainer.innerHTML = `
-					<div class="playlists-grid">
-						${playlists.map(pl => {
-							const isPrivate = pl.private === true || pl.private === 'true'
+				usersContainer.innerHTML = `
+					<div class="users-grid">
+						${users.map(user => {
+							const initial = (user.username || '?')[0].toUpperCase()
 							return `
-								<div class="playlist-card" onclick="window.location.href='playlist.html?id=${encodeURIComponent(pl.id || '')}&name=${encodeURIComponent(pl.name || 'Без названия')}&uploader=${encodeURIComponent(pl.username || pl.uploader_id || '')}&cover=${encodeURIComponent(pl.cover || '')}'">
-									<div class="playlist-cover" style="${pl.cover ? `background-image: url('${attrEscape(pl.cover)}'); background-size: cover; background-position: center;` : ''}">${pl.cover ? '' : '📋'}</div>
-									<div class="playlist-info">
-										<div class="playlist-name">${escapeHtml(pl.name || 'Без названия')}</div>
-										<div class="playlist-uploader">${escapeHtml(pl.username || pl.uploader_id || 'Неизвестный')}</div>
-										<div class="playlist-meta">
-											${isPrivate ? '<span class="private-badge">🔒 Приватный</span>' : '<span class="public-badge" style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;background:#c6f6d5;color:#276749;font-weight:600;">🌍 Публичный</span>'}
-										</div>
+								<div class="user-card">
+									<div class="user-avatar">${escapeHtml(initial)}</div>
+									<div class="user-name">${escapeHtml(user.username || 'Без имени')}</div>
+									<div class="user-stats">
+										<span class="user-stat">❤️ ${user.likes || 0}</span>
+										<span class="user-stat">🎧 ${user.listening_count || 0}</span>
+										<span class="user-stat">⭐ ${user.favor_count || 0}</span>
 									</div>
 								</div>
 							`
@@ -385,13 +366,13 @@
 			function showLoading() {
 				isLoading = true
 				loadingContainer.style.display = 'flex'
-				playlistsContainer.style.display = 'none'
+				usersContainer.style.display = 'none'
 			}
 
 			function hideLoading() {
 				isLoading = false
 				loadingContainer.style.display = 'none'
-				playlistsContainer.style.display = 'block'
+				usersContainer.style.display = 'block'
 			}
 
 			function updateStatus(type, message) {
@@ -403,28 +384,19 @@
 			}
 
 			function showError(message) {
-				playlistsContainer.style.display = 'block'
-				playlistsContainer.innerHTML = `
+				usersContainer.style.display = 'block'
+				usersContainer.innerHTML = `
 					<div class="error-container">
 						<div class="error-icon">⚠️</div>
-						<h3>Ошибка загрузки плейлистов</h3>
+						<h3>Ошибка загрузки пользователей</h3>
 						<p>${message}</p>
-						<button class="btn btn-primary" onclick="fetchPlaylists(currentTab)">Повторить</button>
+						<button class="btn btn-primary" onclick="fetchUsers()">Повторить</button>
 					</div>
 				`
 			}
 
-			document.querySelectorAll('.tab-btn').forEach(btn => {
-				btn.addEventListener('click', function() {
-					document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
-					this.classList.add('active')
-					currentTab = this.dataset.tab
-					fetchPlaylists(currentTab)
-				})
-			})
-
-			document.addEventListener('DOMContentLoaded', () => fetchPlaylists('my'))
-			refreshBtn.addEventListener('click', () => fetchPlaylists(currentTab))
+			document.addEventListener('DOMContentLoaded', fetchUsers)
+			refreshBtn.addEventListener('click', fetchUsers)
 		</script>
 
 	<script>

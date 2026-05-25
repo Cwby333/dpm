@@ -142,6 +142,15 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
+	h.Mux.Handle("GET /users", corsMiddleware(wrapGetUsers(strict)))
+	h.Mux.Handle("OPTIONS /users", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
 	h.Mux.Handle("GET /profile", corsMiddleware(wrapGetProfile(strict)))
 	h.Mux.Handle("OPTIONS /profile", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
@@ -439,6 +448,12 @@ func wrapGetMusic(strict api.ServerInterface) http.HandlerFunc {
 			}
 		}
 		strict.GetMusic(w, r, r.PathValue("musicID"), api.GetMusicParams{AccessToken: &c.Value})
+	}
+}
+
+func wrapGetUsers(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		strict.GetUsers(w, r)
 	}
 }
 
@@ -955,6 +970,36 @@ func (h Handler) DeleteFavor(ctx context.Context, request api.DeleteFavorRequest
 	}
 
 	return api.DeleteFavor200JSONResponse("Success"), nil
+}
+
+func (h Handler) GetUsers(ctx context.Context, request api.GetUsersRequestObject) (api.GetUsersResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetUsers()"
+
+	users, err := h.uServices.GetPublicUsers(ctx)
+	if err != nil {
+		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+		return api.GetUsers500Response{}, err
+	}
+
+	resp := make(api.GetUsers200JSONResponse, 0, len(users))
+	for i := range users {
+		id := users[i].ID
+		uname := users[i].Username
+		sTime := fmt.Sprint(users[i].RegisterAt)
+		likes := users[i].Likes
+		lCount := users[i].ListeningCount
+		fCount := users[i].FavorCount
+		resp = append(resp, api.UserPublic{
+			Id:             &id,
+			Username:       &uname,
+			RegisterAt:     &sTime,
+			Likes:          &likes,
+			ListeningCount: &lCount,
+			FavorCount:     &fCount,
+		})
+	}
+
+	return resp, nil
 }
 
 func (h Handler) GetProfile(ctx context.Context, request api.GetProfileRequestObject) (api.GetProfileResponseObject, error) {
