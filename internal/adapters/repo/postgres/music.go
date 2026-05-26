@@ -10,6 +10,7 @@ import (
 	// "log/slog"
 
 	"github.com/jackc/pgx/v5"
+	sq "github.com/Masterminds/squirrel"
 )
 
 type Music struct {
@@ -100,6 +101,118 @@ func (p *Postgres) GetMusic(ctx context.Context, id string, userID string) (mode
 	like := LDBToLike(l)
 
 	return MusicPgToMusic(product), like, nil
+}
+
+func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, userID string) ([]models.Music, []models.Like, error) {
+	const op = "./internal/adapters/repo/postgres/music.go.GetMusicSQ"
+
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	sql := psql.Select("id, uploader_id, name, likes, duration_seconds, music_cover, song_url").From("music")
+	
+	q, args, err := sql.ToSql()
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	slog.Info(fmt.Sprintf("%s: %s", "sql", q))
+	slog.Info(fmt.Sprintf("%s: %v", "args", args))
+
+	if m.LikeMin != nil {
+		sql = sql.Where("likes >= ?", m.LikeMin)
+	}
+
+	q, args, err = sql.ToSql()
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	slog.Info(fmt.Sprintf("%s: %s", "sql", q))
+	slog.Info(fmt.Sprintf("%s: %v", "args", args))
+
+	if m.LikeMax != nil {
+		sql = sql.Where("likes <= ?", m.LikeMax)
+	}
+
+	q, args, err = sql.ToSql()
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	slog.Info(fmt.Sprintf("%s: %s", "sql", q))
+	slog.Info(fmt.Sprintf("%s: %v", "args", args))
+
+	if m.DurMin != nil {
+		sql = sql.Where("duration_seconds >= ?", m.DurMin)
+	}
+
+	q, args, err = sql.ToSql()
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	slog.Info(fmt.Sprintf("%s: %s", "sql", q))
+	slog.Info(fmt.Sprintf("%s: %v", "args", args))
+
+	if m.DurMax != nil {
+		sql = sql.Where("duration_seconds <= ?", m.DurMax)
+	}
+
+	q, args, err = sql.ToSql()
+	if err != nil {
+		return nil , nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	slog.Info(fmt.Sprintf("%s: %s", "sql", q))
+	slog.Info(fmt.Sprintf("%s: %v", "args", args))
+
+	rows, err := p.pool.Query(ctx, q, args...)
+	if err != nil {
+		return nil , nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	mus, err := pgx.CollectRows(rows, pgx.RowToStructByName[Music])
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	musr := make([]models.Music, 0, len(mus))
+
+	for i := range mus {
+		musr = append(musr, MusicPgToMusic(mus[i]))
+	}
+
+	if userID == "" {
+		return musr, nil, nil
+	}
+
+	q, args, err = psql.Select("user_id, music_id").From("users_music_likes").Where("user_id = ?", userID).ToSql()
+	if err != nil {
+		slog.Error(fmt.Sprintf("%s: %s", op, err.Error()))
+		return musr, nil, nil
+	}
+
+	slog.Info(fmt.Sprintf("%s: %s", "sql", q))
+	slog.Info(fmt.Sprintf("%s: %v", "args", args))
+
+	rows, err = p.pool.Query(ctx, q, args...)
+	if err !=  nil {
+		slog.Error(fmt.Sprintf("%s: %s", op, err.Error()))
+		return musr, nil, nil
+	}
+
+	l, err := pgx.CollectRows(rows, pgx.RowToStructByName[LikeDB])
+	if err != nil {
+		slog.Error(fmt.Sprintf("%s: %s", op, err.Error()))
+		return musr, nil, nil
+	}
+
+	likes := make([]models.Like, 0, len(l))
+	for i := range l {
+		likes = append(likes, LDBToLike(l[i]))
+	}
+
+	return musr, likes, nil
 }
 
 func (p *Postgres) GetAllMusic(ctx context.Context, u models.User) ([]models.Music, []models.Like, error) {

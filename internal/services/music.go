@@ -20,6 +20,7 @@ type RepoMusic interface {
 	CreateMusic(ctx context.Context, product models.Music) error
 	GetMusic(ctx context.Context, id string, userID string) (models.Music, models.Like, error)
 	GetAllMusic(ctx context.Context, u models.User) ([]models.Music, []models.Like, error)
+	GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, userID string) ([]models.Music, []models.Like, error)
 }
 
 type S3 interface {
@@ -161,4 +162,15 @@ func (s *MusicService) GetPresignURCover(ctx context.Context, id string) (string
 	}
 
 	return url, nil
+}
+
+func (s *MusicService) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, userID string) ([]models.Music, []models.Like, error) {
+	const op = "./internal/services/music.go.GetMusicSQ()"
+
+	mu, l, err := s.repo.GetMusicSQ(ctx, m, userID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return mu, l, nil
 }

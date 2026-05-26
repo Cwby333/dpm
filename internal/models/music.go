@@ -9,3 +9,10 @@ type Music struct {
 	Likes       int
 	DurationSec int
 }
+
+type MusicFilterQuery struct {
+	LikeMin *int
+	LikeMax *int
+	DurMin *int
+	DurMax *int
+}
