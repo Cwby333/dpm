@@ -106,6 +106,11 @@ func (p *Postgres) GetMusic(ctx context.Context, id string, userID string) (mode
 func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, userID string) ([]models.Music, []models.Like, error) {
 	const op = "./internal/adapters/repo/postgres/music.go.GetMusicSQ"
 
+	slog.Info("GetMusicSQReq pg start")
+	defer func ()  {
+		slog.Info("GetMusicSQReq return")
+	}()
+
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 	sql := psql.Select("id, uploader_id, name, likes, duration_seconds, music_cover, song_url").From("music")

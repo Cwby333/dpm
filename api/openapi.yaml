@@ -639,6 +639,29 @@ paths:
           schema:
             type: string
           required: false
+        - name: likes_min
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: likes_max
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: dur_min
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: dur_max
+          in: query
+          required: false
+          schema:
+            type: integer  
+      # requestBody:
+      #   $ref: "#/components/requestBodies/MusicFiltering"
+      #   required: false
       responses:
         200:
           description: "Success"
@@ -949,7 +972,6 @@ components:
                 type: array
                 items:
                   $ref: "#/components/schemas/MusicLikes"
-
     GetMusicResponse:
       description: "Object that will be returned by /product/{productID} GET operation"
       content:
@@ -966,6 +988,21 @@ components:
                 type: object
                 $ref: "#/components/schemas/MusicLikes"
   requestBodies:
+    MusicFiltering:
+      description: "For GET /music"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              likes_min:
+                type: integer
+              likes_max:
+                type: integer
+              dur_min:
+                type: integer
+              dur_max:
+                type: integer     
     UploadAlbum:
       description: "For POST /album"
       content:

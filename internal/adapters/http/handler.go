@@ -6,6 +6,7 @@ import (
 	"dpm/internal/services"
 	"dpm/pkg/api/v1"
 	"encoding/json"
+	"strconv"
 	"time"
 
 	// "encoding/json"
@@ -376,7 +377,32 @@ func wrapGetAllMusic(strict api.ServerInterface) http.HandlerFunc {
 				Value: "",
 			}
 		}
-		strict.GetAllMusic(w, r, api.GetAllMusicParams{AccessToken: &c.Value})
+		
+		var params api.GetAllMusicParams
+		params.AccessToken = &c.Value
+
+		if v := r.URL.Query().Get("likes_min"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LikesMin = &n
+            }
+        }
+        if v := r.URL.Query().Get("likes_max"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LikesMax = &n
+            }
+        }
+        if v := r.URL.Query().Get("dur_min"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.DurMin = &n
+            }
+        }
+        if v := r.URL.Query().Get("dur_max"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.DurMax = &n
+            }
+        }
+
+		strict.GetAllMusic(w, r, params)
 	}
 }
 
@@ -699,7 +725,15 @@ func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequest
 
 	slog.Info("Get request")
 
-	p, l, err := h.mService.GetAllMusic(ctx, u)
+	mf := models.MusicFilterQuery{
+		LikeMin: request.Params.LikesMin,
+		LikeMax: request.Params.LikesMax,
+		DurMin: request.Params.DurMin,
+		DurMax: request.Params.DurMax,
+	}
+	slog.Info(fmt.Sprintf("%v", mf))
+
+	p, l, err := h.mService.GetMusicSQ(ctx, mf, u.ID)
 	if err != nil {
 		return api.GetAllMusic500JSONResponse(err.Error()), err
 	}
