@@ -53,7 +53,19 @@
 			.btn-outline {
 				border: 2px solid #667eea; color: #667eea; background: transparent;
 			}
-			.btn-outline:hover { background: #667eea; color: white; }
+			.btn-outline:hover {
+				background: #667eea;
+				color: white;
+			}
+			.btn-danger {
+				background: #e53e3e;
+				color: white;
+			}
+			.btn-danger:hover {
+				background: #c53030;
+				transform: translateY(-2px);
+				box-shadow: 0 5px 20px rgba(229,62,62,0.4);
+			}
 			.main-content {
 				max-width: 1200px; margin: 140px auto 0; padding: 2rem;
 			}
@@ -290,9 +302,12 @@
 					<h1 id="playlistName">Загрузка...</h1>
 					<div class="playlist-uploader" id="playlistUploader"></div>
 					<div class="playlist-meta" id="playlistMeta"></div>
-					<div class="playlist-actions" style="margin-top: 1rem;">
+					<div class="playlist-actions" style="margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
 						<button class="btn btn-primary" id="playAllBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem;">
 							▶ Слушать все треки
+						</button>
+						<button class="btn btn-danger" id="deletePlaylistBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem;">
+							🗑 Удалить плейлист
 						</button>
 					</div>
 				</div>
@@ -509,6 +524,25 @@
 			}
 
 			document.addEventListener('DOMContentLoaded', fetchPlaylistTracks)
+
+			document.getElementById('deletePlaylistBtn').addEventListener('click', async function() {
+				if (!confirm('Удалить этот плейлист? Это действие нельзя отменить.')) return
+				try {
+					const resp = await fetch(`${apiBaseUrl}/playlist/${encodeURIComponent(playlistId)}`, {
+						method: 'DELETE',
+						credentials: 'include',
+					})
+					if (resp.ok) {
+						window.location.href = 'playlists.html'
+					} else if (resp.status === 403) {
+						alert('Вы не можете удалить этот плейлист')
+					} else {
+						alert('Ошибка при удалении плейлиста')
+					}
+				} catch (e) {
+					alert('Ошибка при удалении плейлиста')
+				}
+			})
 
 			let allModalTracks = []
 

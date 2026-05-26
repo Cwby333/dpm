@@ -12,3 +12,9 @@ type PlaylistInfo struct {
 	Playlist
 	Username string
 }
+
+type PlaylistUpdate struct {
+	Name *string
+	Cover *string
+	Private *bool
+}

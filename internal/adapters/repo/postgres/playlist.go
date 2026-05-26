@@ -4,7 +4,9 @@ import (
 	"context"
 	"dpm/internal/models"
 	"fmt"
+	"log/slog"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -165,11 +167,61 @@ func (pg *Postgres) GetPlaylistMusic(ctx context.Context, id string) ([]models.L
 	return mu, nil
 }
 
+func (pg *Postgres) DeletePlaylist(ctx context.Context, id string) error {
+	const op = "./internal/adapters/repo/postgres/playlist.go.DeletePlaylist()"
+
+	q := "DELETE FROM playlists_music WHERE playlist_id = $1"
+	_, err := pg.pool.Exec(ctx, q, id)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	q = "DELETE FROM playlists WHERE id = $1"
+	_, err = pg.pool.Exec(ctx, q, id)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
 func (pg *Postgres) AddMusicToPlaylist(ctx context.Context, playlistID string, musicID string) error {
 	const op = "./internal/adapters/repo/postgres/playlist.go.AddMusicToPlaylist()"
 
 	q := "INSERT INTO playlists_music(playlist_id, music_id) VALUES ($1, $2)"
 	_, err := pg.pool.Exec(ctx, q, playlistID, musicID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (pg *Postgres) UpdatePlaylist(ctx context.Context, playlist models.PlaylistUpdate) (error) {
+	const op = "./internal/adapters/repo/postgres/playlist.go.UpdatePlaylist()"
+
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	var sql sq.UpdateBuilder
+	if playlist.Name != nil {
+		sql = psql.Update("playlists").Set("name = ?", playlist.Name)
+	}
+
+	if playlist.Cover != nil {
+		sql = psql.Update("playlists").Set("cover = ?", playlist.Cover)
+	}
+
+	if playlist.Private != nil {
+		sql = psql.Update("playlists").Set("private = ?", playlist.Private)
+	}
+
+	q, args, err := sql.ToSql()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	slog.Info(fmt.Sprint(args))
+
+	_, err = pg.pool.Exec(ctx, q, args)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

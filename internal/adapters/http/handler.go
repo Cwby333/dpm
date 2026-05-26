@@ -281,6 +281,7 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	h.Mux.Handle("GET /playlist/{playlistID}", corsMiddleware(wrapGetPlaylistTracks(strict)))
+	h.Mux.Handle("DELETE /playlist/{playlistID}", corsMiddleware(wrapDeletePlaylist(strict)))
 	h.Mux.Handle("OPTIONS /playlist/{playlistID}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
@@ -553,6 +554,17 @@ func wrapAddMusicToPlaylist(strict api.ServerInterface) http.HandlerFunc {
 			c = &http.Cookie{}
 		}
 		strict.AddMusicToPlaylist(w, r, r.PathValue("playlistID"), api.AddMusicToPlaylistParams{AccessToken: c.Value})
+	}
+}
+
+func wrapDeletePlaylist(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Error(err.Error())
+			c = &http.Cookie{}
+		}
+		strict.DeletePlaylist(w, r, r.PathValue("playlistID"), api.DeletePlaylistParams{AccessToken: c.Value})
 	}
 }
 
@@ -1749,6 +1761,71 @@ func (h Handler) GetPublicPlaylists(ctx context.Context, request api.GetPublicPl
 	}
 
 	return resp, nil
+}
+
+func (h Handler) DeletePlaylist(ctx context.Context, request api.DeletePlaylistRequestObject) (api.DeletePlaylistResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.DeletePlaylist()"
+
+	slog.Info("DeletePlaylist")
+
+	claims, err := h.uServices.CheckAccessToken(ctx, request.Params.AccessToken)
+	if err != nil {
+		return api.DeletePlaylist403Response{}, nil
+	}
+
+	userID := claims["sub"].(string)
+
+	pl, err := h.pService.GetPlaylist(ctx, request.PlaylistID)
+	if err != nil {
+		return api.DeletePlaylist404Response{}, nil
+	}
+
+	if pl.UploaderID != userID {
+		return api.DeletePlaylist403Response{}, nil
+	}
+
+	err = h.pService.DeletePlaylist(ctx, request.PlaylistID)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.DeletePlaylist500Response{}, nil
+	}
+
+	status := "ok"
+	return api.DeletePlaylist200JSONResponse{Status: &status}, nil
+}
+
+func (h Handler) UpdatePlaylist(ctx context.Context, request api.UpdatePlaylistRequestObject) (api.UpdatePlaylistResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.UpdatePlaylist()"
+
+	claims, err := h.uServices.CheckAccessToken(ctx, request.Params.AccessToken)
+	if err != nil {
+		return api.UpdatePlaylist403Response{}, err
+	}
+
+	userID := claims["sub"].(string)
+
+	pl, err := h.pService.GetPlaylist(ctx, request.PlaylistID)
+	if err != nil {
+		return api.UpdatePlaylist404Response{}, err
+	}
+
+	if pl.UploaderID != userID {
+		return api.UpdatePlaylist403Response{}, err
+	}
+
+	plu := models.PlaylistUpdate{
+		Name: request.Body.Name,
+		Cover: request.Body.Cover,
+		Private: request.Body.Private,
+	}
+
+	err = h.pService.UpdatePlaylist(ctx, plu)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.UpdatePlaylist500Response{}, err
+	}
+
+	return api.UpdatePlaylist200Response{}, nil
 }
 
 func (h Handler) GetPlaylistTracks(ctx context.Context, request api.GetPlaylistTracksRequestObject) (api.GetPlaylistTracksResponseObject, error) {

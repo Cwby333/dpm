@@ -15,8 +15,10 @@ type PlaylistRepo interface {
 	GetPlaylistMusic(ctx context.Context, id string) ([]models.LikedTrack, error)
 	GetUserPlaylists(ctx context.Context, userID string) ([]models.PlaylistInfo, error)
 	GetPublicPlaylists(ctx context.Context) ([]models.PlaylistInfo, error)
-	AddMusicToPlaylist(ctx context.Context, playlistID string, musicID string) error
 	GetPublicPlaylistsByID(ctx context.Context, id string) ([]models.PlaylistInfo, error)
+	AddMusicToPlaylist(ctx context.Context, playlistID string, musicID string) error
+	DeletePlaylist(ctx context.Context, id string) error
+	UpdatePlaylist(ctx context.Context, playlist models.PlaylistUpdate) (error)
 }
 
 type PlaylistService struct {
@@ -159,6 +161,17 @@ func (s *PlaylistService) GetPlaylistMusic(ctx context.Context, id string) ([]mo
 	return m, nil
 }
 
+func (s *PlaylistService) DeletePlaylist(ctx context.Context, id string) error {
+	const op = "./internal/services/playlist.go.DeletePlaylist()"
+
+	err := s.repo.DeletePlaylist(ctx, id)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
 func (s *PlaylistService) AddMusic(ctx context.Context, playlistID string, musicID string) error {
 	const op = "./internal/services/playlist.go.AddMusic()"
 
@@ -185,4 +198,15 @@ func (s *PlaylistService) GetPlaylistCoverPresignURL(ctx context.Context, coverK
 	}
 
 	return url, nil
+}
+
+func (s *PlaylistService) UpdatePlaylist(ctx context.Context, playlist models.PlaylistUpdate) (error) {
+	const op = "./internal/services/playlist.go.UpdatePlaylist()"
+
+	err := s.repo.UpdatePlaylist(ctx, playlist)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }

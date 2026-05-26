@@ -175,6 +175,31 @@ paths:
                 type: string
   /playlist/{playlistID}:
     description: "Actions with playlist"
+    patch:
+      description: "Update playlist"
+      operationId: "updatePlaylist"
+      parameters:
+        - name: "Access-Token"
+          in: cookie
+          required: true
+          schema:
+            type: string
+        - name: playlistID
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/PlaylistUpdate"
+      responses:
+        200:
+          description: "Success"
+        403:
+          description: "Forbidden"
+        404:
+          description: "Not found"
+        500:
+          description: "Server error"
     get:
       description: "Get tracks in playlist"
       operationId: "getPlaylistTracks"
@@ -199,6 +224,36 @@ paths:
             application/json:
               schema:
                 type: string
+    delete:
+      description: "Delete playlist by ID (owner only)"
+      operationId: "deletePlaylist"
+      parameters:
+        - name: playlistID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: Access-Token
+          in: cookie
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "Success"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        403:
+          description: "Not authorized to delete this playlist"
+        404:
+          description: "Playlist not found"
+        500:
+          description: "Server error"
   /playlist/{playlistID}/add:
     description: "Add track to playlist"
     post:
@@ -988,6 +1043,19 @@ components:
                 type: object
                 $ref: "#/components/schemas/MusicLikes"
   requestBodies:
+    PlaylistUpdate:
+      description: "Fpr PATCH /playlist/{playlistID}"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              private:
+                type: boolean
+              cover:
+                type: string
     MusicFiltering:
       description: "For GET /music"
       content:
