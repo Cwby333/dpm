@@ -92,6 +92,21 @@ paths:
                   $ref: "#/components/schemas/UserPublic"
         500:
           description: "Server error"
+  /album/my:
+    get:
+      description: "getAlbumsUploadedByUser"
+      parameters:
+        - name: "Access-Token"
+          in: cookie
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "Success"
+          $ref: "#/components/responses/GetAlbum"
+        500:
+          description: "Server error"
   /album:
     post:
       description: "Upload album"
@@ -965,6 +980,21 @@ paths:
 
 components:
   responses:
+    GetAlbum:
+      description: "GET /album/my"
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+                cover:
+                  type: string
     GetLikedTracks:
       description: "GET /likes"
       content:
@@ -990,6 +1020,8 @@ components:
           schema:
             type: object
             properties:
+              id:
+                type: string
               username:
                 type: string
               register_at:
@@ -1046,7 +1078,7 @@ components:
     PlaylistUpdate:
       description: "Fpr PATCH /playlist/{playlistID}"
       content:
-        application/json:
+        multipart/form-data:
           schema:
             type: object
             properties:
@@ -1056,6 +1088,7 @@ components:
                 type: boolean
               cover:
                 type: string
+                format: binary
     MusicFiltering:
       description: "For GET /music"
       content:

@@ -182,3 +182,32 @@ func (pg *Postgres) GetUserAlbums(ctx context.Context, userID string) ([]models.
 
 	return al, nil
 }
+
+func (pg *Postgres) GetUploadedByUserAlbums(ctx context.Context, id string) ([]models.Album, error) {
+	const op = "./internal/adapters/repo/postgres/album.go.GetUploadedByUserAlbums()"
+
+	q := "SELECT id, name, cover FROM albums WHERE uploader_id = $1"
+	rows, err := pg.pool.Query(ctx, q, id)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	aSlice := make([]models.Album, 0)
+	aID := ""
+	name := ""
+	cover := ""
+	for rows.Next() {
+		err = rows.Scan(&aID, &name, &cover)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+
+		aSlice = append(aSlice, models.Album{
+			ID: aID,
+			Name: name,
+			Cover: cover,
+		})
+	}
+
+	return aSlice, nil
+}

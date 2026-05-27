@@ -236,6 +236,7 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	}))
 	h.Mux.Handle("GET /album", corsMiddleware(http.HandlerFunc(strict.GetAlbums)))
 	h.Mux.Handle("POST /album", corsMiddleware(http.HandlerFunc(h.UploadAlbum)))
+	h.Mux.Handle("GET /album/my", corsMiddleware(wrapGetMyAlbums(strict)))
 	h.Mux.Handle("OPTIONS /album", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
@@ -282,6 +283,7 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	}))
 	h.Mux.Handle("GET /playlist/{playlistID}", corsMiddleware(wrapGetPlaylistTracks(strict)))
 	h.Mux.Handle("DELETE /playlist/{playlistID}", corsMiddleware(wrapDeletePlaylist(strict)))
+	h.Mux.Handle("PATCH /playlist/{playlistID}", corsMiddleware(http.HandlerFunc(h.UpdatePlaylist)))
 	h.Mux.Handle("OPTIONS /playlist/{playlistID}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
@@ -299,6 +301,23 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
+}
+
+func wrapGetMyAlbums(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapGetLikedTracks")
+			slog.Error(err.Error())
+			c = &http.Cookie{
+				Value: "",
+			}
+		} else {
+			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
+		}
+
+		strict.GetAlbumMy(w, r, api.GetAlbumMyParams{AccessToken: c.Value})
+	}
 }
 
 func wrapGetAlbum(strict api.ServerInterface) http.HandlerFunc {
@@ -1247,6 +1266,7 @@ func (h Handler) GetProfile(ctx context.Context, request api.GetProfileRequestOb
 	sTime := fmt.Sprint(us.RegisterAt)
 	return api.GetProfile200JSONResponse{
 		GetProfileJSONResponse: api.GetProfileJSONResponse{
+			Id: &us.ID,
 			Email:          &us.Email,
 			Username:       &us.Username,
 			RegisterAt:     &sTime,
@@ -1609,6 +1629,40 @@ func (h Handler) UploadAlbum(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"album_id": albumID})
 }
 
+func (h Handler) GetAlbumMy(ctx context.Context, request api.GetAlbumMyRequestObject) (api.GetAlbumMyResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetAlbumMy"
+
+	t := request.Params.AccessToken
+
+	if t == "" {
+		slog.Warn("GetAlbumMy token missing")
+		return api.GetAlbumMy500Response{}, errors.New("token missing")
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Warn(fmt.Sprintf("%s: %s", "GetAlbumsMy check token", err.Error()))
+		return api.GetAlbumMy500Response{}, err
+	}
+
+	id := claims["sub"].(string)
+
+	a, err := h.aService.GetUploadedByUserAlbums(ctx, id)
+	if err != nil {
+		slog.Error(fmt.Sprintf("%s: %s", "GetAlbumsMy get", err.Error()))
+		return api.GetAlbumMy500Response{}, err
+	}
+
+	ar := make(api.GetAlbumJSONResponse, 0, len(a))
+	for i := range a {
+		ar = append(ar, struct{Cover *string "json:\"cover,omitempty\""; Id *string "json:\"id,omitempty\""; Name *string "json:\"name,omitempty\""}{&a[i].Cover, &a[i].ID, &a[i].Name})
+	}
+
+	return api.GetAlbumMy200JSONResponse{
+		GetAlbumJSONResponse: ar,
+	}, nil
+}
+
 func (h Handler) PostMusicPlay(ctx context.Context, request api.PostMusicPlayRequestObject) (api.PostMusicPlayResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.PlayMusic()"
 
@@ -1794,38 +1848,92 @@ func (h Handler) DeletePlaylist(ctx context.Context, request api.DeletePlaylistR
 	return api.DeletePlaylist200JSONResponse{Status: &status}, nil
 }
 
-func (h Handler) UpdatePlaylist(ctx context.Context, request api.UpdatePlaylistRequestObject) (api.UpdatePlaylistResponseObject, error) {
+func (h Handler) UpdatePlaylist(w http.ResponseWriter, r *http.Request) {
 	const op = "./internal/adapters/http/handler.go.UpdatePlaylist()"
 
-	claims, err := h.uServices.CheckAccessToken(ctx, request.Params.AccessToken)
+	c, err := r.Cookie("Access-Token")
 	if err != nil {
-		return api.UpdatePlaylist403Response{}, err
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	userID := claims["sub"].(string)
-
-	pl, err := h.pService.GetPlaylist(ctx, request.PlaylistID)
-	if err != nil {
-		return api.UpdatePlaylist404Response{}, err
+	if c.Value == "" {
+		slog.Info("UpdatePlaylist token empty")
+		http.Error(w, "token empty", http.StatusBadRequest)
+		return
 	}
 
-	if pl.UploaderID != userID {
-		return api.UpdatePlaylist403Response{}, err
+	claims, err := h.uServices.CheckAccessToken(r.Context(), c.Value)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	userID := claims["sub"]
+
+	p, err := h.pService.GetPlaylist(r.Context(), r.PathValue("playlistID"))
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if userID != p.UploaderID {
+		slog.Info("UpdatePlaylist userID not match with p.UploaderID")
+		http.Error(w, "UserID not match with uploaderID", http.StatusForbidden)
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, 50<<20)
+
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		slog.Error(fmt.Sprint(op, err.Error()))
+		http.Error(w, "Failed to parse form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	playlistName := r.FormValue("name")
+	if playlistName == "" {
+		slog.Warn("playlist_name field empty")
+	}
+
+	private := r.FormValue("private") == "true"
+
+	var coverData []byte
+	coverContentType := ""
+	coverFile, _, err := r.FormFile("cover")
+	if err == nil {
+		defer coverFile.Close()
+		coverData, err = io.ReadAll(coverFile)
+		if err != nil {
+			slog.Error(fmt.Sprint(op, err.Error()))
+			http.Error(w, "Failed to read cover file", http.StatusInternalServerError)
+			return
+		}
+		coverContentType = "image/jpeg"
+	} else if !errors.Is(err, http.ErrMissingFile) {
+		slog.Error(fmt.Sprint(op, err.Error()))
+		http.Error(w, "Failed to get cover file", http.StatusBadRequest)
+		return
 	}
 
 	plu := models.PlaylistUpdate{
-		Name: request.Body.Name,
-		Cover: request.Body.Cover,
-		Private: request.Body.Private,
+		ID: r.PathValue("playlistID"),
+		Name: &playlistName,
+		Private: &private,
 	}
 
-	err = h.pService.UpdatePlaylist(ctx, plu)
+	err = h.pService.UpdatePlaylist(r.Context(), plu, coverData, coverContentType)
 	if err != nil {
 		slog.Error(err.Error())
-		return api.UpdatePlaylist500Response{}, err
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	return api.UpdatePlaylist200Response{}, nil
+	w.Write([]byte("Success"))
+	w.WriteHeader(200)
 }
 
 func (h Handler) GetPlaylistTracks(ctx context.Context, request api.GetPlaylistTracksRequestObject) (api.GetPlaylistTracksResponseObject, error) {

@@ -200,8 +200,17 @@ func (s *PlaylistService) GetPlaylistCoverPresignURL(ctx context.Context, coverK
 	return url, nil
 }
 
-func (s *PlaylistService) UpdatePlaylist(ctx context.Context, playlist models.PlaylistUpdate) (error) {
+func (s *PlaylistService) UpdatePlaylist(ctx context.Context, playlist models.PlaylistUpdate, coverData []byte, ctt string) (error) {
 	const op = "./internal/services/playlist.go.UpdatePlaylist()"
+
+	coverKey := ""
+	if len(coverData) != 0 {
+		coverKey = playlist.ID + "-playlistImage"
+		err := s.s3.UploadObject(ctx, coverKey, coverData, ctt)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+	}
 
 	err := s.repo.UpdatePlaylist(ctx, playlist)
 	if err != nil {

@@ -185,7 +185,23 @@
 			}
 			.modal-search:focus { outline: none; border-color: #667eea; }
 			.modal-empty {
-				text-align: center; padding: 2rem; color: #999;
+				padding: 2rem;
+				text-align: center;
+				color: #999;
+				font-size: 0.9rem;
+			}
+			.edit-field {
+				margin-bottom: 1rem;
+				display: flex;
+				flex-direction: column;
+				gap: 0.35rem;
+			}
+			.edit-field label {
+				font-size: 0.8rem;
+				font-weight: 600;
+				color: #666;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
 			}
 			.empty-state {
 				text-align: center; padding: 4rem; background: white;
@@ -309,6 +325,9 @@
 						<button class="btn btn-danger" id="deletePlaylistBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem;">
 							🗑 Удалить плейлист
 						</button>
+						<button class="btn btn-primary" id="editPlaylistBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem;">
+							✏️ Редактировать
+						</button>
 					</div>
 				</div>
 			</div>
@@ -335,6 +354,36 @@
 				<div class="modal-body">
 					<input type="text" class="modal-search" id="modalSearch" placeholder="Поиск треков..." oninput="filterModalTracks()" />
 					<div id="modalTracksList"></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="modal-overlay" id="editPlaylistModal">
+			<div class="modal-content" style="max-width: 420px;">
+				<div class="modal-header">
+					<h3>✏️ Редактировать плейлист</h3>
+					<button class="modal-close" onclick="closeEditModal()">✕</button>
+				</div>
+				<div class="modal-body">
+					<div class="edit-form">
+						<div class="edit-field">
+							<label for="editName">Название</label>
+							<input type="text" id="editName" class="modal-search" placeholder="Новое название">
+						</div>
+						<div class="edit-field" style="flex-direction:row;align-items:center;gap:0.75rem;">
+							<label for="editPrivate" style="margin-bottom:0;">Приватный</label>
+							<input type="checkbox" id="editPrivate" style="width:18px;height:18px;cursor:pointer;">
+						</div>
+						<div class="edit-field">
+							<label for="editCover">Обложка</label>
+							<input type="file" id="editCover" accept="image/*" style="padding:0.5rem 0;font-size:0.9rem;">
+						</div>
+						<div class="edit-actions" style="display:flex;gap:0.75rem;margin-top:1rem;">
+							<button class="btn btn-primary" id="editSaveBtn" style="flex:1;">Сохранить</button>
+							<button class="btn btn-outline" onclick="closeEditModal()" style="flex:1;">Отмена</button>
+						</div>
+						<div id="editError" style="color:#e53e3e;font-size:0.85rem;margin-top:0.75rem;display:none;"></div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -370,6 +419,7 @@
 	const playlistNameParam = params.get('name') || 'Плейлист'
 	const playlistUploaderParam = params.get('uploader') || ''
 	const playlistCoverParam = params.get('cover') || ''
+	const playlistPrivateParam = params.get('private')
 
 	document.getElementById('playlistName').textContent = playlistNameParam
 	document.getElementById('playlistUploader').textContent = playlistUploaderParam
@@ -575,6 +625,57 @@
 				document.getElementById('addTrackModal').classList.remove('active')
 			}
 
+			function openEditModal() {
+				document.getElementById('editName').value = playlistNameParam
+				document.getElementById('editPrivate').checked = playlistPrivateParam === 'true'
+				document.getElementById('editCover').value = ''
+				document.getElementById('editError').style.display = 'none'
+				document.getElementById('editPlaylistModal').classList.add('active')
+			}
+
+			function closeEditModal() {
+				document.getElementById('editPlaylistModal').classList.remove('active')
+			}
+
+			document.getElementById('editSaveBtn').addEventListener('click', async function() {
+				const name = document.getElementById('editName').value.trim()
+				const isPrivate = document.getElementById('editPrivate').checked
+				const coverFile = document.getElementById('editCover').files[0]
+				const errorEl = document.getElementById('editError')
+
+				if (!name && !coverFile && isPrivate === (playlistPrivateParam === 'true')) {
+					errorEl.textContent = 'Измените хотя бы одно поле'
+					errorEl.style.display = 'block'
+					return
+				}
+
+				const fd = new FormData()
+				if (name && name !== playlistNameParam) fd.append('name', name)
+				if (coverFile) fd.append('cover', coverFile)
+				if (isPrivate !== (playlistPrivateParam === 'true')) fd.append('private', String(isPrivate))
+
+				try {
+					const resp = await fetch(`${apiBaseUrl}/playlist/${encodeURIComponent(playlistId)}`, {
+						method: 'PATCH',
+						body: fd,
+						credentials: 'include',
+					})
+					if (resp.ok) {
+						location.reload()
+					} else if (resp.status === 403) {
+						errorEl.textContent = 'Вы не можете редактировать этот плейлист'
+						errorEl.style.display = 'block'
+					} else {
+						const txt = await resp.text()
+						errorEl.textContent = txt || 'Ошибка при сохранении'
+						errorEl.style.display = 'block'
+					}
+				} catch (e) {
+					errorEl.textContent = 'Ошибка сети'
+					errorEl.style.display = 'block'
+				}
+			})
+
 			function filterModalTracks() {
 				const q = document.getElementById('modalSearch').value.toLowerCase().trim()
 				const filtered = allModalTracks.filter(t =>
@@ -622,6 +723,12 @@
 			document.getElementById('addTrackModal').addEventListener('click', function(e) {
 				if (e.target === this) closeAddTrackModal()
 			})
+
+			document.getElementById('editPlaylistModal').addEventListener('click', function(e) {
+				if (e.target === this) closeEditModal()
+			})
+
+			document.getElementById('editPlaylistBtn').addEventListener('click', openEditModal)
 		</script>
 
 	<script>

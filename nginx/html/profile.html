@@ -552,6 +552,58 @@
     .hamburger.active span:nth-child(2) { opacity: 0; }
     .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
 }
+
+.albums-section {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    margin-top: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+.albums-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+.albums-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+}
+.album-card {
+    background: #f8f9ff;
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+.album-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+}
+.album-cover {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #e0e5ff 0%, #d1d5f0 100%);
+    background-size: cover;
+    background-position: center;
+    margin-bottom: 0.75rem;
+}
+.album-card-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.album-card-artist {
+    font-size: 0.8rem;
+    color: #667eea;
+    margin-top: 0.25rem;
+}
 </style>
 </head>
 <body>
@@ -721,6 +773,10 @@
 
                 renderProfile();
 
+                if (profileData && profileData.id) {
+                    fetchMyAlbums();
+                }
+
                 updateStatus('success', 'Профиль загружен');
 
             } catch (error) {
@@ -751,6 +807,11 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function attrEscape(text) {
+            if (!text) return '';
+            return text.replace(/'/g, "%27").replace(/\\/g, "\\\\").replace(/\n/g, "\\n");
         }
 
         function renderUnauthorizedState() {
@@ -830,6 +891,48 @@
                     </div>
                 </div>
             `;
+        }
+
+        async function fetchMyAlbums() {
+            const userId = profileData && profileData.id;
+            if (!userId) return;
+
+            try {
+                const response = await fetch(`${apiBaseUrl}/album/my`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'include',
+                });
+                if (!response.ok) return;
+
+                const data = await response.json();
+                let albums = data;
+                if (data && data.GetAlbumJSONResponse) albums = data.GetAlbumJSONResponse;
+                if (!albums || albums.length === 0) return;
+
+                const section = document.createElement('div');
+                section.className = 'albums-section';
+                section.innerHTML = `
+                    <h2>🎵 Мои альбомы</h2>
+                    <div class="albums-grid">
+                        ${albums.map(a => {
+                            const coverStyle = a.cover
+                                ? `background-image: url('${attrEscape(a.cover)}')`
+                                : '';
+                            const name = escapeHtml(a.name || 'Без названия');
+                            return `
+                                <div class="album-card" onclick="window.location.href='album.html?id=${encodeURIComponent(a.id || '')}&name=${encodeURIComponent(a.name || '')}'">
+                                    <div class="album-cover" style="${coverStyle}"></div>
+                                    <div class="album-card-name">${name}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                profileContainer.appendChild(section);
+            } catch (e) {
+                console.error('Ошибка загрузки моих альбомов:', e);
+            }
         }
 
         function showNotification(message, type = 'success') {

@@ -21,6 +21,7 @@ type AlbumRepo interface {
 	GetAlbumsInfo(ctx context.Context) ([]models.AlbumInfo, error)
 	GetUserAlbums(ctx context.Context, userID string) ([]models.AlbumInfo, error)
 	AddMusicToAlbum(ctx context.Context, albumID string, musicID string) error
+	GetUploadedByUserAlbums(ctx context.Context, id string) ([]models.Album, error)
 	CreateMusic(ctx context.Context, product models.Music) error
 }
 
@@ -224,4 +225,27 @@ func parseMP3Duration(data []byte) int {
 		count++
 	}
 	return int(math.Round((float64(count) * 26.0) / 1000.0))
+}
+
+func (s *AlbumsService) GetUploadedByUserAlbums(ctx context.Context, id string) ([]models.Album, error) {
+	const op = "./internal/services/album.go.GetUploadedByUserAlbums()"
+
+	a, err := s.repo.GetUploadedByUserAlbums(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	for i := range a {
+		if a[i].Cover != "" {
+			url, err := s.s3.GetPresignURL(ctx, a[i].Cover)
+			if err != nil {
+				slog.Error("GetUploadedByUserAlbums s3", slog.String("error", err.Error()))
+				continue
+			}
+
+			a[i].Cover = url
+		}
+	}
+
+	return a, nil
 }

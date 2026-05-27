@@ -204,26 +204,29 @@ func (pg *Postgres) UpdatePlaylist(ctx context.Context, playlist models.Playlist
 
 	var sql sq.UpdateBuilder
 	if playlist.Name != nil {
-		sql = psql.Update("playlists").Set("name = ?", playlist.Name)
+		sql = psql.Update("playlists").Set("name", playlist.Name)
 	}
 
 	if playlist.Cover != nil {
-		sql = psql.Update("playlists").Set("cover = ?", playlist.Cover)
+		sql = sql.Set("cover", playlist.Cover)
 	}
 
 	if playlist.Private != nil {
-		sql = psql.Update("playlists").Set("private = ?", playlist.Private)
+		sql = sql.Set("private", playlist.Private)
 	}
+
+	sql = sql.Where("id = ?", playlist.ID)
 
 	q, args, err := sql.ToSql()
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: Query %w", op, err)
 	}
 	slog.Info(fmt.Sprint(args))
+	slog.Info(q)
 
-	_, err = pg.pool.Exec(ctx, q, args)
+	_, err = pg.pool.Exec(ctx, q, args...)
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return fmt.Errorf("%s: Exec %w", op, err)
 	}
 
 	return nil

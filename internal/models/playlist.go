@@ -14,6 +14,7 @@ type PlaylistInfo struct {
 }
 
 type PlaylistUpdate struct {
+	ID string
 	Name *string
 	Cover *string
 	Private *bool

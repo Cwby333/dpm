@@ -110,6 +110,13 @@ type UserPublic struct {
 	Username       *string `json:"username,omitempty"`
 }
 
+// GetAlbum defines model for GetAlbum.
+type GetAlbum = []struct {
+	Cover *string `json:"cover,omitempty"`
+	Id    *string `json:"id,omitempty"`
+	Name  *string `json:"name,omitempty"`
+}
+
 // GetFavor defines model for GetFavor.
 type GetFavor = []Favor
 
@@ -135,17 +142,11 @@ type GetMusicResponse struct {
 type GetProfile struct {
 	Email          *string `json:"email,omitempty"`
 	FavorCount     *int    `json:"favor_count,omitempty"`
+	Id             *string `json:"id,omitempty"`
 	Likes          *int    `json:"likes,omitempty"`
 	ListeningCount *int    `json:"listening_count,omitempty"`
 	RegisterAt     *string `json:"register_at,omitempty"`
 	Username       *string `json:"username,omitempty"`
-}
-
-// PlaylistUpdate defines model for PlaylistUpdate.
-type PlaylistUpdate struct {
-	Cover   *string `json:"cover,omitempty"`
-	Name    *string `json:"name,omitempty"`
-	Private *bool   `json:"private,omitempty"`
 }
 
 // Register defines model for Register.
@@ -154,6 +155,11 @@ type Register struct {
 	Password       *string `json:"password,omitempty"`
 	PrivateProfile *bool   `json:"private_profile,omitempty"`
 	Username       *string `json:"username,omitempty"`
+}
+
+// GetAlbumMyParams defines parameters for GetAlbumMy.
+type GetAlbumMyParams struct {
+	AccessToken string `form:"Access-Token" json:"Access-Token"`
 }
 
 // DeleteFavorJSONBody defines parameters for DeleteFavor.
@@ -261,18 +267,6 @@ type DeletePlaylistParams struct {
 	AccessToken string `form:"Access-Token" json:"Access-Token"`
 }
 
-// UpdatePlaylistJSONBody defines parameters for UpdatePlaylist.
-type UpdatePlaylistJSONBody struct {
-	Cover   *string `json:"cover,omitempty"`
-	Name    *string `json:"name,omitempty"`
-	Private *bool   `json:"private,omitempty"`
-}
-
-// UpdatePlaylistParams defines parameters for UpdatePlaylist.
-type UpdatePlaylistParams struct {
-	AccessToken string `form:"Access-Token" json:"Access-Token"`
-}
-
 // AddMusicToPlaylistJSONBody defines parameters for AddMusicToPlaylist.
 type AddMusicToPlaylistJSONBody struct {
 	MusicId string `json:"music_id"`
@@ -317,9 +311,6 @@ type PostMusicLikeJSONRequestBody PostMusicLikeJSONBody
 // PostMusicPlayJSONRequestBody defines body for PostMusicPlay for application/json ContentType.
 type PostMusicPlayJSONRequestBody PostMusicPlayJSONBody
 
-// UpdatePlaylistJSONRequestBody defines body for UpdatePlaylist for application/json ContentType.
-type UpdatePlaylistJSONRequestBody UpdatePlaylistJSONBody
-
 // AddMusicToPlaylistJSONRequestBody defines body for AddMusicToPlaylist for application/json ContentType.
 type AddMusicToPlaylistJSONRequestBody AddMusicToPlaylistJSONBody
 
@@ -331,6 +322,9 @@ type ServerInterface interface {
 
 	// (GET /album)
 	GetAlbums(w http.ResponseWriter, r *http.Request)
+
+	// (GET /album/my)
+	GetAlbumMy(w http.ResponseWriter, r *http.Request, params GetAlbumMyParams)
 
 	// (GET /album/{albumID})
 	GetAlbumID(w http.ResponseWriter, r *http.Request, albumID string)
@@ -386,9 +380,6 @@ type ServerInterface interface {
 	// (GET /playlist/{playlistID})
 	GetPlaylistTracks(w http.ResponseWriter, r *http.Request, playlistID string)
 
-	// (PATCH /playlist/{playlistID})
-	UpdatePlaylist(w http.ResponseWriter, r *http.Request, playlistID string, params UpdatePlaylistParams)
-
 	// (POST /playlist/{playlistID}/add)
 	AddMusicToPlaylist(w http.ResponseWriter, r *http.Request, playlistID string, params AddMusicToPlaylistParams)
 
@@ -425,6 +416,43 @@ func (siw *ServerInterfaceWrapper) GetAlbums(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetAlbums(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAlbumMy operation middleware
+func (siw *ServerInterfaceWrapper) GetAlbumMy(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAlbumMyParams
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = value
+
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
+			return
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAlbumMy(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1051,52 +1079,6 @@ func (siw *ServerInterfaceWrapper) GetPlaylistTracks(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
-// UpdatePlaylist operation middleware
-func (siw *ServerInterfaceWrapper) UpdatePlaylist(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "playlistID" -------------
-	var playlistID string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "playlistID", r.PathValue("playlistID"), &playlistID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "playlistID", Err: err})
-		return
-	}
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params UpdatePlaylistParams
-
-	{
-		var cookie *http.Cookie
-
-		if cookie, err = r.Cookie("Access-Token"); err == nil {
-			var value string
-			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
-			if err != nil {
-				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
-				return
-			}
-			params.AccessToken = value
-
-		} else {
-			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
-			return
-		}
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdatePlaylist(w, r, playlistID, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // AddMusicToPlaylist operation middleware
 func (siw *ServerInterfaceWrapper) AddMusicToPlaylist(w http.ResponseWriter, r *http.Request) {
 
@@ -1404,6 +1386,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc("GET "+options.BaseURL+"/album", wrapper.GetAlbums)
+	m.HandleFunc("GET "+options.BaseURL+"/album/my", wrapper.GetAlbumMy)
 	m.HandleFunc("GET "+options.BaseURL+"/album/{albumID}", wrapper.GetAlbumID)
 	m.HandleFunc("DELETE "+options.BaseURL+"/favor", wrapper.DeleteFavor)
 	m.HandleFunc("GET "+options.BaseURL+"/favor", wrapper.GetFavor)
@@ -1422,7 +1405,6 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/playlist/public", wrapper.GetPublicPlaylists)
 	m.HandleFunc("DELETE "+options.BaseURL+"/playlist/{playlistID}", wrapper.DeletePlaylist)
 	m.HandleFunc("GET "+options.BaseURL+"/playlist/{playlistID}", wrapper.GetPlaylistTracks)
-	m.HandleFunc("PATCH "+options.BaseURL+"/playlist/{playlistID}", wrapper.UpdatePlaylist)
 	m.HandleFunc("POST "+options.BaseURL+"/playlist/{playlistID}/add", wrapper.AddMusicToPlaylist)
 	m.HandleFunc("GET "+options.BaseURL+"/profile", wrapper.GetProfile)
 	m.HandleFunc("POST "+options.BaseURL+"/register", wrapper.Register)
@@ -1432,6 +1414,12 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/users/{userID}/playlists", wrapper.GetUserPlaylists)
 
 	return m
+}
+
+type GetAlbumJSONResponse []struct {
+	Cover *string `json:"cover,omitempty"`
+	Id    *string `json:"id,omitempty"`
+	Name  *string `json:"name,omitempty"`
 }
 
 type GetFavorJSONResponse []Favor
@@ -1453,6 +1441,7 @@ type GetMusicResponseJSONResponse struct {
 type GetProfileJSONResponse struct {
 	Email          *string `json:"email,omitempty"`
 	FavorCount     *int    `json:"favor_count,omitempty"`
+	Id             *string `json:"id,omitempty"`
 	Likes          *int    `json:"likes,omitempty"`
 	ListeningCount *int    `json:"listening_count,omitempty"`
 	RegisterAt     *string `json:"register_at,omitempty"`
@@ -1482,6 +1471,31 @@ func (response GetAlbums500JSONResponse) VisitGetAlbumsResponse(w http.ResponseW
 	w.WriteHeader(500)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAlbumMyRequestObject struct {
+	Params GetAlbumMyParams
+}
+
+type GetAlbumMyResponseObject interface {
+	VisitGetAlbumMyResponse(w http.ResponseWriter) error
+}
+
+type GetAlbumMy200JSONResponse struct{ GetAlbumJSONResponse }
+
+func (response GetAlbumMy200JSONResponse) VisitGetAlbumMyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAlbumMy500Response struct {
+}
+
+func (response GetAlbumMy500Response) VisitGetAlbumMyResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
 }
 
 type GetAlbumIDRequestObject struct {
@@ -1981,48 +1995,6 @@ func (response GetPlaylistTracks500JSONResponse) VisitGetPlaylistTracksResponse(
 	return json.NewEncoder(w).Encode(response)
 }
 
-type UpdatePlaylistRequestObject struct {
-	PlaylistID string `json:"playlistID"`
-	Params     UpdatePlaylistParams
-	Body       *UpdatePlaylistJSONRequestBody
-}
-
-type UpdatePlaylistResponseObject interface {
-	VisitUpdatePlaylistResponse(w http.ResponseWriter) error
-}
-
-type UpdatePlaylist200Response struct {
-}
-
-func (response UpdatePlaylist200Response) VisitUpdatePlaylistResponse(w http.ResponseWriter) error {
-	w.WriteHeader(200)
-	return nil
-}
-
-type UpdatePlaylist403Response struct {
-}
-
-func (response UpdatePlaylist403Response) VisitUpdatePlaylistResponse(w http.ResponseWriter) error {
-	w.WriteHeader(403)
-	return nil
-}
-
-type UpdatePlaylist404Response struct {
-}
-
-func (response UpdatePlaylist404Response) VisitUpdatePlaylistResponse(w http.ResponseWriter) error {
-	w.WriteHeader(404)
-	return nil
-}
-
-type UpdatePlaylist500Response struct {
-}
-
-func (response UpdatePlaylist500Response) VisitUpdatePlaylistResponse(w http.ResponseWriter) error {
-	w.WriteHeader(500)
-	return nil
-}
-
 type AddMusicToPlaylistRequestObject struct {
 	PlaylistID string `json:"playlistID"`
 	Params     AddMusicToPlaylistParams
@@ -2238,6 +2210,9 @@ type StrictServerInterface interface {
 	// (GET /album)
 	GetAlbums(ctx context.Context, request GetAlbumsRequestObject) (GetAlbumsResponseObject, error)
 
+	// (GET /album/my)
+	GetAlbumMy(ctx context.Context, request GetAlbumMyRequestObject) (GetAlbumMyResponseObject, error)
+
 	// (GET /album/{albumID})
 	GetAlbumID(ctx context.Context, request GetAlbumIDRequestObject) (GetAlbumIDResponseObject, error)
 
@@ -2291,9 +2266,6 @@ type StrictServerInterface interface {
 
 	// (GET /playlist/{playlistID})
 	GetPlaylistTracks(ctx context.Context, request GetPlaylistTracksRequestObject) (GetPlaylistTracksResponseObject, error)
-
-	// (PATCH /playlist/{playlistID})
-	UpdatePlaylist(ctx context.Context, request UpdatePlaylistRequestObject) (UpdatePlaylistResponseObject, error)
 
 	// (POST /playlist/{playlistID}/add)
 	AddMusicToPlaylist(ctx context.Context, request AddMusicToPlaylistRequestObject) (AddMusicToPlaylistResponseObject, error)
@@ -2363,6 +2335,32 @@ func (sh *strictHandler) GetAlbums(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetAlbumsResponseObject); ok {
 		if err := validResponse.VisitGetAlbumsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAlbumMy operation middleware
+func (sh *strictHandler) GetAlbumMy(w http.ResponseWriter, r *http.Request, params GetAlbumMyParams) {
+	var request GetAlbumMyRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAlbumMy(ctx, request.(GetAlbumMyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAlbumMy")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAlbumMyResponseObject); ok {
+		if err := validResponse.VisitGetAlbumMyResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -2883,40 +2881,6 @@ func (sh *strictHandler) GetPlaylistTracks(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// UpdatePlaylist operation middleware
-func (sh *strictHandler) UpdatePlaylist(w http.ResponseWriter, r *http.Request, playlistID string, params UpdatePlaylistParams) {
-	var request UpdatePlaylistRequestObject
-
-	request.PlaylistID = playlistID
-	request.Params = params
-
-	var body UpdatePlaylistJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.UpdatePlaylist(ctx, request.(UpdatePlaylistRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "UpdatePlaylist")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(UpdatePlaylistResponseObject); ok {
-		if err := validResponse.VisitUpdatePlaylistResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
 // AddMusicToPlaylist operation middleware
 func (sh *strictHandler) AddMusicToPlaylist(w http.ResponseWriter, r *http.Request, playlistID string, params AddMusicToPlaylistParams) {
 	var request AddMusicToPlaylistRequestObject
@@ -3113,41 +3077,41 @@ func (sh *strictHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Request
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"nwEAAP//YwFu2tBCAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
