@@ -86,12 +86,13 @@ type MusicLikes struct {
 
 // PlaylistInfo defines model for PlaylistInfo.
 type PlaylistInfo struct {
-	Cover      *string `json:"cover,omitempty"`
-	Id         *string `json:"id,omitempty"`
-	Name       *string `json:"name,omitempty"`
-	Private    *bool   `json:"private,omitempty"`
-	UploaderId *string `json:"uploader_id,omitempty"`
-	Username   *string `json:"username,omitempty"`
+	AvailableUpdate *bool   `json:"available_update,omitempty"`
+	Cover           *string `json:"cover,omitempty"`
+	Id              *string `json:"id,omitempty"`
+	Name            *string `json:"name,omitempty"`
+	Private         *bool   `json:"private,omitempty"`
+	UploaderId      *string `json:"uploader_id,omitempty"`
+	Username        *string `json:"username,omitempty"`
 }
 
 // UserProfileResponse defines model for UserProfileResponse.
@@ -267,6 +268,11 @@ type DeletePlaylistParams struct {
 	AccessToken string `form:"Access-Token" json:"Access-Token"`
 }
 
+// GetPlaylistTracksParams defines parameters for GetPlaylistTracks.
+type GetPlaylistTracksParams struct {
+	AccessToken *string `form:"Access-Token,omitempty" json:"Access-Token,omitempty"`
+}
+
 // AddMusicToPlaylistJSONBody defines parameters for AddMusicToPlaylist.
 type AddMusicToPlaylistJSONBody struct {
 	MusicId string `json:"music_id"`
@@ -378,7 +384,7 @@ type ServerInterface interface {
 	DeletePlaylist(w http.ResponseWriter, r *http.Request, playlistID string, params DeletePlaylistParams)
 
 	// (GET /playlist/{playlistID})
-	GetPlaylistTracks(w http.ResponseWriter, r *http.Request, playlistID string)
+	GetPlaylistTracks(w http.ResponseWriter, r *http.Request, playlistID string, params GetPlaylistTracksParams)
 
 	// (POST /playlist/{playlistID}/add)
 	AddMusicToPlaylist(w http.ResponseWriter, r *http.Request, playlistID string, params AddMusicToPlaylistParams)
@@ -1068,8 +1074,26 @@ func (siw *ServerInterfaceWrapper) GetPlaylistTracks(w http.ResponseWriter, r *h
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetPlaylistTracksParams
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: false})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = &value
+
+		}
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetPlaylistTracks(w, r, playlistID)
+		siw.Handler.GetPlaylistTracks(w, r, playlistID, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1971,13 +1995,17 @@ func (response DeletePlaylist500Response) VisitDeletePlaylistResponse(w http.Res
 
 type GetPlaylistTracksRequestObject struct {
 	PlaylistID string `json:"playlistID"`
+	Params     GetPlaylistTracksParams
 }
 
 type GetPlaylistTracksResponseObject interface {
 	VisitGetPlaylistTracksResponse(w http.ResponseWriter) error
 }
 
-type GetPlaylistTracks200JSONResponse []LikedTrack
+type GetPlaylistTracks200JSONResponse struct {
+	AvailableForUpdate *bool         `json:"available_for_update,omitempty"`
+	Tracks             *[]LikedTrack `json:"tracks,omitempty"`
+}
 
 func (response GetPlaylistTracks200JSONResponse) VisitGetPlaylistTracksResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2856,10 +2884,11 @@ func (sh *strictHandler) DeletePlaylist(w http.ResponseWriter, r *http.Request, 
 }
 
 // GetPlaylistTracks operation middleware
-func (sh *strictHandler) GetPlaylistTracks(w http.ResponseWriter, r *http.Request, playlistID string) {
+func (sh *strictHandler) GetPlaylistTracks(w http.ResponseWriter, r *http.Request, playlistID string, params GetPlaylistTracksParams) {
 	var request GetPlaylistTracksRequestObject
 
 	request.PlaylistID = playlistID
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetPlaylistTracks(ctx, request.(GetPlaylistTracksRequestObject))
@@ -3077,41 +3106,41 @@ func (sh *strictHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Request
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"nwEAAP//YwFu2tBCAAA=",
+	"H4sIAAAAAAAC/+xbW2/juBX+KwRbYFtAE2c7sy95araZS4BMG0yTp8XAoKVjmxNJ1JBUUjXwf1/wKtmi",
+	"LvFtkkGebIjkEfmd+znUI45ZVrAccinw2SPm8L0EIX9nCQX94AssqJDA1f+Y5RJyqf6SokhpTCRl+eSb",
+	"YLl6JuIlZET9KzgrgEtLAjJCU/VHVgXgMywkp/kCryJcECEeGE/Cg5zeEwnTgrM5TaExZ8ZYCiRXk0oB",
+	"PCcZBCisIn0ayiHBZ3/4mci9FJl9fY3cQjb7BrHEK7UyARFzWqjz4TP8Bb6jGUsqNGccTbiDxLxCFCwX",
+	"5qQfQZ6nszJ7ElhUQibaqMXs3qDeAoaG8eqGYeN8/gHhnFSh8358f4MmRJ1kklVqwUeQH8g949sd7K8c",
+	"5vgM/2VSy9rETBMTQ3bsnuZu9keQV/QOkhtO4jux/23VxEfvLaV3IPzehISc5otPVEjGq0NscP0NX6wc",
+	"jtouSJS69Whpt2h2/rkUNN5B2TO3ftQpzNtaW44MmamB9EnErhwXNkBYNwZml2NUX2FF0hRlbqcOIw/4",
+	"HrAaBZGBZO7UcCwSW5/8P3oEySWR6IGmKZoB4iBLnkOCZhWaFJwlZSwnj/bP5cUKKU1QR9QAWLiuawO+",
+	"dw+i4ZjGrDRE7TjNJSyA9xhLL1ntFV4z+sg6HzAlMki/3y8NS50yKM7xqWHLWUXOe5jD+IsIl0XKSAJ8",
+	"2rHQjz/pkBH2HmR940lppGUqIGZ5IvbFR6Mv3bB0nl+wfDEteboFOBvKRhNs37O+0O07ah8+soxsbONr",
+	"AMuGfwqblZ6Dm3H35j7wOkDfMM5dqw8B8PbS1+kwW/jVBiAhUo/PGc+UomP14I2kmqEdsLzivo67Dyhe",
+	"tX5nrW/49Q6t79pfi9R1Siol6Jf5nLWJkXtCUzJLYVoWTgnaydf+XI7N9TpyvCHJfJpA3grgNiTptgHS",
+	"5xU7pwtmg0MU9K7KWapivc5dm/HWZn+aIIhaYVRhIollI/TDWSmh4EzN/edCPTuJWeb07Ax/LiUgO45b",
+	"4ZTWG5TRmDMB/J7GgD7d3Fyj8+tLndKvrY6wpDKF4DIc4XvgwlD99eT05FS9jBWQk4LiM/z25PTkVxzh",
+	"gsilRtZk0erfAvR5wtmFnqXMgI+dLxMzfO5G1goN/zg93X9KaQLLEfnjf8s4BqGzrN+euJFNMWjRfs+5",
+	"yvD1SF2C6MJv4QC6NTYi+b1SitIJ5OdKM4eTDCRwgc/+eMRUEYoZu6NQy9O5PuGbG3YHOW6ad8lLiHoO",
+	"9DXMqRDuft7E141qRDcQB34PHEEbnEf9c3mxai86j9UfgR6oXBoJw1GfGM60QoWBu7zoAE5Jeg0b8XN3",
+	"RuxH1nMOKeAhVvqkPoEUjBtcX3Shn5siBJIMKcv6i0Bm3SbPzOQPduzw0u4qxtWupZDLi+Hgyk0MVTBW",
+	"O0rSMO+OKBdRnzZv8L9TqXvlxBd1n6lJ9KXhI2BdMBGA8DxJRurceZK8KtzLVjhliH1EPKx7Lpcb0j03",
+	"r6V7V3bgWepes7lyGPAD2NuU482ybpoMOMS6izHnLAs0NcK+0deCPnCWXX16MUq7W2VqTO3Cz3z1r1p3",
+	"2/LUqe/Dwqf06tPz1fiNluXzcLw0HwHseZL47d+wF6TQr1446IXZgho6ZZYR5QjwlXqkhOEBZqQosJ3G",
+	"yoDwXOnnxiOISkjQefXEd1utBgcS3dQUq7eSnu4zR5bA9xK07Nr1OjCYZjS42FfZBlaT/221Oin51m/W",
+	"a4feu60V8t3uQwta1BCuVo+/HjqPpfEIfszIkY4URwQojSAQsdxSCQclvrj/c1ivn8tMve8PG1qZQZPZ",
+	"YRd3zYQcJx5q5qtwvAThqM1DkZIqwPOUVENi4adESBiTRXLxABwVHATNF7dfrpBkKCveIn07pFNaFCW8",
+	"V26O7S7uzs71l+uTL/KO7uyY+zTHjmCMEJjGZZvHplnRcimPVmVWve0iExbPKqTL7K0gpiOCWadjaGgC",
+	"gSK+09ynmI1o1yBpp4Chefnxt51ELQMhyGLba1vt9GYtkvCOguXQ4H6h6PfEpddq/OdKvWtY/rWE+A4t",
+	"gaRyiVyXVaNiLyjY9l9bEeKSc8iND0Vudm9FrrniF7G2pq1H1XVj+Edk7PttgK3d93iGLTDP7sJfcmgz",
+	"0IyNY7YK6APz29ql5zSZ/coMz4xH9883mHuzHTfbuCf0N/aQA0csT6u/dyQ9DolR3eV6M4fwTcdT2HWX",
+	"IySRpdg9sHl3+rbNmH8ziUgpl4zT/0OiAkfDQiSXtLaAZvm7cDSqGZozieaszJPRVxR666tFzfZOBTZX",
+	"sBDNm7Pb6mvHbK/iQKWbvcjhfsWmvqI3Z7z3mt4e77I9x1g7aKwmJEnCZWWNhlKEhlR1F6FDs1u1Zx2D",
+	"3rCXa8sOnyEercd0GNt6HEGuv5PZyBdtvGrHh3vO9cy2vfRDz7IL5bZ38DINb3zXGlb/W51XMCGRcpXu",
+	"LmtkPhuN6s9ISZ4gUhTIUURLmimvZVsPmzzwH9S2FC8MTuN73Ilfu18t2THp3V5NjpV7O9w2GkiKp6I7",
+	"e9DDNl6xiYSRzkbe0dKvW03zGElE88b4NinEsEHSAEwe1U/wgmnT4qwBZECTS6Ac2dv71pUOQddvntZd",
+	"qNnXUUOwQX5sfFcwFLG/6zA7PtxGjHtQVcBuv5PYnosTe9V84Cp6zbZZhQgSBcR0TmPN7gEW+hvrz5KD",
+	"B7sJ/0OYWVc2umsgbgqKORC5DUeHKmEvg6k7FF2OwNvV6s8AAAD//4PFDlyLQwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

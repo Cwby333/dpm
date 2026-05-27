@@ -334,7 +334,7 @@
 
 			<div class="section-header">
 				<h2 class="section-title" style="margin-bottom:0;">Треки</h2>
-				<button class="btn btn-primary btn-add-track" onclick="showAddTrackModal()">➕ Добавить трек</button>
+				<button class="btn btn-primary btn-add-track" id="addTrackBtn" onclick="showAddTrackModal()">➕ Добавить трек</button>
 			</div>
 
 			<div class="loading-container" id="loadingContainer">
@@ -433,6 +433,8 @@
 		coverEl.textContent = ''
 	}
 
+			let availableForUpdate = false
+
 			async function fetchPlaylistTracks() {
 				if (!playlistId) {
 					tracksContainer.innerHTML = `
@@ -461,14 +463,20 @@
 
 					const data = await response.json()
 
-					if (Array.isArray(data)) {
+					if (data && Array.isArray(data.tracks)) {
+						tracks = data.tracks
+						availableForUpdate = data.available_for_update === true
+					} else if (Array.isArray(data)) {
 						tracks = data
+						availableForUpdate = false
 					} else {
 						tracks = []
+						availableForUpdate = false
 					}
 
 					document.getElementById('playlistMeta').textContent = `${tracks.length} треков`
 					renderTracks()
+					updateActionButtons()
 				} catch (error) {
 					console.error('Ошибка загрузки:', error)
 					tracksContainer.style.display = 'block'
@@ -571,6 +579,16 @@
 						}).join('')}
 					</div>
 				`
+			}
+
+			function updateActionButtons() {
+				const show = availableForUpdate ? '' : 'none'
+				const deleteBtn = document.getElementById('deletePlaylistBtn')
+				const editBtn = document.getElementById('editPlaylistBtn')
+				const addBtn = document.getElementById('addTrackBtn')
+				if (deleteBtn) deleteBtn.style.display = show
+				if (editBtn) editBtn.style.display = show
+				if (addBtn) addBtn.style.display = show
 			}
 
 			document.addEventListener('DOMContentLoaded', fetchPlaylistTracks)

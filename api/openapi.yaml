@@ -219,6 +219,11 @@ paths:
       description: "Get tracks in playlist"
       operationId: "getPlaylistTracks"
       parameters:
+        - name: Access-Token
+          in: cookie
+          required: false
+          schema:
+            type: string
         - name: playlistID
           in: path
           required: true
@@ -230,9 +235,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/LikedTrack"
+                type: object
+                properties:
+                  tracks:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LikedTrack"
+                  available_for_update:
+                    type: boolean
         500:
           description: "Server error"
           content:
@@ -1246,6 +1256,8 @@ components:
           type: boolean
         username:
           type: string
+        available_update:
+          type: boolean
     Album:
       type: object
       properties:

@@ -561,7 +561,18 @@ func wrapGetMyPlaylists(strict api.ServerInterface) http.HandlerFunc {
 
 func wrapGetPlaylistTracks(strict api.ServerInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		strict.GetPlaylistTracks(w, r, r.PathValue("playlistID"))
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapGetLikedTracks")
+			slog.Error(err.Error())
+			c = &http.Cookie{
+				Value: "",
+			}
+		} else {
+			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
+		}
+
+		strict.GetPlaylistTracks(w, r, r.PathValue("playlistID"), api.GetPlaylistTracksParams{AccessToken: &c.Value})
 	}
 }
 
@@ -1939,13 +1950,50 @@ func (h Handler) UpdatePlaylist(w http.ResponseWriter, r *http.Request) {
 func (h Handler) GetPlaylistTracks(ctx context.Context, request api.GetPlaylistTracksRequestObject) (api.GetPlaylistTracksResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.GetPlaylistTracks()"
 
+	slog.Info("GetPlaylistTracks req")
+
+	t := request.Params.AccessToken
+	userID := ""
+	availableUpdate := false
+	if t != nil{
+		slog.Info("GetPlaylistTracks token not nill")
+
+		claims, err := h.uServices.CheckAccessToken(ctx, *t)
+		
+		switch (err) {
+		case nil:
+			userID = claims["sub"].(string)
+		default:
+			slog.Error(err.Error())
+		}
+
+		switch (userID) {
+		case "":
+			slog.Info("userID empty")
+		default:
+			p, err := h.pService.GetPlaylist(ctx, request.PlaylistID)
+			
+			switch (err) {
+			case nil:
+				if userID == p.UploaderID {
+					availableUpdate = true
+				}
+			default:
+				slog.Error(err.Error())
+			}
+		}
+	}else {
+		slog.Info("GetPlaylistTracks token nil")
+	}
+
 	tracks, err := h.pService.GetPlaylistMusic(ctx, request.PlaylistID)
 	if err != nil {
 		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
 		return api.GetPlaylistTracks500JSONResponse(err.Error()), err
 	}
 
-	resp := make(api.GetPlaylistTracks200JSONResponse, 0, len(tracks))
+	resp := api.GetPlaylistTracks200JSONResponse{}
+	respArr := make([]api.LikedTrack, 0, len(tracks))
 	for i := range tracks {
 		mid := tracks[i].MusicID
 		mname := tracks[i].MusicName
@@ -1955,7 +2003,7 @@ func (h Handler) GetPlaylistTracks(ctx context.Context, request api.GetPlaylistT
 		surl := tracks[i].MusicSongURL
 		uid := tracks[i].MusicUploaderID
 		uuname := tracks[i].UserUsername
-		resp = append(resp, api.LikedTrack{
+		respArr = append(respArr, api.LikedTrack{
 			MusicId:          &mid,
 			MusicName:        &mname,
 			MusicCover:       &mcover,
@@ -1966,6 +2014,9 @@ func (h Handler) GetPlaylistTracks(ctx context.Context, request api.GetPlaylistT
 			UploaderUsername: &uuname,
 		})
 	}
+
+	resp.Tracks = &respArr
+	resp.AvailableForUpdate = &availableUpdate
 
 	return resp, nil
 }
