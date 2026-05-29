@@ -829,6 +829,11 @@
             return div.innerHTML;
         }
 
+        function attrEscape(text) {
+            if (!text) return '';
+            return text.replace(/'/g, "%27").replace(/\\/g, "\\\\").replace(/\n/g, "\\n");
+        }
+
         function renderUnauthorizedState() {
             likesContainer.innerHTML = `
                 <div class="empty-state">
@@ -862,11 +867,13 @@
                 const artist = escapeHtml(track.uploader_username || track.uploader_id || 'Неизвестный исполнитель');
                 const likes = track.music_likes || 0;
                 const duration = track.music_duration || 0;
+                const coverUrl = track.music_cover || '';
+                const coverStyle = coverUrl ? `background-image: url('${attrEscape(coverUrl)}'); background-size: cover; background-position: center;` : '';
                 
                 return `
                     <div class="like-card">
-                        <div class="like-cover" onclick="window.location.href='music-id.html?id=${musicId}'">
-                            <span>🎵</span>
+                        <div class="like-cover" onclick="window.location.href='music-id.html?id=${musicId}'" style="${coverStyle}">
+                            ${coverUrl ? '' : '<span>🎵</span>'}
                             <div class="play-overlay">
                                 <div class="play-button">▶️</div>
                             </div>

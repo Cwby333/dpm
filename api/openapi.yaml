@@ -323,10 +323,54 @@ paths:
                 type: string
   /album/{albumID}:
     description: "Actions with album"
+    delete:
+      description: "Delete playlist"
+      parameters:
+        - name: Access-Token
+          in: cookie
+          required: true
+          schema:
+            type: string
+        - name: albumID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "Success"
+        500:
+          description: "Server error"
+    patch:
+      description: "Update album"
+      operationId: "updateAlbum"
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateAlbum"
+      parameters:
+        - name: Access-Token
+          in: cookie
+          required: true
+          schema:
+            type: string
+        - name: albumID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "Success"
+        500:
+          description: "Server error"
     get:
       description: "Get albom"
       operationId: "getAlbumID"
       parameters:
+        - name: Access-Token
+          in: cookie
+          required: false
+          schema:
+            type: string
         - name: albumID
           in: path
           required: true
@@ -338,9 +382,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/LikedTrack"
+                type: object
+                properties:
+                  tracks:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LikedTrack"
+                  available_update:
+                    type: boolean
         500:
           description: "Server error"
           content:
@@ -1100,6 +1149,18 @@ components:
                 type: object
                 $ref: "#/components/schemas/MusicLikes"
   requestBodies:
+    UpdateAlbum:
+      description: "For PATCH /album/{albumID}"
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              cover:
+                type: string
+                format: binary
     PlaylistUpdate:
       description: "Fpr PATCH /playlist/{playlistID}"
       content:

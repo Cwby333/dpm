@@ -163,6 +163,16 @@ type GetAlbumMyParams struct {
 	AccessToken string `form:"Access-Token" json:"Access-Token"`
 }
 
+// DeleteAlbumAlbumIDParams defines parameters for DeleteAlbumAlbumID.
+type DeleteAlbumAlbumIDParams struct {
+	AccessToken string `form:"Access-Token" json:"Access-Token"`
+}
+
+// GetAlbumIDParams defines parameters for GetAlbumID.
+type GetAlbumIDParams struct {
+	AccessToken *string `form:"Access-Token,omitempty" json:"Access-Token,omitempty"`
+}
+
 // DeleteFavorJSONBody defines parameters for DeleteFavor.
 type DeleteFavorJSONBody struct {
 	MusicID string `json:"musicID"`
@@ -337,8 +347,11 @@ type ServerInterface interface {
 	// (GET /album/my)
 	GetAlbumMy(w http.ResponseWriter, r *http.Request, params GetAlbumMyParams)
 
+	// (DELETE /album/{albumID})
+	DeleteAlbumAlbumID(w http.ResponseWriter, r *http.Request, albumID string, params DeleteAlbumAlbumIDParams)
+
 	// (GET /album/{albumID})
-	GetAlbumID(w http.ResponseWriter, r *http.Request, albumID string)
+	GetAlbumID(w http.ResponseWriter, r *http.Request, albumID string, params GetAlbumIDParams)
 
 	// (DELETE /favor)
 	DeleteFavor(w http.ResponseWriter, r *http.Request, params DeleteFavorParams)
@@ -476,6 +489,52 @@ func (siw *ServerInterfaceWrapper) GetAlbumMy(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteAlbumAlbumID operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAlbumAlbumID(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "albumID" -------------
+	var albumID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "albumID", r.PathValue("albumID"), &albumID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "albumID", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteAlbumAlbumIDParams
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = value
+
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
+			return
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAlbumAlbumID(w, r, albumID, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetAlbumID operation middleware
 func (siw *ServerInterfaceWrapper) GetAlbumID(w http.ResponseWriter, r *http.Request) {
 
@@ -490,8 +549,26 @@ func (siw *ServerInterfaceWrapper) GetAlbumID(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAlbumIDParams
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: false})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = &value
+
+		}
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetAlbumID(w, r, albumID)
+		siw.Handler.GetAlbumID(w, r, albumID, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1456,6 +1533,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc("GET "+options.BaseURL+"/album", wrapper.GetAlbums)
 	m.HandleFunc("GET "+options.BaseURL+"/album/my", wrapper.GetAlbumMy)
+	m.HandleFunc("DELETE "+options.BaseURL+"/album/{albumID}", wrapper.DeleteAlbumAlbumID)
 	m.HandleFunc("GET "+options.BaseURL+"/album/{albumID}", wrapper.GetAlbumID)
 	m.HandleFunc("DELETE "+options.BaseURL+"/favor", wrapper.DeleteFavor)
 	m.HandleFunc("GET "+options.BaseURL+"/favor", wrapper.GetFavor)
@@ -1568,15 +1646,44 @@ func (response GetAlbumMy500Response) VisitGetAlbumMyResponse(w http.ResponseWri
 	return nil
 }
 
+type DeleteAlbumAlbumIDRequestObject struct {
+	AlbumID string `json:"albumID"`
+	Params  DeleteAlbumAlbumIDParams
+}
+
+type DeleteAlbumAlbumIDResponseObject interface {
+	VisitDeleteAlbumAlbumIDResponse(w http.ResponseWriter) error
+}
+
+type DeleteAlbumAlbumID200Response struct {
+}
+
+func (response DeleteAlbumAlbumID200Response) VisitDeleteAlbumAlbumIDResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type DeleteAlbumAlbumID500Response struct {
+}
+
+func (response DeleteAlbumAlbumID500Response) VisitDeleteAlbumAlbumIDResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
 type GetAlbumIDRequestObject struct {
 	AlbumID string `json:"albumID"`
+	Params  GetAlbumIDParams
 }
 
 type GetAlbumIDResponseObject interface {
 	VisitGetAlbumIDResponse(w http.ResponseWriter) error
 }
 
-type GetAlbumID200JSONResponse []LikedTrack
+type GetAlbumID200JSONResponse struct {
+	AvailableUpdate *bool         `json:"available_update,omitempty"`
+	Tracks          *[]LikedTrack `json:"tracks,omitempty"`
+}
 
 func (response GetAlbumID200JSONResponse) VisitGetAlbumIDResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2312,6 +2419,9 @@ type StrictServerInterface interface {
 	// (GET /album/my)
 	GetAlbumMy(ctx context.Context, request GetAlbumMyRequestObject) (GetAlbumMyResponseObject, error)
 
+	// (DELETE /album/{albumID})
+	DeleteAlbumAlbumID(ctx context.Context, request DeleteAlbumAlbumIDRequestObject) (DeleteAlbumAlbumIDResponseObject, error)
+
 	// (GET /album/{albumID})
 	GetAlbumID(ctx context.Context, request GetAlbumIDRequestObject) (GetAlbumIDResponseObject, error)
 
@@ -2470,11 +2580,39 @@ func (sh *strictHandler) GetAlbumMy(w http.ResponseWriter, r *http.Request, para
 	}
 }
 
+// DeleteAlbumAlbumID operation middleware
+func (sh *strictHandler) DeleteAlbumAlbumID(w http.ResponseWriter, r *http.Request, albumID string, params DeleteAlbumAlbumIDParams) {
+	var request DeleteAlbumAlbumIDRequestObject
+
+	request.AlbumID = albumID
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteAlbumAlbumID(ctx, request.(DeleteAlbumAlbumIDRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteAlbumAlbumID")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteAlbumAlbumIDResponseObject); ok {
+		if err := validResponse.VisitDeleteAlbumAlbumIDResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetAlbumID operation middleware
-func (sh *strictHandler) GetAlbumID(w http.ResponseWriter, r *http.Request, albumID string) {
+func (sh *strictHandler) GetAlbumID(w http.ResponseWriter, r *http.Request, albumID string, params GetAlbumIDParams) {
 	var request GetAlbumIDRequestObject
 
 	request.AlbumID = albumID
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetAlbumID(ctx, request.(GetAlbumIDRequestObject))
@@ -3206,42 +3344,42 @@ func (sh *strictHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Request
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"FQAA//+djm2upUQAAA==",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

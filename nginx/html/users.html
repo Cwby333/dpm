@@ -95,6 +95,14 @@
 				grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 				gap: 1.5rem; margin-top: 1rem;
 			}
+			.search-input {
+				width: 100%; padding: 0.75rem 1rem; margin: 1rem 0;
+				border: 2px solid #e2e8f0; border-radius: 10px;
+				font-size: 1rem; background: white; color: #333;
+				transition: border-color 0.3s ease; outline: none;
+			}
+			.search-input:focus { border-color: #667eea; }
+			.search-input::placeholder { color: #aaa; }
 			.user-card {
 				background: white; border-radius: 12px; padding: 2rem;
 				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
@@ -244,6 +252,8 @@
 				<span id="usersCount">0 пользователей</span>
 			</div>
 
+			<input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск пользователей..." oninput="filterUsers()">
+
 			<div class="loading-container" id="loadingContainer">
 				<div class="loading-spinner"></div>
 				<p>Загрузка пользователей...</p>
@@ -275,6 +285,7 @@
 			const apiBaseUrl = 'https://172.17.110.58:443'
 			let users = []
 			let isLoading = false
+			let searchQuery = ''
 
 			const loadingContainer = document.getElementById('loadingContainer')
 			const usersContainer = document.getElementById('usersContainer')
@@ -282,6 +293,7 @@
 			const statusDot = document.getElementById('statusDot')
 			const statusText = document.getElementById('statusText')
 			const usersCount = document.getElementById('usersCount')
+			const searchInput = document.getElementById('searchInput')
 
 			async function fetchUsers() {
 				if (isLoading) return
@@ -309,6 +321,8 @@
 
 					updateStatus('success', 'Пользователи загружены')
 					usersCount.textContent = `${users.length} пользователей`
+					if (searchInput) searchInput.value = ''
+					searchQuery = ''
 					renderUsers()
 				} catch (error) {
 					console.error('Ошибка загрузки:', error)
@@ -319,13 +333,22 @@
 				}
 			}
 
+			function filterUsers() {
+				searchQuery = searchInput ? searchInput.value.trim().toLowerCase() : ''
+				renderUsers()
+			}
+
 			function renderUsers() {
-				if (users.length === 0) {
+				const filtered = searchQuery
+					? users.filter(u => u.username && u.username.toLowerCase().includes(searchQuery))
+					: users
+
+				if (filtered.length === 0) {
 					usersContainer.innerHTML = `
 						<div class="empty-state">
 							<div class="empty-state-icon">👥</div>
-							<h3>Пользователи не найдены</h3>
-							<p>Пока нет пользователей с публичными профилями</p>
+							<h3>${users.length === 0 ? 'Пользователи не найдены' : 'Ничего не найдено'}</h3>
+							<p>${users.length === 0 ? 'Пока нет пользователей с публичными профилями' : 'Попробуйте изменить запрос'}</p>
 						</div>
 					`
 					return
@@ -333,7 +356,7 @@
 
 				usersContainer.innerHTML = `
 					<div class="users-grid">
-						${users.map(user => {
+						${filtered.map(user => {
 							const initial = (user.username || '?')[0].toUpperCase()
 							return `
 								<div class="user-card" onclick="window.location.href='user.html?id=${encodeURIComponent(user.id || '')}'" style="cursor:pointer;">

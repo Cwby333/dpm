@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"dpm/internal/models"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -23,6 +24,7 @@ type AlbumRepo interface {
 	AddMusicToAlbum(ctx context.Context, albumID string, musicID string) error
 	GetUploadedByUserAlbums(ctx context.Context, id string) ([]models.Album, error)
 	CreateMusic(ctx context.Context, product models.Music) error
+	UpdateAlbum(ctx context.Context, album models.Album) (error)
 }
 
 type AlbumsService struct {
@@ -59,10 +61,19 @@ func (s *AlbumsService) GetAlbum(ctx context.Context, id string) (models.Album, 
 	return a, nil
 }
 
-func (s *AlbumsService) DeleteAlbum(ctx context.Context, id string) error {
+func (s *AlbumsService) DeleteAlbum(ctx context.Context, id string, userID string) error {
 	const op = "./internal/services/album.go.CreateAlbum()"
 
-	err := s.repo.DeleteAlbum(ctx, id)
+	a, err := s.repo.GetAlbum(ctx, id)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if a.UploaderID == userID {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	err = s.repo.DeleteAlbum(ctx, id)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -248,4 +259,42 @@ func (s *AlbumsService) GetUploadedByUserAlbums(ctx context.Context, id string) 
 	}
 
 	return a, nil
+}
+
+func (s *AlbumsService) UpdateAlbum(ctx context.Context, album models.Album, coverData []byte, ctt string, updaterID string) (error) {
+	const op = "./internal/services/album.go.UpdateAlbum()"
+
+	a, err := s.repo.GetAlbum(ctx, album.ID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if a.UploaderID != updaterID {
+		return fmt.Errorf("%s: %w", op, errors.New("UpdateAlbum forbidden"))
+	}
+
+	coverKey := album.ID + "-albumImage"
+
+	if len(coverData) > 0 {
+		err := s.s3.UploadObject(ctx, coverKey, coverData, ctt)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+	}
+
+	cover := ""
+	if len(coverData) > 0 {
+		cover = coverKey
+	}
+
+	album.Cover = cover
+
+	err = s.repo.UpdateAlbum(ctx, album)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	
+
+	return nil
 }

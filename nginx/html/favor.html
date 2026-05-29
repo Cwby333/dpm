@@ -856,6 +856,11 @@
             return div.innerHTML;
         }
 
+        function attrEscape(text) {
+            if (!text) return '';
+            return text.replace(/'/g, "%27").replace(/\\/g, "\\\\").replace(/\n/g, "\\n");
+        }
+
         function renderUnauthorizedState() {
             favorContainer.innerHTML = `
                 <div class="empty-state">
@@ -891,11 +896,13 @@
                 const likes = music.likes || item.likes || 0;
                 const duration = music.duration_seconds || item.duration_seconds || 0;
                 const songUrl = music.song_url || item.song_url || '';
+                const coverUrl = music.music_cover || item.music_cover || '';
+                const coverStyle = coverUrl ? `background-image: url('${attrEscape(coverUrl)}'); background-size: cover; background-position: center;` : '';
                 
                 return `
                     <div class="favor-card">
-                        <div class="favor-cover" onclick="window.location.href='music-id.html?id=${musicId}'">
-                            <span>🎵</span>
+                        <div class="favor-cover" onclick="window.location.href='music-id.html?id=${musicId}'" style="${coverStyle}">
+                            ${coverUrl ? '' : '<span>🎵</span>'}
                             <div class="play-overlay">
                                 <div class="play-button">▶️</div>
                             </div>

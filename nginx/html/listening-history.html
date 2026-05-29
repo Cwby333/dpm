@@ -927,6 +927,11 @@ async function removeFromHistory(musicId, musicName, listeningDate) {
             return div.innerHTML;
         }
 
+        function attrEscape(text) {
+            if (!text) return '';
+            return text.replace(/'/g, "%27").replace(/\\/g, "\\\\").replace(/\n/g, "\\n");
+        }
+
         function renderUnauthorizedState() {
             historyContainer.innerHTML = `
                 <div class="empty-state">
@@ -969,12 +974,14 @@ async function removeFromHistory(musicId, musicName, listeningDate) {
                 const likes = item.music_likes || 0;
                 const duration = item.music_duration || 0;
                 const listeningDate = item.listening_date || new Date().toISOString();
+                const coverUrl = item.music_cover || '';
+                const coverStyle = coverUrl ? `background-image: url('${attrEscape(coverUrl)}'); background-size: cover; background-position: center;` : '';
                 
                 return `
                     <div class="history-item">
                         <div class="history-item-info">
-                            <div class="history-item-image" onclick="window.location.href='music-id.html?id=${musicId}'">
-                                <span>🎵</span>
+                            <div class="history-item-image" onclick="window.location.href='music-id.html?id=${musicId}'" style="${coverStyle}">
+                                ${coverUrl ? '' : '<span>🎵</span>'}
                             </div>
                             <div class="history-item-details">
                                 <h4 onclick="window.location.href='music-id.html?id=${musicId}'">${escapeHtml(musicName)}</h4>
