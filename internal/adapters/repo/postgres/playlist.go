@@ -200,11 +200,28 @@ func (pg *Postgres) AddMusicToPlaylist(ctx context.Context, playlistID string, m
 func (pg *Postgres) UpdatePlaylist(ctx context.Context, playlist models.PlaylistUpdate) (error) {
 	const op = "./internal/adapters/repo/postgres/playlist.go.UpdatePlaylist()"
 
+	q := "SELECT name, private, cover FROM playlists WHERE id = $1"
+	rows, err := pg.pool.Query(ctx, q, playlist.ID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	name := ""
+	cover := ""
+	private := false
+	for rows.Next() {
+		err = rows.Scan(&name, &private, &cover)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+	}
+
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 	var sql sq.UpdateBuilder
-	if playlist.Name != nil {
-		sql = psql.Update("playlists").Set("name", playlist.Name)
+	sql = psql.Update("playlists")
+	if playlist.Name != nil && *playlist.Name != "" && *playlist.Name != name {
+		sql = sql.Set("name", playlist.Name)
 	}
 
 	if playlist.Cover != nil {
@@ -217,14 +234,14 @@ func (pg *Postgres) UpdatePlaylist(ctx context.Context, playlist models.Playlist
 
 	sql = sql.Where("id = ?", playlist.ID)
 
-	q, args, err := sql.ToSql()
+	q2, args, err := sql.ToSql()
 	if err != nil {
 		return fmt.Errorf("%s: Query %w", op, err)
 	}
 	slog.Info(fmt.Sprint(args))
-	slog.Info(q)
+	slog.Info(q2)
 
-	_, err = pg.pool.Exec(ctx, q, args...)
+	_, err = pg.pool.Exec(ctx, q2, args...)
 	if err != nil {
 		return fmt.Errorf("%s: Exec %w", op, err)
 	}

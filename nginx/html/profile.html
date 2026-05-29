@@ -604,6 +604,78 @@
     color: #667eea;
     margin-top: 0.25rem;
 }
+
+.tracks-section {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    margin-top: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+.tracks-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+.tracks-list { display: flex; flex-direction: column; gap: 0.75rem; }
+.track-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    background: #f8f9ff;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.track-card:hover {
+    background: #eef0ff;
+    transform: translateX(4px);
+}
+.track-index {
+    width: 28px;
+    text-align: center;
+    font-weight: 600;
+    color: #999;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+.track-cover-small {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #e0e5ff 0%, #d1d5f0 100%);
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+}
+.track-info { flex: 1; min-width: 0; }
+.track-name { font-weight: 600; color: #333; margin-bottom: 0.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.track-artist { font-size: 0.85rem; color: #667eea; }
+.track-meta {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    color: #666;
+}
+.track-meta a {
+    text-decoration: none;
+    color: #667eea;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+.track-meta a:hover {
+    background: rgba(102, 126, 234, 0.1);
+}
+.track-likes { color: #e53e3e; }
+@media (max-width: 797px) {
+    .track-card { flex-wrap: wrap; }
+    .track-meta { width: 100%; justify-content: flex-end; }
+}
 </style>
 </head>
 <body>
@@ -775,6 +847,7 @@
 
                 if (profileData && profileData.id) {
                     fetchMyAlbums();
+                    fetchMyMusic();
                 }
 
                 updateStatus('success', 'Профиль загружен');
@@ -884,6 +957,7 @@
                         </div>
                         <div class="action-buttons">
                             <a href="/music.html" class="action-btn action-btn-primary">🎵 Перейти к музыке</a>
+                            <a href="/playlists.html" class="action-btn action-btn-secondary">📋 Мои плейлисты</a>
                             <a href="/favor.html" class="action-btn action-btn-secondary">⭐ Моё избранное</a>
                             <a href="/likes.html" class="action-btn action-btn-secondary">❤️ Понравившиеся</a>
                             <button class="action-btn action-btn-logout" onclick="logout()">🚪 Выйти</button>
@@ -932,6 +1006,88 @@
                 profileContainer.appendChild(section);
             } catch (e) {
                 console.error('Ошибка загрузки моих альбомов:', e);
+            }
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        async function fetchMyMusic() {
+            const userId = profileData && profileData.id;
+            if (!userId) return;
+
+            try {
+                const response = await fetch(`${apiBaseUrl}/music/my`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'include',
+                });
+                if (!response.ok) return;
+
+                const data = await response.json();
+                let tracks = data && data.music ? data.music : (Array.isArray(data) ? data : null);
+                if (!tracks || tracks.length === 0) return;
+
+                const section = document.createElement('div');
+                section.className = 'tracks-section';
+                section.innerHTML = `
+                    <h2>🎵 Мои треки</h2>
+                    <div class="tracks-list">
+                        ${tracks.map((track, i) => {
+                            const coverStyle = track.music_cover
+                                ? `background-image: url('${attrEscape(track.music_cover)}')`
+                                : '';
+                            const name = escapeHtml(track.name || 'Без названия');
+                            const duration = formatDuration(track.duration_seconds || 0);
+                            return `
+                                <div class="track-card" onclick="playTrackList(${i})">
+                                    <div class="track-index">${i + 1}</div>
+                                    <div class="track-cover-small" style="${coverStyle}"></div>
+                                    <div class="track-info">
+                                        <div class="track-name">${name}</div>
+                                        <div class="track-artist">${escapeHtml(profileData.username || '')}</div>
+                                    </div>
+                                    <div class="track-meta">
+                                        <span class="track-likes">❤️ ${track.likes || 0}</span>
+                                        <span>⏱️ ${duration}</span>
+                                        <a href="music-id.html?id=${encodeURIComponent(track.id || '')}" onclick="event.stopPropagation()">🔗</a>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                profileContainer.appendChild(section);
+
+                // Store tracks for playTrackList
+                window._myTracks = tracks;
+            } catch (e) {
+                console.error('Ошибка загрузки моих треков:', e);
+            }
+        }
+
+        function playTrackList(startIndex) {
+            const tracks = window._myTracks;
+            if (!tracks || tracks.length === 0) return;
+
+            const playlist = tracks.map(t => ({
+                musicId: t.id,
+                musicName: t.name || 'Без названия',
+                artistName: profileData.username || '',
+            }));
+
+            sessionStorage.setItem('albumPlaylist', JSON.stringify(playlist));
+
+            const playerUrl = `player-window.html?playlist=album&startIndex=${startIndex}`;
+
+            if (window._playerWindow && !window._playerWindow.closed) {
+                window._playerWindow.focus();
+            } else {
+                window._playerWindow = window.open(playerUrl, 'MusicPlayer', 'width=450,height=420,resizable=yes');
             }
         }
 

@@ -301,6 +301,32 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
+	h.Mux.Handle("GET /music/my", corsMiddleware(wrapGetMusicMy(strict)))
+	h.Mux.Handle("OPTIONS /music/my", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+}
+
+func wrapGetMusicMy(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapGetLikedTracks")
+			slog.Error(err.Error())
+			c = &http.Cookie{
+				Value: "",
+			}
+		} else {
+			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
+		}
+
+		strict.GetMusicMy(w, r, api.GetMusicMyParams{AccessToken: c.Value})
+	}
 }
 
 func wrapGetMyAlbums(strict api.ServerInterface) http.HandlerFunc {
@@ -1910,7 +1936,26 @@ func (h Handler) UpdatePlaylist(w http.ResponseWriter, r *http.Request) {
 		slog.Warn("playlist_name field empty")
 	}
 
-	private := r.FormValue("private") == "true"
+	privateInt := r.FormValue("private")
+	var private bool
+	n, err := strconv.Atoi(privateInt)
+	if err != nil {
+		slog.Error(fmt.Sprintf("%s: %w", op, err))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if n == 0 {
+		private = false
+	}
+	if n == 1 {
+		private = true
+	}
+	if n != 0 && n != 1 {
+		slog.Warn("UpdatePlaylist private not in (0,1)")
+		http.Error(w, errors.New("private not in (0,1)").Error(), http.StatusBadRequest)
+		return
+	}
 
 	var coverData []byte
 	coverContentType := ""
@@ -2105,4 +2150,57 @@ func (h Handler) GetAlbumID(ctx context.Context, request api.GetAlbumIDRequestOb
 	}
 
 	return api.GetAlbumID200JSONResponse(al), nil
+}
+
+func (h Handler) GetMusicMy(ctx context.Context, request api.GetMusicMyRequestObject) (api.GetMusicMyResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetMusicMy"
+
+	t := request.Params.AccessToken
+
+	if t == "" {
+		slog.Warn("GetMusicMy token empty")
+		return api.GetMusicMy500Response{}, errors.New("token empty")
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Error("GetMusicMy error " + err.Error())
+		return api.GetMusicMy500Response{}, err
+	}
+
+	userID := claims["sub"].(string)
+
+	p, err := h.mService.GetMusicByUploaderID(ctx, userID)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.GetMusicMy500Response{}, err
+	}
+
+	pResp := make([]api.Music, 0, len(p))
+	for i := range p {
+		urlCover := p[i].CoverURL
+		if p[i].CoverURL != "" {
+			urlCover, err = h.mService.GetPresignURLSong(ctx, p[i].CoverURL)
+			if err != nil {
+				slog.Error(err.Error())
+				return api.GetMusicMy500Response{}, fmt.Errorf("%s: %w", op, err)
+			}
+		}
+
+		pResp = append(pResp, api.Music{
+			Id:              p[i].ID,
+			Name:            p[i].Name,
+			UploaderId:      p[i].UploaderID,
+			Likes:           p[i].Likes,
+			DurationSeconds: p[i].DurationSec,
+			MusicCover:      &urlCover,
+			SongUrl:         p[i].SongURL,
+		})
+	}
+
+	return api.GetMusicMy200JSONResponse{
+		api.GetMusicJSONResponse{
+			Music: pResp,
+		},
+	}, nil
 }

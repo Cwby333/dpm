@@ -21,6 +21,7 @@ type RepoMusic interface {
 	GetMusic(ctx context.Context, id string, userID string) (models.Music, models.Like, error)
 	GetAllMusic(ctx context.Context, u models.User) ([]models.Music, []models.Like, error)
 	GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, userID string) ([]models.Music, []models.Like, error)
+	GetMusicByUploaderID(ctx context.Context, id string) ([]models.Music, error)
 }
 
 type S3 interface {
@@ -173,4 +174,15 @@ func (s *MusicService) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery
 	}
 
 	return mu, l, nil
+}
+
+func (s *MusicService) GetMusicByUploaderID(ctx context.Context, id string) ([]models.Music, error) {
+	const op = "./internal/services/music.go.GetMusicByUploaderID"
+
+	m, err := s.repo.GetMusicByUploaderID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return m, nil
 }

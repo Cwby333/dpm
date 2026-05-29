@@ -264,3 +264,25 @@ func (p *Postgres) GetAllMusic(ctx context.Context, u models.User) ([]models.Mus
 
 	return pSlice, lSlice, nil
 }
+
+func (p *Postgres) GetMusicByUploaderID(ctx context.Context, id string) ([]models.Music, error) {
+	const op = "./internal/adapters/repo/postgres/music.go.GetMusicByUploaderID"
+
+	q := "SELECT id, uploader_id, name, likes, duration_seconds, music_cover, song_url FROM music WHERE uploader_id = $1"
+	rows, err := p.pool.Query(ctx, q, id)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	m, err := pgx.CollectRows(rows, pgx.RowToStructByName[Music])
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	mr := make([]models.Music, 0, len(m))
+	for i := range m {
+		mr = append(mr, MusicPgToMusic(m[i]))
+	}
+
+	return mr, nil
+}

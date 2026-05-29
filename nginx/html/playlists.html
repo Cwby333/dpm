@@ -354,7 +354,7 @@
 						${playlists.map(pl => {
 							const isPrivate = pl.private === true || pl.private === 'true'
 							return `
-								<div class="playlist-card" onclick="window.location.href='playlist.html?id=${encodeURIComponent(pl.id || '')}&name=${encodeURIComponent(pl.name || 'Без названия')}&uploader=${encodeURIComponent(pl.username || pl.uploader_id || '')}&cover=${encodeURIComponent(pl.cover || '')}&private=${encodeURIComponent(pl.private || '')}'">
+								<div class="playlist-card" onclick="window.location.href='playlist.html?id=${encodeURIComponent(pl.id || '')}&name=${encodeURIComponent(pl.name || 'Без названия')}&uploader=${encodeURIComponent(pl.username || pl.uploader_id || '')}&cover=${encodeURIComponent(pl.cover || '')}&private=${encodeURIComponent(pl.private ? 'true' : 'false')}'">
 									<div class="playlist-cover" style="${pl.cover ? `background-image: url('${attrEscape(pl.cover)}'); background-size: cover; background-position: center;` : ''}">${pl.cover ? '' : '📋'}</div>
 									<div class="playlist-info">
 										<div class="playlist-name">${escapeHtml(pl.name || 'Без названия')}</div>

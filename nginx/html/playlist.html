@@ -661,16 +661,19 @@
 				const coverFile = document.getElementById('editCover').files[0]
 				const errorEl = document.getElementById('editError')
 
-				if (!name && !coverFile && isPrivate === (playlistPrivateParam === 'true')) {
+				const nameChanged = name && name !== playlistNameParam
+				const coverChanged = !!coverFile
+				const privateChanged = isPrivate !== (playlistPrivateParam === 'true')
+				if (!nameChanged && !coverChanged && !privateChanged) {
 					errorEl.textContent = 'Измените хотя бы одно поле'
 					errorEl.style.display = 'block'
 					return
 				}
 
 				const fd = new FormData()
-				if (name && name !== playlistNameParam) fd.append('name', name)
-				if (coverFile) fd.append('cover', coverFile)
-				if (isPrivate !== (playlistPrivateParam === 'true')) fd.append('private', String(isPrivate))
+				if (nameChanged) fd.append('name', name)
+				if (coverChanged) fd.append('cover', coverFile)
+				fd.append('private', isPrivate ? '1' : '0')
 
 				try {
 					const resp = await fetch(`${apiBaseUrl}/playlist/${encodeURIComponent(playlistId)}`, {
