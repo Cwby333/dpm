@@ -18,6 +18,7 @@ type FavorResponseDB struct {
 	UserUsername         string  `db:"username"`
 	MusicLikes           int     `db:"likes"`
 	MusicDurationSeconds int     `db:"dur_sec"`
+	MusicListeningCount int `db:"lis_count"`
 }
 
 func FavorDBToModel(lhdb FavorResponseDB) models.ListeningHistoryResponse {
@@ -39,6 +40,7 @@ func FavorDBToModel(lhdb FavorResponseDB) models.ListeningHistoryResponse {
 		UserUsername:         lhdb.UserUsername,
 		MusicLikes:           lhdb.MusicLikes,
 		MusicDurationSeconds: lhdb.MusicDurationSeconds,
+		MusicListeningCount:        lhdb.MusicListeningCount,
 	}
 }
 
@@ -89,7 +91,7 @@ func (p *Postgres) DeleteFavor(ctx context.Context, lhi models.ListeningHistory)
 func (p *Postgres) ReadFavor(ctx context.Context, lhi models.ListeningHistory) ([]models.ListeningHistoryResponse, error) {
 	const op = "./internal/adapters/repo/postgres/favor.go.ReadFavor()"
 
-	q := "SELECT m.id AS music_id, m.name AS music_name, m.music_cover AS music_cover, m.song_url AS song_url, m.uploader_id AS uploader_id, u.username AS username, m.likes AS likes, m.duration_seconds AS dur_sec FROM music m JOIN favor lh ON m.id = lh.music_id JOIN users u ON u.id = lh.user_id WHERE lh.user_id = $1"
+	q := "SELECT m.id AS music_id, m.name AS music_name, m.music_cover AS music_cover, m.song_url AS song_url, m.uploader_id AS uploader_id, u.username AS username, m.likes AS likes, m.duration_seconds AS dur_sec, m.listening_count AS lis_count FROM music m JOIN favor lh ON m.id = lh.music_id JOIN users u ON u.id = lh.user_id WHERE lh.user_id = $1"
 	rows, err := p.pool.Query(ctx, q, lhi.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: Query: %w", op, err)

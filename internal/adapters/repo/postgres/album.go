@@ -135,7 +135,7 @@ func (pg *Postgres) GetAlbum(ctx context.Context, id string) (models.Album, erro
 func (pg *Postgres) GetAlbumsMusic(ctx context.Context, id string) ([]models.LikedTrack, error) {
 	const op = "./internal/adapters/repo/postgres/album.go.GetAlbumsMusic()"
 
-	q := "SELECT m.id AS music_id, m.name AS music_name, m.uploader_id, u.username, m.likes, m.duration_seconds AS dur_sec, m.song_url, m.music_cover FROM music m JOIN albums_music am ON m.id = am.music_id JOIN users u ON u.id = m.uploader_id WHERE am.album_id = $1"
+	q := "SELECT m.id AS music_id, m.name AS music_name, m.uploader_id, u.username, m.likes, m.duration_seconds AS dur_sec, m.song_url, m.music_cover, m.listening_count AS lis_count FROM music m JOIN albums_music am ON m.id = am.music_id JOIN users u ON u.id = m.uploader_id WHERE am.album_id = $1"
 	rows, err := pg.pool.Query(ctx, q, id)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
@@ -258,6 +258,32 @@ func (pg *Postgres) UpdateAlbum(ctx context.Context, album models.Album) (error)
 
 	if album.Cover != "" {
 		sql = sql.Set("cover", album.Cover)
+		slog.Info("albumCover: " + album.Cover)
+
+		q := "SELECT music_id FROM albums_music WHERE album_id = $1"
+		rows, err := pg.pool.Query(ctx, q, album.ID)
+		if err != nil {
+			return fmt.Errorf("%s: SELECT music_id ... %w", op, err)
+		}
+
+		musicsIDS := make([]string, 0)
+		for rows.Next() {
+			musicID := ""
+			err = rows.Scan(&musicID)
+			if err != nil {
+				return fmt.Errorf("%s: %w", op, err)
+			}
+
+			musicsIDS = append(musicsIDS, musicID)
+		}
+		
+		q = "UPDATE music SET music_cover = $1 WHERE id = $2"
+		for i := range musicsIDS {
+			_, err = pg.pool.Exec(ctx, q, album.Cover, musicsIDS[i])
+			if err != nil {
+				return fmt.Errorf("%s: UPDATE music SET cover ... %w", op, err)
+			}
+		}
 	}
 
 	sql.Where("id = ?", album.ID)
@@ -272,31 +298,6 @@ func (pg *Postgres) UpdateAlbum(ctx context.Context, album models.Album) (error)
 	_, err = pg.pool.Exec(ctx, q, args...)
 	if err != nil {
 		return fmt.Errorf("%s: EXEC %w", op, err)
-	}
-
-	q = "SELECT music_id FROM albums_music WHERE album_id = $1"
-	rows, err := pg.pool.Query(ctx, q, album.ID)
-	if err != nil {
-		return fmt.Errorf("%s: SELECT music_id ... %w", op, err)
-	}
-
-	musicsIDS := make([]string, 0)
-	for rows.Next() {
-		musicID := ""
-		err = rows.Scan(&musicID)
-		if err != nil {
-			return fmt.Errorf("%s: %w", op, err)
-		}
-
-		musicsIDS = append(musicsIDS, musicID)
-	}
-	
-	q = "UPDATE music SET music_cover = $1 WHERE id = $2"
-	for i := range musicsIDS {
-		_, err = pg.pool.Exec(ctx, q, album.Cover, musicsIDS[i])
-		if err != nil {
-			return fmt.Errorf("%s: UPDATE music SET cover ... %w", op, err)
-		}
 	}
 
 	return nil

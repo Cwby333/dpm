@@ -285,16 +285,13 @@ func (s *AlbumsService) UpdateAlbum(ctx context.Context, album models.Album, cov
 	cover := ""
 	if len(coverData) > 0 {
 		cover = coverKey
+		album.Cover = cover
 	}
-
-	album.Cover = cover
 
 	err = s.repo.UpdateAlbum(ctx, album)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
-
-	
 
 	return nil
 }

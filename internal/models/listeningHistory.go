@@ -19,4 +19,5 @@ type ListeningHistoryResponse struct {
 	MusicLikes           int
 	MusicDurationSeconds int
 	ListeningDate        time.Time
+	MusicListeningCount int
 }

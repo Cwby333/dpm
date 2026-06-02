@@ -1292,6 +1292,7 @@
                             <span class="likes ${isLiked ? 'liked' : ''}" onclick="toggleLike('${musicId}', '${musicName.replace(/'/g, "\\'")}')">
                                 ❤️ ${likesCount}
                             </span>
+                            <span class="duration">🎧 ${music.listening_count || 0}</span>
                             <span class="duration">⏱️ ${duration}</span>
                         </div>
                         <div class="music-actions">

@@ -202,24 +202,24 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .history-header {
-            display: grid;
-            grid-template-columns: 2.5fr 1.2fr 1fr 1fr 0.8fr 0.5fr;
-            background: #f8f9fa;
-            padding: 1rem 1.5rem;
-            font-weight: 600;
-            color: #555;
-            border-bottom: 2px solid #e2e8f0;
-        }
+            .history-header {
+                display: grid;
+                grid-template-columns: 2.5fr 1.2fr 1fr 1fr 0.8fr 0.8fr 0.5fr;
+                background: #f8f9fa;
+                padding: 1rem 1.5rem;
+                font-weight: 600;
+                color: #555;
+                border-bottom: 2px solid #e2e8f0;
+            }
 
-        .history-item {
-            display: grid;
-            grid-template-columns: 2.5fr 1.2fr 1fr 1fr 0.8fr 0.5fr;
-            align-items: center;
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            transition: background 0.3s ease;
-        }
+            .history-item {
+                display: grid;
+                grid-template-columns: 2.5fr 1.2fr 1fr 1fr 0.8fr 0.8fr 0.5fr;
+                align-items: center;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid #e2e8f0;
+                transition: background 0.3s ease;
+            }
 
         .history-item:hover {
             background: #f8f9fa;
@@ -562,7 +562,7 @@
                 grid-column: 1;
             }
 
-            .history-item-date, .history-item-duration, .history-item-likes, .history-item-actions {
+            .history-item-date, .history-item-duration, .history-item-likes, .history-item-listening, .history-item-actions {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -581,8 +581,13 @@
                 color: #555;
             }
 
+            .history-item-listening::before {
+                content: "Прослушивания:";
+                font-weight: 600;
+                color: #555;
+            }
+
             .history-item-likes::before {
-                content: "Лайки:";
                 font-weight: 600;
                 color: #555;
             }
@@ -964,6 +969,7 @@ async function removeFromHistory(musicId, musicName, listeningDate) {
                 <span>Дата прослушивания</span>
                 <span>Длительность</span>
                 <span>Лайки</span>
+                <span>Прослушивания</span>
                 <span>Действия</span>
                 <span></span>
             </div>
@@ -971,8 +977,9 @@ async function removeFromHistory(musicId, musicName, listeningDate) {
                 const musicId = item.music_id;
                 const musicName = item.music_name || 'Без названия';
                 const artist = item.uploader_username || item.uploader_id || 'Неизвестный исполнитель';
-                const likes = item.music_likes || 0;
-                const duration = item.music_duration || 0;
+                            const likes = item.music_likes || 0;
+                            const listeningCount = item.listening_count || 0;
+                            const duration = item.music_duration || 0;
                 const listeningDate = item.listening_date || new Date().toISOString();
                 const coverUrl = item.music_cover || '';
                 const coverStyle = coverUrl ? `background-image: url('${attrEscape(coverUrl)}'); background-size: cover; background-position: center;` : '';
@@ -991,6 +998,7 @@ async function removeFromHistory(musicId, musicName, listeningDate) {
                         <div class="history-item-date">${formatDate(listeningDate)}</div>
                         <div class="history-item-duration">${formatDuration(duration)}</div>
                         <div class="history-item-likes">❤️ ${likes}</div>
+                        <div class="history-item-listening">🎧 ${listeningCount}</div>
                         <div class="history-item-actions">
                             <button class="remove-btn" onclick="removeFromHistory('${musicId}', '${escapeHtml(musicName).replace(/'/g, "\\'")}', '${listeningDate}')">✕</button>
                         </div>

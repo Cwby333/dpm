@@ -490,10 +490,11 @@
 										<div class="track-name">${escapeHtml(track.music_name || 'Без названия')}</div>
 										<div class="track-artist">${escapeHtml(track.uploader_username || 'Неизвестный')}</div>
 									</div>
-									<div class="track-meta">
-										<span class="track-likes">❤️ ${track.music_likes || 0}</span>
-										<span>⏱️ ${duration}</span>
-									</div>
+								<div class="track-meta">
+									<span class="track-likes">❤️ ${track.music_likes || 0}</span>
+									<span>🎧 ${track.music_listening_count || track.listening_count || 0}</span>
+									<span>⏱️ ${duration}</span>
+								</div>
 								</div>
 							`
 						}).join('')}

@@ -14,4 +14,5 @@ type LikedTrack struct {
 	UserUsername         string
 	MusicLikes           int
 	MusicDurationSeconds int
+	MusicListeningCount int
 }

@@ -1360,6 +1360,8 @@ components:
           type: string
         music_likes:
           type: integer
+        listening_count:
+          type: integer
         music_duration:
           type: integer
         song_url:
@@ -1379,6 +1381,8 @@ components:
         uploader_id:
           type: string
         likes:
+          type: integer
+        listening_count:
           type: integer
         duration_seconds:
           type: integer
@@ -1412,6 +1416,8 @@ components:
           type: string
         music_likes:
           type: integer
+        listening_count:
+          type: integer
         music_duration:
           type: integer
         song_url:
@@ -1441,6 +1447,8 @@ components:
           type: string
         song_url:
           type: string
+        listening_count:
+          type: integer
       required:
         - id
         - name

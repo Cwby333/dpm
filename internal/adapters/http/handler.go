@@ -251,7 +251,7 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	h.Mux.Handle("OPTIONS /album/{albumID}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
@@ -856,6 +856,7 @@ func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequest
 			DurationSeconds: p[i].DurationSec,
 			MusicCover:      &urlCover,
 			SongUrl:         p[i].SongURL,
+			ListeningCount:  &p[i].ListeningCount,
 		})
 	}
 
@@ -921,15 +922,16 @@ func (h Handler) GetMusic(ctx context.Context, request api.GetMusicRequestObject
 
 	return api.GetMusic200JSONResponse{
 		GetMusicResponseJSONResponse: api.GetMusicResponseJSONResponse{
-			Music: api.Music{
-				Id:              product.ID,
-				UploaderId:      product.UploaderID,
-				Name:            product.Name,
-				Likes:           product.Likes,
-				DurationSeconds: product.DurationSec,
-				MusicCover:      &urlCover,
-				SongUrl:         product.SongURL,
-			},
+				Music: api.Music{
+					Id:              product.ID,
+					UploaderId:      product.UploaderID,
+					Name:            product.Name,
+					Likes:           product.Likes,
+					DurationSeconds: product.DurationSec,
+					MusicCover:      &urlCover,
+					SongUrl:         product.SongURL,
+					ListeningCount:  &product.ListeningCount,
+				},
 			MusicFavor: &api.MusicLikes{
 				MusicId: &like.MusicID,
 			},
@@ -1019,6 +1021,7 @@ func (h Handler) GetLH(ctx context.Context, request api.GetLHRequestObject) (api
 			UploaderId:       &lh[i].MusicUploaderID,
 			UploaderUsername: &lh[i].UserUsername,
 			ListeningDate:    &lh[i].ListeningDate,
+			ListeningCount:  &lh[i].MusicListeningCount,
 		})
 	}
 
@@ -1129,12 +1132,13 @@ func (h Handler) GetFavor(ctx context.Context, request api.GetFavorRequestObject
 		}
 
 		fAPI = append(fAPI, api.Favor{
-			Id:         favor[i].MusicID,
-			Name:       favor[i].MusicName,
-			MusicCover: &favor[i].MusicCover,
-			SongUrl:    favor[i].MusicSongURL,
-			UploaderId: favor[i].MusicUploaderID,
-			Likes:      favor[i].MusicLikes,
+			Id:              favor[i].MusicID,
+			Name:            favor[i].MusicName,
+			MusicCover:      &favor[i].MusicCover,
+			SongUrl:         favor[i].MusicSongURL,
+			UploaderId:      favor[i].MusicUploaderID,
+			Likes:           favor[i].MusicLikes,
+			ListeningCount:  &favor[i].MusicListeningCount,
 		})
 	}
 
@@ -1232,16 +1236,18 @@ func (h Handler) GetUserProfile(ctx context.Context, request api.GetUserProfileR
 		surl := tracks[i].MusicSongURL
 		uid := tracks[i].MusicUploaderID
 		uuname := tracks[i].UserUsername
+		slog.Info(fmt.Sprintf("%s: %v", "listening_count", tracks[i].MusicListeningCount))
 		apiTracks = append(apiTracks, api.LikedTrack{
-			MusicId:          &mid,
-			MusicName:        &mname,
-			MusicCover:       &mcover,
-			MusicLikes:       &mlikes,
-			MusicDuration:    &mdur,
-			SongUrl:          &surl,
-			UploaderId:       &uid,
-			UploaderUsername: &uuname,
-		})
+				MusicId:          &mid,
+				MusicName:        &mname,
+				MusicCover:       &mcover,
+				MusicLikes:       &mlikes,
+				MusicDuration:    &mdur,
+				SongUrl:          &surl,
+				UploaderId:       &uid,
+				UploaderUsername: &uuname,
+				ListeningCount:  &tracks[i].MusicListeningCount,
+			})
 	}
 
 	return api.GetUserProfile200JSONResponse{
@@ -1465,15 +1471,16 @@ func (h Handler) GetLikes(ctx context.Context, request api.GetLikesRequestObject
 		}
 
 		lR = append(lR, api.LikedTrack{
-			MusicId:          &l[i].MusicID,
-			UploaderId:       &l[i].MusicUploaderID,
-			UploaderUsername: &l[i].UserUsername,
-			MusicName:        &l[i].MusicName,
-			MusicDuration:    &l[i].MusicDurationSeconds,
-			MusicLikes:       &l[i].MusicLikes,
-			MusicCover:       &l[i].MusicCover,
-			SongUrl:          &l[i].MusicSongURL,
-		})
+				MusicId:          &l[i].MusicID,
+				UploaderId:       &l[i].MusicUploaderID,
+				UploaderUsername: &l[i].UserUsername,
+				MusicName:        &l[i].MusicName,
+				MusicDuration:    &l[i].MusicDurationSeconds,
+				MusicLikes:       &l[i].MusicLikes,
+				MusicCover:       &l[i].MusicCover,
+				SongUrl:          &l[i].MusicSongURL,
+				ListeningCount:  &l[i].MusicListeningCount,
+			})
 	}
 
 	return api.GetLikes200JSONResponse{
@@ -2110,15 +2117,16 @@ func (h Handler) GetPlaylistTracks(ctx context.Context, request api.GetPlaylistT
 		uid := tracks[i].MusicUploaderID
 		uuname := tracks[i].UserUsername
 		respArr = append(respArr, api.LikedTrack{
-			MusicId:          &mid,
-			MusicName:        &mname,
-			MusicCover:       &mcover,
-			MusicLikes:       &mlikes,
-			MusicDuration:    &mdur,
-			SongUrl:          &surl,
-			UploaderId:       &uid,
-			UploaderUsername: &uuname,
-		})
+				MusicId:          &mid,
+				MusicName:        &mname,
+				MusicCover:       &mcover,
+				MusicLikes:       &mlikes,
+				MusicDuration:    &mdur,
+				SongUrl:          &surl,
+				UploaderId:       &uid,
+				UploaderUsername: &uuname,
+				ListeningCount:  &tracks[i].MusicListeningCount,
+			})
 	}
 
 	resp.Tracks = &respArr
@@ -2223,15 +2231,16 @@ func (h Handler) GetAlbumID(ctx context.Context, request api.GetAlbumIDRequestOb
 		}
 
 		al = append(al, api.LikedTrack{
-			MusicId: &a[i].MusicID,
-			MusicName: &a[i].MusicName,
-			UploaderId: &a[i].MusicUploaderID,
-			UploaderUsername: &a[i].UserUsername,
-			MusicLikes: &a[i].MusicLikes,
-			MusicCover: &coverURL,
-			SongUrl: &a[i].MusicSongURL,
-			MusicDuration: &a[i].MusicDurationSeconds,
-		})
+				MusicId:          &a[i].MusicID,
+				MusicName:        &a[i].MusicName,
+				UploaderId:       &a[i].MusicUploaderID,
+				UploaderUsername: &a[i].UserUsername,
+				MusicLikes:       &a[i].MusicLikes,
+				MusicCover:       &coverURL,
+				SongUrl:          &a[i].MusicSongURL,
+				MusicDuration:    &a[i].MusicDurationSeconds,
+				ListeningCount:  &a[i].MusicListeningCount,
+			})
 	}
 
 	return api.GetAlbumID200JSONResponse{
@@ -2372,14 +2381,15 @@ func (h Handler) GetMusicMy(ctx context.Context, request api.GetMusicMyRequestOb
 		}
 
 		pResp = append(pResp, api.Music{
-			Id:              p[i].ID,
-			Name:            p[i].Name,
-			UploaderId:      p[i].UploaderID,
-			Likes:           p[i].Likes,
-			DurationSeconds: p[i].DurationSec,
-			MusicCover:      &urlCover,
-			SongUrl:         p[i].SongURL,
-		})
+				Id:              p[i].ID,
+				Name:            p[i].Name,
+				UploaderId:      p[i].UploaderID,
+				Likes:           p[i].Likes,
+				DurationSeconds: p[i].DurationSec,
+				MusicCover:      &urlCover,
+				SongUrl:         p[i].SongURL,
+				ListeningCount:  &p[i].ListeningCount,
+			})
 	}
 
 	return api.GetMusicMy200JSONResponse{

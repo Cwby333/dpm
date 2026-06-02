@@ -8,6 +8,7 @@ type Music struct {
 	SongURL     string
 	Likes       int
 	DurationSec int
+	ListeningCount int
 }
 
 type MusicFilterQuery struct {

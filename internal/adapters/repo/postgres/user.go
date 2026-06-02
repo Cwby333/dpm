@@ -166,7 +166,7 @@ func (pg *Postgres) GetPublicUsers(ctx context.Context) ([]models.User, error) {
 func (pg *Postgres) GetUserTracks(ctx context.Context, userID string) ([]models.LikedTrack, error) {
 	const op = "./internal/adapters/repo/postgres/user.go.GetUserTracks()"
 
-	q := "SELECT m.id AS music_id, m.name AS music_name, m.music_cover AS music_cover, m.song_url AS song_url, m.uploader_id AS uploader_id, u.username AS username, m.likes AS likes, m.duration_seconds AS dur_sec FROM music m JOIN users u ON u.id = m.uploader_id WHERE m.uploader_id = $1"
+	q := "SELECT m.id AS music_id, m.name AS music_name, m.music_cover AS music_cover, m.song_url AS song_url, m.uploader_id AS uploader_id, u.username AS username, m.likes AS likes, m.duration_seconds AS dur_sec, m.listening_count AS lis_count FROM music m JOIN users u ON u.id = m.uploader_id WHERE m.uploader_id = $1"
 	rows, err := pg.pool.Query(ctx, q, userID)
 	if err != nil {
 		return nil, fmt.Errorf("%s %s: %w", op, q, err)
@@ -197,6 +197,7 @@ func (pg *Postgres) GetUserTracks(ctx context.Context, userID string) ([]models.
 			UserUsername:         lt[i].UserUsername,
 			MusicLikes:           lt[i].MusicLikes,
 			MusicDurationSeconds: lt[i].MusicDurationSeconds,
+			MusicListeningCount: lt[i].MusicListeningCount,
 		})
 	}
 

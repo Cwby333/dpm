@@ -137,6 +137,36 @@
 			.empty-state-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
 			.empty-state h3 { color: #333; margin-bottom: 0.5rem; }
 			.empty-state p { color: #666; }
+			.btn-danger {
+				background: #e53e3e; color: white;
+			}
+			.btn-danger:hover { background: #c53030; }
+			.modal-overlay {
+				display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+				background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center;
+				align-items: center;
+			}
+			.modal-overlay.active { display: flex; }
+			.modal-content {
+				background: white; border-radius: 16px; width: 90%; max-width: 420px;
+				max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+			}
+			.modal-header {
+				display: flex; justify-content: space-between; align-items: center;
+				padding: 1.5rem 2rem; border-bottom: 1px solid #e2e8f0;
+			}
+			.modal-header h3 { font-size: 1.3rem; color: #333; }
+			.modal-close {
+				background: none; border: none; font-size: 1.5rem; cursor: pointer;
+				color: #999; padding: 0.25rem;
+			}
+			.modal-close:hover { color: #333; }
+			.modal-body { padding: 1.5rem 2rem; }
+			.edit-field { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.35rem; }
+			.edit-field label {
+				font-size: 0.8rem; font-weight: 600; color: #666;
+				text-transform: uppercase; letter-spacing: 0.5px;
+			}
 			.footer {
 				background: #1a1a2e; color: white; padding: 3rem 2rem 1rem; margin-top: 4rem;
 			}
@@ -247,9 +277,15 @@
 					<h1 id="albumName">Загрузка...</h1>
 					<div class="album-uploader" id="albumUploader"></div>
 					<div class="album-meta" id="albumMeta"></div>
-					<div class="album-actions" style="margin-top: 1rem;">
+					<div class="album-actions" style="margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
 						<button class="btn btn-primary" id="playAllBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem;">
 							▶ Слушать все треки
+						</button>
+						<button class="btn btn-primary" id="editAlbumBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem; display:none;">
+							✏️ Редактировать
+						</button>
+						<button class="btn btn-danger" id="deleteAlbumBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem; display:none;">
+							🗑 Удалить альбом
 						</button>
 					</div>
 				</div>
@@ -266,6 +302,32 @@
 		</div>
 
 		<footer class="footer">
+
+		<div class="modal-overlay" id="editAlbumModal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3>✏️ Редактировать альбом</h3>
+					<button class="modal-close" onclick="closeEditAlbumModal()">✕</button>
+				</div>
+				<div class="modal-body">
+					<div class="edit-form">
+						<div class="edit-field">
+							<label for="editAlbumName">Название</label>
+							<input type="text" id="editAlbumName" class="modal-search" style="width:100%;padding:0.75rem 1rem;border:2px solid #e2e8f0;border-radius:10px;font-size:1rem;outline:none;">
+						</div>
+						<div class="edit-field">
+							<label for="editAlbumCover">Обложка</label>
+							<input type="file" id="editAlbumCover" accept="image/*" style="padding:0.5rem 0;font-size:0.9rem;">
+						</div>
+						<div class="edit-actions" style="display:flex;gap:0.75rem;margin-top:1rem;">
+							<button class="btn btn-primary" id="editAlbumSaveBtn" style="flex:1;">Сохранить</button>
+							<button class="btn btn-outline" onclick="closeEditAlbumModal()" style="flex:1;">Отмена</button>
+						</div>
+						<div id="editAlbumError" style="color:#e53e3e;font-size:0.85rem;margin-top:0.75rem;display:none;"></div>
+					</div>
+				</div>
+			</div>
+		</div>
 			<div class="footer-content">
 				<div class="footer-section">
 					<h4>Mute</h4>
@@ -287,6 +349,7 @@
 		<script>
 			const apiBaseUrl = 'https://172.17.110.58:443'
 			let tracks = []
+			let availableForUpdate = false
 
 			const loadingContainer = document.getElementById('loadingContainer')
 			const tracksContainer = document.getElementById('tracksContainer')
@@ -330,14 +393,18 @@
 
 					if (Array.isArray(data)) {
 						tracks = data
+						availableForUpdate = false
 					} else if (data && data.tracks && Array.isArray(data.tracks)) {
 						tracks = data.tracks
+						availableForUpdate = data.available_update === true
 					} else {
 						tracks = []
+						availableForUpdate = false
 					}
 
 					document.getElementById('albumMeta').textContent = `${tracks.length} треков`
 					renderTracks()
+					updateActionButtons()
 				} catch (error) {
 					console.error('Ошибка загрузки:', error)
 					tracksContainer.style.display = 'block'
@@ -404,6 +471,89 @@
 				return text.replace(/'/g, '&#39;').replace(/\\/g, '\\\\').replace(/\n/g, ' ')
 			}
 
+			function updateActionButtons() {
+				const show = availableForUpdate ? '' : 'none'
+				const editBtn = document.getElementById('editAlbumBtn')
+				const deleteBtn = document.getElementById('deleteAlbumBtn')
+				if (editBtn) editBtn.style.display = show
+				if (deleteBtn) deleteBtn.style.display = show
+			}
+
+			document.getElementById('deleteAlbumBtn').addEventListener('click', async function() {
+				if (!confirm('Удалить этот альбом? Это действие нельзя отменить.')) return
+				try {
+					const resp = await fetch(`${apiBaseUrl}/album/${encodeURIComponent(albumId)}`, {
+						method: 'DELETE',
+						credentials: 'include',
+					})
+					if (resp.ok) {
+						window.location.href = 'albums.html'
+					} else if (resp.status === 403) {
+						alert('Вы не можете удалить этот альбом')
+					} else {
+						alert('Ошибка при удалении альбома')
+					}
+				} catch (e) {
+					alert('Ошибка при удалении альбома')
+				}
+			})
+
+			function openEditAlbumModal() {
+				document.getElementById('editAlbumName').value = albumNameParam
+				document.getElementById('editAlbumCover').value = ''
+				document.getElementById('editAlbumError').style.display = 'none'
+				document.getElementById('editAlbumModal').classList.add('active')
+			}
+
+			function closeEditAlbumModal() {
+				document.getElementById('editAlbumModal').classList.remove('active')
+			}
+
+			document.getElementById('editAlbumSaveBtn').addEventListener('click', async function() {
+				const name = document.getElementById('editAlbumName').value.trim()
+				const coverFile = document.getElementById('editAlbumCover').files[0]
+				const errorEl = document.getElementById('editAlbumError')
+
+				const nameChanged = name && name !== albumNameParam
+				const coverChanged = !!coverFile
+				if (!nameChanged && !coverChanged) {
+					errorEl.textContent = 'Измените хотя бы одно поле'
+					errorEl.style.display = 'block'
+					return
+				}
+
+				const fd = new FormData()
+				if (nameChanged) fd.append('name', name)
+				if (coverChanged) fd.append('cover', coverFile)
+
+				try {
+					const resp = await fetch(`${apiBaseUrl}/album/${encodeURIComponent(albumId)}`, {
+						method: 'PATCH',
+						body: fd,
+						credentials: 'include',
+					})
+					if (resp.ok) {
+						location.reload()
+					} else if (resp.status === 403) {
+						errorEl.textContent = 'Вы не можете редактировать этот альбом'
+						errorEl.style.display = 'block'
+					} else {
+						const txt = await resp.text()
+						errorEl.textContent = txt || 'Ошибка при сохранении'
+						errorEl.style.display = 'block'
+					}
+				} catch (e) {
+					errorEl.textContent = 'Ошибка сети'
+					errorEl.style.display = 'block'
+				}
+			})
+
+			document.getElementById('editAlbumModal').addEventListener('click', function(e) {
+				if (e.target === this) closeEditAlbumModal()
+			})
+
+			document.getElementById('editAlbumBtn').addEventListener('click', openEditAlbumModal)
+
 			function renderTracks() {
 				if (tracks.length === 0) {
 					tracksContainer.innerHTML = `
@@ -439,10 +589,11 @@
 										<div class="track-name">${escapeHtml(track.music_name || 'Без названия')}</div>
 										<div class="track-artist">${escapeHtml(track.uploader_username || track.uploader_id || 'Неизвестный')}</div>
 									</div>
-									<div class="track-meta">
-										<span class="track-likes">❤️ ${track.music_likes || 0}</span>
-										<span>⏱️ ${duration}</span>
-									</div>
+								<div class="track-meta">
+									<span class="track-likes">❤️ ${track.music_likes || 0}</span>
+									<span>🎧 ${track.listening_count || 0}</span>
+									<span>⏱️ ${duration}</span>
+								</div>
 								</div>
 							`
 						}).join('')}

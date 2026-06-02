@@ -23,6 +23,7 @@ type LikedTrack struct {
 	UserUsername         string  `db:"username"`
 	MusicLikes           int     `db:"likes"`
 	MusicDurationSeconds int     `db:"dur_sec"`
+	MusicListeningCount int `db:"lis_count"`
 }
 
 func LikedTrackDBToLT(lhdb LikedTrack) models.LikedTrack {
@@ -44,6 +45,7 @@ func LikedTrackDBToLT(lhdb LikedTrack) models.LikedTrack {
 		UserUsername:         lhdb.UserUsername,
 		MusicLikes:           lhdb.MusicLikes,
 		MusicDurationSeconds: lhdb.MusicDurationSeconds,
+		MusicListeningCount:        lhdb.MusicListeningCount,
 	}
 }
 
@@ -131,7 +133,7 @@ func (pg *Postgres) DeleteLike(ctx context.Context, l models.Like) error {
 func (pg *Postgres) ReadLikedTracks(ctx context.Context, u models.User) ([]models.LikedTrack, error) {
 	const op = "./internal/adapters/repo/postgres/likes.go.ReadLikedTracks"
 
-	q := "SELECT m.id AS music_id, m.name AS music_name, m.music_cover AS music_cover, m.song_url AS song_url, m.uploader_id AS uploader_id, u.username AS username, m.likes AS likes, m.duration_seconds AS dur_sec FROM music m JOIN users_music_likes lh ON m.id = lh.music_id JOIN users u ON u.id = lh.user_id WHERE lh.user_id = $1"
+	q := "SELECT m.id AS music_id, m.name AS music_name, m.music_cover AS music_cover, m.song_url AS song_url, m.uploader_id AS uploader_id, u.username AS username, m.likes AS likes, m.duration_seconds AS dur_sec, m.listening_count AS lis_count FROM music m JOIN users_music_likes lh ON m.id = lh.music_id JOIN users u ON u.id = lh.user_id WHERE lh.user_id = $1"
 	rows, err := pg.pool.Query(ctx, q, u.ID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)

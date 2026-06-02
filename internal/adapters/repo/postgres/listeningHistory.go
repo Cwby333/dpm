@@ -20,6 +20,7 @@ type ListeningHistoryResponseDB struct {
 	MusicLikes           int       `db:"likes"`
 	MusicDurationSeconds int       `db:"dur_sec"`
 	ListeningDate        time.Time `db:"lis_date"`
+	MusicListeningCount int `db:"lis_count"`
 }
 
 func ListeningHistoryDBToModel(lhdb ListeningHistoryResponseDB) models.ListeningHistoryResponse {
@@ -42,6 +43,7 @@ func ListeningHistoryDBToModel(lhdb ListeningHistoryResponseDB) models.Listening
 		MusicLikes:           lhdb.MusicLikes,
 		MusicDurationSeconds: lhdb.MusicDurationSeconds,
 		ListeningDate:        lhdb.ListeningDate,
+		MusicListeningCount:        lhdb.MusicListeningCount,
 	}
 }
 
@@ -92,7 +94,7 @@ func (p *Postgres) DeleteListeningHistoryItem(ctx context.Context, lhi models.Li
 func (p *Postgres) ReadListeningHistory(ctx context.Context, lhi models.ListeningHistory) ([]models.ListeningHistoryResponse, error) {
 	const op = "./internal/adapters/repo/postgres/listeningHistory.go.ReadListeningHistory()"
 
-	q := "SELECT m.id AS music_id, m.name AS music_name, m.music_cover AS music_cover, m.song_url AS song_url, m.uploader_id AS uploader_id, u.username AS username, m.likes AS likes, m.duration_seconds AS dur_sec, lh.listening_date AS lis_date FROM music m JOIN listening_history lh ON m.id = lh.music_id JOIN users u ON u.id = lh.user_id WHERE lh.user_id = $1"
+	q := "SELECT m.id AS music_id, m.name AS music_name, m.music_cover AS music_cover, m.song_url AS song_url, m.uploader_id AS uploader_id, u.username AS username, m.likes AS likes, m.duration_seconds AS dur_sec, lh.listening_date AS lis_date, m.listening_count AS lis_count FROM music m JOIN listening_history lh ON m.id = lh.music_id JOIN users u ON u.id = lh.user_id WHERE lh.user_id = $1"
 	rows, err := p.pool.Query(ctx, q, lhi.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: Query: %w", op, err)

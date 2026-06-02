@@ -148,7 +148,7 @@ func (pg *Postgres) GetPublicPlaylistsByID(ctx context.Context, id string) ([]mo
 func (pg *Postgres) GetPlaylistMusic(ctx context.Context, id string) ([]models.LikedTrack, error) {
 	const op = "./internal/adapters/repo/postgres/playlist.go.GetPlaylistMusic"
 
-	q := "SELECT m.id AS music_id, m.name AS music_name, m.uploader_id, u.username, m.likes, m.duration_seconds AS dur_sec, m.song_url, m.music_cover FROM music m JOIN playlists_music pm ON m.id = pm.music_id JOIN users u ON u.id = m.uploader_id WHERE pm.playlist_id = $1"
+	q := "SELECT m.id AS music_id, m.name AS music_name, m.uploader_id, u.username, m.likes, m.duration_seconds AS dur_sec, m.song_url, m.music_cover, m.listening_count AS lis_count FROM music m JOIN playlists_music pm ON m.id = pm.music_id JOIN users u ON u.id = m.uploader_id WHERE pm.playlist_id = $1"
 	rows, err := pg.pool.Query(ctx, q, id)
 	if err != nil {
 		return nil, fmt.Errorf("%s: SELECT %w", op, err)

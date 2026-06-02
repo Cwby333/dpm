@@ -21,6 +21,7 @@ type Music struct {
 	DurationSeconds int     `db:"duration_seconds"`
 	Cover           *string `db:"music_cover"`
 	SongURL         *string `db:"song_url"`
+	MusicListeningCount int `db:"listening_count"`
 }
 
 func MusicPgToMusic(pdb Music) models.Music {
@@ -41,6 +42,7 @@ func MusicPgToMusic(pdb Music) models.Music {
 		UploaderID:  pdb.UploaderID,
 		CoverURL:    *pdb.Cover,
 		SongURL:     *pdb.SongURL,
+		ListeningCount: pdb.MusicListeningCount,
 	}
 
 	return p
@@ -63,7 +65,7 @@ func (p *Postgres) CreateMusic(ctx context.Context, product models.Music) error 
 func (p *Postgres) GetMusic(ctx context.Context, id string, userID string) (models.Music, models.Like, error) {
 	const op = "./internal/adapters/repo/postgres/music.go.GetMusic()"
 
-	q := "SELECT id, uploader_id, name, likes, duration_seconds, music_cover, song_url FROM music WHERE id = $1"
+	q := "SELECT id, uploader_id, name, likes, duration_seconds, music_cover, song_url, listening_count FROM music WHERE id = $1"
 	rows, err := p.pool.Query(ctx, q, id)
 	if err != nil {
 		return models.Music{}, models.Like{}, fmt.Errorf("%s SELECT ... FROM products(): %w", op, err)
@@ -113,7 +115,7 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	sql := psql.Select("id, uploader_id, name, likes, duration_seconds, music_cover, song_url").From("music")
+	sql := psql.Select("id, uploader_id, name, likes, duration_seconds, music_cover, song_url, listening_count").From("music")
 	
 	q, args, err := sql.ToSql()
 	if err != nil {
@@ -223,7 +225,7 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 func (p *Postgres) GetAllMusic(ctx context.Context, u models.User) ([]models.Music, []models.Like, error) {
 	const op = "./internal/adapters/repo/postgres/music.go.GetAllMusic()"
 
-	q := "SELECT id, name, uploader_id, likes, duration_seconds, music_cover, song_url FROM music"
+	q := "SELECT id, name, uploader_id, likes, duration_seconds, music_cover, song_url, listening_count FROM music"
 	rows, err := p.pool.Query(ctx, q)
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s: %w", op, err)
@@ -268,7 +270,7 @@ func (p *Postgres) GetAllMusic(ctx context.Context, u models.User) ([]models.Mus
 func (p *Postgres) GetMusicByUploaderID(ctx context.Context, id string) ([]models.Music, error) {
 	const op = "./internal/adapters/repo/postgres/music.go.GetMusicByUploaderID"
 
-	q := "SELECT id, uploader_id, name, likes, duration_seconds, music_cover, song_url FROM music WHERE uploader_id = $1"
+	q := "SELECT id, uploader_id, name, likes, duration_seconds, music_cover, song_url, listening_count FROM music WHERE uploader_id = $1"
 	rows, err := p.pool.Query(ctx, q, id)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
