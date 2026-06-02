@@ -101,8 +101,72 @@
 				font-size: 1rem; background: white; color: #333;
 				transition: border-color 0.3s ease; outline: none;
 			}
-			.search-input:focus { border-color: #667eea; }
-			.search-input::placeholder { color: #aaa; }
+.search-input:focus { border-color: #667eea; }
+.search-input::placeholder { color: #aaa; }
+.sort-bar {
+	display: flex; flex-wrap: wrap; gap: 0.5rem;
+	margin-bottom: 1rem; align-items: center;
+}
+.sort-label {
+	color: white; font-size: 0.85rem; font-weight: 600;
+	margin-right: 0.25rem; opacity: 0.8;
+}
+.sort-btn {
+	padding: 0.4rem 0.8rem; border: 1px solid rgba(255,255,255,0.3);
+	background: rgba(255,255,255,0.1); color: white; border-radius: 6px;
+	cursor: pointer; font-size: 0.8rem; transition: all 0.2s ease;
+}
+.sort-btn:hover { background: rgba(255,255,255,0.2); }
+.sort-btn.active { background: white; color: #667eea; border-color: white; font-weight: 600; }
+
+.filter-bar {
+    background: rgba(255,255,255,0.95);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.filter-group label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.filter-group input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    width: 90px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.filter-group input:focus {
+    border-color: #667eea;
+}
+.filter-group input[type="date"] {
+    width: 140px;
+}
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+    padding-bottom: 1px;
+}
+.filter-actions .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
 			.user-card {
 				background: white; border-radius: 12px; padding: 2rem;
 				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
@@ -254,6 +318,53 @@
 
 			<input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск пользователей..." oninput="filterUsers()">
 
+			<div class="filter-bar">
+				<div class="filter-group">
+					<label>Лайков от</label>
+					<input type="number" id="filterLikesMin" min="0" placeholder="0">
+				</div>
+				<div class="filter-group">
+					<label>Лайков до</label>
+					<input type="number" id="filterLikesMax" min="0" placeholder="∞">
+				</div>
+				<div class="filter-group">
+					<label>Прослушиваний от</label>
+					<input type="number" id="filterLisMin" min="0" placeholder="0">
+				</div>
+				<div class="filter-group">
+					<label>Прослушиваний до</label>
+					<input type="number" id="filterLisMax" min="0" placeholder="∞">
+				</div>
+				<div class="filter-group">
+					<label>Избранное от</label>
+					<input type="number" id="filterFavorMin" min="0" placeholder="0">
+				</div>
+				<div class="filter-group">
+					<label>Избранное до</label>
+					<input type="number" id="filterFavorMax" min="0" placeholder="∞">
+				</div>
+				<div class="filter-group">
+					<label>Дата рег. от</label>
+					<input type="date" id="filterRegMin">
+				</div>
+				<div class="filter-group">
+					<label>Дата рег. до</label>
+					<input type="date" id="filterRegMax">
+				</div>
+				<div class="filter-actions">
+					<button class="btn btn-primary" id="filterApplyBtn">Применить</button>
+					<button class="btn btn-outline" id="filterResetBtn">Сбросить</button>
+				</div>
+			</div>
+
+			<div class="sort-bar">
+				<span class="sort-label">Сортировать:</span>
+				<button class="sort-btn" data-sort="register_at" onclick="sortUsers('register_at')">📅 Дата регистрации</button>
+				<button class="sort-btn" data-sort="likes" onclick="sortUsers('likes')">❤️ Лайки</button>
+				<button class="sort-btn" data-sort="listening_count" onclick="sortUsers('listening_count')">🎧 Прослушивания</button>
+				<button class="sort-btn" data-sort="favor_count" onclick="sortUsers('favor_count')">⭐ Избранное</button>
+			</div>
+
 			<div class="loading-container" id="loadingContainer">
 				<div class="loading-spinner"></div>
 				<p>Загрузка пользователей...</p>
@@ -286,6 +397,8 @@
 			let users = []
 			let isLoading = false
 			let searchQuery = ''
+			let sortField = ''
+			let sortAsc = true
 
 			const loadingContainer = document.getElementById('loadingContainer')
 			const usersContainer = document.getElementById('usersContainer')
@@ -295,13 +408,43 @@
 			const usersCount = document.getElementById('usersCount')
 			const searchInput = document.getElementById('searchInput')
 
+			function formatDate(dateStr) {
+				if (!dateStr) return ''
+				try {
+					const d = new Date(dateStr)
+					return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+				} catch { return dateStr }
+			}
+
+			function getUsersUrl() {
+				const params = new URLSearchParams()
+				const likesMin = document.getElementById('filterLikesMin').value
+				const likesMax = document.getElementById('filterLikesMax').value
+				const lisMin = document.getElementById('filterLisMin').value
+				const lisMax = document.getElementById('filterLisMax').value
+				const favorMin = document.getElementById('filterFavorMin').value
+				const favorMax = document.getElementById('filterFavorMax').value
+				const regMin = document.getElementById('filterRegMin').value
+				const regMax = document.getElementById('filterRegMax').value
+				if (likesMin) params.set('likes_count_min', likesMin)
+				if (likesMax) params.set('likes_count_max', likesMax)
+				if (lisMin) params.set('lis_count_min', lisMin)
+				if (lisMax) params.set('lis_count_max', lisMax)
+				if (favorMin) params.set('favor_count_min', favorMin)
+				if (favorMax) params.set('favor_count_max', favorMax)
+				if (regMin) params.set('reg_date_min', regMin + 'T00:00:00Z')
+				if (regMax) params.set('reg_date_max', regMax + 'T23:59:59Z')
+				const qs = params.toString()
+				return `${apiBaseUrl}/users${qs ? '?' + qs : ''}`
+			}
+
 			async function fetchUsers() {
 				if (isLoading) return
 				showLoading()
 				updateStatus('loading', 'Загрузка пользователей...')
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/users`, {
+					const response = await fetch(getUsersUrl(), {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',
@@ -323,6 +466,12 @@
 					usersCount.textContent = `${users.length} пользователей`
 					if (searchInput) searchInput.value = ''
 					searchQuery = ''
+					sortField = ''
+					sortAsc = true
+					document.querySelectorAll('.sort-btn').forEach(b => {
+						b.classList.remove('active')
+						b.textContent = b.textContent.replace(/ [▲▼]$/, '')
+					})
 					renderUsers()
 				} catch (error) {
 					console.error('Ошибка загрузки:', error)
@@ -333,15 +482,46 @@
 				}
 			}
 
+			function sortUsers(field) {
+				if (sortField === field) {
+					sortAsc = !sortAsc
+				} else {
+					sortField = field
+					sortAsc = field === 'register_at' ? false : true
+				}
+				document.querySelectorAll('.sort-btn').forEach(b => {
+					const isActive = b.dataset.sort === field
+					b.classList.toggle('active', isActive)
+					let txt = b.textContent.replace(/ [▲▼]$/, '')
+					if (isActive) txt += sortAsc ? ' ▲' : ' ▼'
+					b.textContent = txt
+				})
+				renderUsers()
+			}
+
 			function filterUsers() {
 				searchQuery = searchInput ? searchInput.value.trim().toLowerCase() : ''
 				renderUsers()
 			}
 
 			function renderUsers() {
-				const filtered = searchQuery
+				let filtered = searchQuery
 					? users.filter(u => u.username && u.username.toLowerCase().includes(searchQuery))
-					: users
+					: [...users]
+
+				if (sortField) {
+					filtered.sort((a, b) => {
+						let va, vb
+						if (sortField === 'register_at') {
+							va = new Date(a.register_at || 0).getTime()
+							vb = new Date(b.register_at || 0).getTime()
+						} else {
+							va = a[sortField] || 0
+							vb = b[sortField] || 0
+						}
+						return sortAsc ? va - vb : vb - va
+					})
+				}
 
 				if (filtered.length === 0) {
 					usersContainer.innerHTML = `
@@ -358,10 +538,12 @@
 					<div class="users-grid">
 						${filtered.map(user => {
 							const initial = (user.username || '?')[0].toUpperCase()
+							const regDate = formatDate(user.register_at)
+							const dir = sortField && sortField !== 'register_at' ? '' : (regDate ? ` • ${regDate}` : '')
 							return `
 								<div class="user-card" onclick="window.location.href='user.html?id=${encodeURIComponent(user.id || '')}'" style="cursor:pointer;">
 									<div class="user-avatar">${escapeHtml(initial)}</div>
-									<div class="user-name">${escapeHtml(user.username || 'Без имени')}</div>
+									<div class="user-name">${escapeHtml(user.username || 'Без имени')}${dir}</div>
 									<div class="user-stats">
 										<span class="user-stat">❤️ ${user.likes || 0}</span>
 										<span class="user-stat">🎧 ${user.listening_count || 0}</span>
@@ -372,6 +554,8 @@
 						}).join('')}
 					</div>
 				`
+
+	
 			}
 
 			function escapeHtml(text) {
@@ -420,6 +604,18 @@
 
 			document.addEventListener('DOMContentLoaded', fetchUsers)
 			refreshBtn.addEventListener('click', fetchUsers)
+			document.getElementById('filterApplyBtn').addEventListener('click', fetchUsers)
+			document.getElementById('filterResetBtn').addEventListener('click', () => {
+				document.getElementById('filterLikesMin').value = ''
+				document.getElementById('filterLikesMax').value = ''
+				document.getElementById('filterLisMin').value = ''
+				document.getElementById('filterLisMax').value = ''
+				document.getElementById('filterFavorMin').value = ''
+				document.getElementById('filterFavorMax').value = ''
+				document.getElementById('filterRegMin').value = ''
+				document.getElementById('filterRegMax').value = ''
+				fetchUsers()
+			})
 		</script>
 
 	<script>

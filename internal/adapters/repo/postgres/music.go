@@ -165,6 +165,15 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 		sql = sql.Where("duration_seconds <= ?", m.DurMax)
 	}
 
+	
+	if m.LisCountMin != nil {
+		sql = sql.Where("listening_count >= ?", m.LisCountMin)
+	}
+	
+	if m.LisCountMax != nil {
+		sql = sql.Where("listening_count <= ?", m.LisCountMax)
+	}
+	
 	q, args, err = sql.ToSql()
 	if err != nil {
 		return nil , nil, fmt.Errorf("%s: %w", op, err)

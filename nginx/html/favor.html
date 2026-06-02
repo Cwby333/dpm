@@ -577,6 +577,25 @@
     .hamburger.active span:nth-child(2) { opacity: 0; }
     .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
 }
+
+.sort-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; align-items: center; }
+.sort-label { color: white; font-size: 0.85rem; font-weight: 600; margin-right: 0.25rem; opacity: 0.8; }
+.sort-btn {
+    padding: 0.4rem 0.8rem; border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.1); color: white; border-radius: 6px;
+    cursor: pointer; font-size: 0.8rem; transition: all 0.2s ease;
+}
+.sort-btn:hover { background: rgba(255,255,255,0.2); }
+.sort-btn.active { background: white; color: #667eea; border-color: white; font-weight: 600; }
+
+.search-input {
+    width: 100%; padding: 0.75rem 1rem; margin-bottom: 1rem;
+    border: 2px solid #e2e8f0; border-radius: 10px;
+    font-size: 1rem; background: white; color: #333;
+    transition: border-color 0.3s ease; outline: none;
+}
+.search-input:focus { border-color: #667eea; }
+.search-input::placeholder { color: #aaa; }
 </style>
 </head>
 <body>
@@ -624,6 +643,16 @@
             <span id="favorCount">0 треков</span>
         </div>
 
+        <div class="sort-bar">
+            <span class="sort-label">Сортировать:</span>
+            <button class="sort-btn" data-sort="name" onclick="sortFavor('name')">📝 Название</button>
+            <button class="sort-btn" data-sort="likes" onclick="sortFavor('likes')">❤️ Лайки</button>
+            <button class="sort-btn" data-sort="listening_count" onclick="sortFavor('listening_count')">🎧 Прослушивания</button>
+            <button class="sort-btn" data-sort="duration" onclick="sortFavor('duration')">⏱️ Длительность</button>
+        </div>
+
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск по названию..." oninput="filterFavor()">
+
         <div class="loading-container" id="loadingContainer">
             <div class="loading-spinner"></div>
             <p>Загрузка избранного...</p>
@@ -666,6 +695,9 @@
         const apiBaseUrl = 'https://172.17.110.58:443';
         let favorItems = [];
         let musicDetails = new Map();
+        let sortField = '';
+        let sortAsc = true;
+        let searchQuery = '';
 
         // DOM элементы
         const loadingContainer = document.getElementById('loadingContainer');
@@ -674,6 +706,7 @@
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
         const favorCount = document.getElementById('favorCount');
+        const searchInput = document.getElementById('searchInput');
 
         // Добавление в историю прослушиваний (POST /listening-history)
         async function addToListeningHistory(musicId) {
@@ -750,6 +783,15 @@
                 }
 
                 console.log(`Загружено треков в избранном: ${favorItems.length}`);
+
+                sortField = '';
+                sortAsc = true;
+                document.querySelectorAll('.sort-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.textContent = b.textContent.replace(/ [▲▼]$/, '');
+                });
+                if (searchInput) searchInput.value = '';
+                searchQuery = '';
 
                 await loadMusicDetails();
                 renderFavor();
@@ -873,6 +915,29 @@
             `;
         }
 
+        function sortFavor(field) {
+            if (sortField === field) {
+                sortAsc = !sortAsc;
+            } else {
+                sortField = field;
+                sortAsc = field === 'name';
+            }
+            document.querySelectorAll('.sort-btn').forEach(b => {
+                const isActive = b.dataset.sort === field;
+                b.classList.toggle('active', isActive);
+                let txt = b.textContent.replace(/ [▲▼]$/, '');
+                if (isActive) txt += sortAsc ? ' ▲' : ' ▼';
+                b.textContent = txt;
+            });
+            renderFavor();
+        }
+
+        function filterFavor() {
+            const input = document.getElementById('searchInput');
+            searchQuery = input ? input.value.trim().toLowerCase() : '';
+            renderFavor();
+        }
+
         function renderFavor() {
     if (!favorItems || favorItems.length === 0) {
         favorContainer.innerHTML = `
@@ -886,9 +951,56 @@
         return;
     }
 
+    let sorted = searchQuery
+        ? favorItems.filter(item => {
+            const music = musicDetails.get(item.id) || {};
+            const name = (music.name || item.name || '').toLowerCase();
+            return name.includes(searchQuery);
+          })
+        : [...favorItems];
+
+    if (sorted.length === 0) {
+        favorContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <h3>Ничего не найдено</h3>
+                <p>Попробуйте изменить запрос</p>
+            </div>
+        `;
+        return;
+    }
+
+    if (sortField) {
+        sorted.sort((a, b) => {
+            const ma = musicDetails.get(a.id) || {};
+            const mb = musicDetails.get(b.id) || {};
+            let va, vb;
+            switch (sortField) {
+                case 'name':
+                    va = (ma.name || a.name || '').toLowerCase();
+                    vb = (mb.name || b.name || '').toLowerCase();
+                    return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+                case 'likes':
+                    va = ma.likes || a.likes || 0;
+                    vb = mb.likes || b.likes || 0;
+                    return sortAsc ? va - vb : vb - va;
+                case 'listening_count':
+                    va = a.listening_count || 0;
+                    vb = b.listening_count || 0;
+                    return sortAsc ? va - vb : vb - va;
+                case 'duration':
+                    va = ma.duration_seconds || a.duration_seconds || 0;
+                    vb = mb.duration_seconds || b.duration_seconds || 0;
+                    return sortAsc ? va - vb : vb - va;
+                default:
+                    return 0;
+            }
+        });
+    }
+
     favorContainer.innerHTML = `
         <div class="favor-grid">
-            ${favorItems.map(item => {
+            ${sorted.map(item => {
                 const musicId = item.id;
                 const music = musicDetails.get(musicId) || item;
                 const name = music.name || item.name || 'Без названия';

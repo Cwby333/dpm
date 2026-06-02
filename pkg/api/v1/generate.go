@@ -239,6 +239,8 @@ type GetAllMusicParams struct {
 	LikesMax    *int    `form:"likes_max,omitempty" json:"likes_max,omitempty"`
 	DurMin      *int    `form:"dur_min,omitempty" json:"dur_min,omitempty"`
 	DurMax      *int    `form:"dur_max,omitempty" json:"dur_max,omitempty"`
+	LisCountMin *int    `form:"lis_count_min,omitempty" json:"lis_count_min,omitempty"`
+	LisCountMax *int    `form:"lis_count_max,omitempty" json:"lis_count_max,omitempty"`
 	AccessToken *string `form:"Access-Token,omitempty" json:"Access-Token,omitempty"`
 }
 
@@ -313,6 +315,18 @@ type RegisterJSONBody struct {
 	Password       *string `json:"password,omitempty"`
 	PrivateProfile *bool   `json:"private_profile,omitempty"`
 	Username       *string `json:"username,omitempty"`
+}
+
+// GetUsersParams defines parameters for GetUsers.
+type GetUsersParams struct {
+	LisCountMin   *int       `form:"lis_count_min,omitempty" json:"lis_count_min,omitempty"`
+	LisCountMax   *int       `form:"lis_count_max,omitempty" json:"lis_count_max,omitempty"`
+	LikesCountMin *int       `form:"likes_count_min,omitempty" json:"likes_count_min,omitempty"`
+	LikesCountMax *int       `form:"likes_count_max,omitempty" json:"likes_count_max,omitempty"`
+	FavorCountMin *int       `form:"favor_count_min,omitempty" json:"favor_count_min,omitempty"`
+	FavorCountMax *int       `form:"favor_count_max,omitempty" json:"favor_count_max,omitempty"`
+	RegisterAtMin *time.Time `form:"register_at_min,omitempty" json:"register_at_min,omitempty"`
+	RegisterAtMax *time.Time `form:"register_at_max,omitempty" json:"register_at_max,omitempty"`
 }
 
 // DeleteFavorJSONRequestBody defines body for DeleteFavor for application/json ContentType.
@@ -421,7 +435,7 @@ type ServerInterface interface {
 	Register(w http.ResponseWriter, r *http.Request)
 
 	// (GET /users)
-	GetUsers(w http.ResponseWriter, r *http.Request)
+	GetUsers(w http.ResponseWriter, r *http.Request, params GetUsersParams)
 
 	// (GET /users/{userID})
 	GetUserProfile(w http.ResponseWriter, r *http.Request, userID string)
@@ -881,6 +895,22 @@ func (siw *ServerInterfaceWrapper) GetAllMusic(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// ------------- Optional query parameter "lis_count_min" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "lis_count_min", r.URL.Query(), &params.LisCountMin)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lis_count_min", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "lis_count_max" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "lis_count_max", r.URL.Query(), &params.LisCountMax)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lis_count_max", Err: err})
+		return
+	}
+
 	{
 		var cookie *http.Cookie
 
@@ -1329,8 +1359,77 @@ func (siw *ServerInterfaceWrapper) Register(w http.ResponseWriter, r *http.Reque
 // GetUsers operation middleware
 func (siw *ServerInterfaceWrapper) GetUsers(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetUsersParams
+
+	// ------------- Optional query parameter "lis_count_min" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "lis_count_min", r.URL.Query(), &params.LisCountMin)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lis_count_min", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "lis_count_max" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "lis_count_max", r.URL.Query(), &params.LisCountMax)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "lis_count_max", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "likes_count_min" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "likes_count_min", r.URL.Query(), &params.LikesCountMin)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "likes_count_min", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "likes_count_max" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "likes_count_max", r.URL.Query(), &params.LikesCountMax)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "likes_count_max", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "favor_count_min" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "favor_count_min", r.URL.Query(), &params.FavorCountMin)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "favor_count_min", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "favor_count_max" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "favor_count_max", r.URL.Query(), &params.FavorCountMax)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "favor_count_max", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "register_at_min" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "register_at_min", r.URL.Query(), &params.RegisterAtMin)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "register_at_min", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "register_at_max" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "register_at_max", r.URL.Query(), &params.RegisterAtMax)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "register_at_max", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetUsers(w, r)
+		siw.Handler.GetUsers(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2292,6 +2391,7 @@ func (response Register500JSONResponse) VisitRegisterResponse(w http.ResponseWri
 }
 
 type GetUsersRequestObject struct {
+	Params GetUsersParams
 }
 
 type GetUsersResponseObject interface {
@@ -3244,8 +3344,10 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetUsers operation middleware
-func (sh *strictHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) GetUsers(w http.ResponseWriter, r *http.Request, params GetUsersParams) {
 	var request GetUsersRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetUsers(ctx, request.(GetUsersRequestObject))
@@ -3348,42 +3450,43 @@ func (sh *strictHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Request
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"H4sIAAAAAAAC/+xb3W/juBH/Vwi2wN0B2jjX3XvJU33drwDZNtgmT4eFQUtjmxdJ1JJUUjXw/17wQ5Rk",
+	"UZYif8TZ5smGSI6GM/ObDw71iEOWZCyFVAp88Yg5fM9ByN9ZREE/+ApLKiRw9T9kqYRUqr8ky2IaEklZ",
+	"OvlTsFQ9E+EKEqL+ZZxlwKUlAQmhsfojiwzwBRaS03SJ1wHOiBAPjEf+QU7viYRZxtmCxlCbM2csBpKq",
+	"SbkAnpIEPBTWgd4N5RDhiz/cTFS+FBm+vgXlQjb/E0KJ12plBCLkNFP7wxf4K3xHcxYVaME4mvBSJOYV",
+	"ImOpMDv9BHIaz/PkScKiEhLRllrI7o3UW4Khfnl1i2Fjf+4B4ZwUvv1++nCDJkTtZJIUasEnkB/JPePj",
+	"NvZXDgt8gf8yqWxtYqaJiSE7lKdFOfsTyCt6B9ENJ+Gd2D9bFfHBvMX0DoTjTUhIabr8TIVkvDgEg803",
+	"fLV2OIhdkCgu16OVZdFw/iUXNNwB7Em5ftAuzNtaLAeGzMyI9EnErkotbAih6QwMl0Ogr2RF4hglJael",
+	"jJzA9yCrQSIyIlmUMBwqidE7/5ceQXJFJHqgcYzmgDjInKcQoXmBJhlnUR7KyaP9c/l+jRQS1Ba1AKy4",
+	"risHvvcIosUxC1luiNpxmkpYAt/iLJ1ltVc4ZGwjW8aAGZFe+tvjUr/VKYdSBj41bDWryLkIc5h4EeA8",
+	"ixmJgM86FrrxJ20ywC6CNBmPcmMtMwEhSyNxVD0aUHXLrlNIgqXLWc7jERLcQCSNsH1Pc2G5uaAtocBq",
+	"u8bGN4/Aa0GsJfW9SMeMl+xto9Ghvg0337X6EFoYb8edoXeckKtJEZGayILxRPkVrB68kVSbRofsXpXT",
+	"VI7LX16dzHGcTC3X8Cc4nfy1SF3HpFACvUwXrE2M3BMak3kMszwrkdIuCPcXBm392VF39pnv06z2VgC3",
+	"aVK3N5Gu1tm5hDEM9lHQXOXzWOWfnVyb8RazP0xiRq0xqtSVhLKWjuIkl5Bxpub+famenYUsKXF2gb/k",
+	"EpAdx60UT+MGJTTkTAC/pyGgzzc312h6famPGRqrAyypjMG7DAf4HrgwVH89Oz87Vy9jGaQko/gCvz07",
+	"P/sVBzgjcqUlayp79W8Jej/+ikfPUm7A5fOXkRmeliONw4+/nZ/vv8w1ye6AmvbfeRiC0JXfb09kZNMM",
+	"WrQ/cM64GlgHuDoW6ZLfshTQrfER0e+FAkqnIL8UWjmcJCCBC3zxxyOmilDI2B2Fyp6meodvbtgdpLju",
+	"3iXPIdiyoW9+Tfnk7uZN3FlWJdENiQO/B46gLZxH/XP5fm0WxWC8aHP5e/0cZdbnt8RjxjULU0Pu0GIK",
+	"LEEFlIoccS/fWeB9FrtdvptWOQ3VH4EeqFwZsOJgG6Ln2jf5bXCscJ9RmCOPEoZlEXsMtUPK/UM6Lx9M",
+	"3SFSDzh1/oYkQypq/iSQWedH6kc7dnhPVnYoil2P3i7f9yfO5UTfidl6R8vs190R7WKre9nQf6eX2Won",
+	"rolwouHOtSKOIOuMCY8Ip1E0EHPTKHoF3MsGnHLErtrpx15Zp/dhr5zXwt6VHThJ7NWbeYcRvkf2tpx8",
+	"s6qadD0BseqaLThLPE00f2x0J4YfOUuuPr8Y0O52NDnkXMrNfI2vGrtte+rEe7/xKVx9Pl3Eb7TITyPw",
+	"0nSAYKdR5Ni/YS8I0K9R2BuF2ZIaOnmSEBUI8JV6pIzhAeYky7CdxnKP8Vzp5yYiiEJI0GcmE9fdtwj2",
+	"VN6x6VYcqPT+noO2XbteJwazhHoXuxPUntXkP6NWRzkf/Wa9duR7YyrMYfEO+3YU+ngY6wndDY9DG3tQ",
+	"M/DWvZZqaBpKE5XcmLFlna0OSJJqiShiqaXiT4xc8+jH8KA/lqv8sD11aVUndWX7w+w1E3KYeaiZr8bx",
+	"Eoyjcg9beiLK2yTFz0b1v3TovHSFp9sQ2fTU/amFkUwWk8KDhpgUfYBxUwIkDHmSigfgKOMgaLq8/XqF",
+	"JENJ9hbpu2KdOFKU8F7tfGhff3dDb75c73yZdtyLOMXjdmME5spAW8emTdgKto/Wmay3g0oXLfMC6aaK",
+	"H09tNDXpGBqagKdlU/q0MZ200SnsTgCtX4X+bSdTS0AIshx7ibNdfDZyLBdCWQo17WeK/paq4VqN/1gH",
+	"I5VY/rGC8A6tgMRyhcr7DVoqtk1sg0wbCGHOOaQmu3BN5a3npfUVP4nGmjaOiuva8HPEpv1eq2jctHrm",
+	"2xU+j+nUnbnrRW0FmrFhylaljmd+G116Tl3Zr8pwyngs/z3taocJT+hn9pACRyyNi186ysHr6jKID2PN",
+	"wFQxc4jY9Fz3E4QkMhe7Jzbvzt+2FfNPJhHJ5Ypx+l+IVOJoVIjkilYe0Cx/589GtUJTJtGC5Wm0n8sr",
+	"tTtAnQA2NzIQTbtvDCn42jHbSTrKnZaRdnioay0Lxv+fr7Z4ndWERJH/0F9LQwGhZlXdLQLf7FZnQOeg",
+	"N+zl+rLDV4hH6wAexrcex5Crr+Y26kWbr9rx/hsB1cy2v3RDJ3neUrJ38AMsXvvK3Q//W11XMCGRCpXl",
+	"LfLAfEQeVB+VkzRCJMtQSRGtaKKilm0MberAfV7fAp5fOLWv8ydu7X5RsmPROx4mx6q9S7lttPeUTkV3",
+	"9aCHbb5iCwljnbW6o4WvW03Tj67nbFVtbfLtykWNxkg+ah+PjOajQWMkH7WPSVp8DLkJM4juBm+D6B7l",
+	"kKD++c+YqrQ/xmlMTR7Vjyspu4JYA3MGh3IFlCP7KZbNzvrQuD3iNbMyw9dRs/pefWx8JNZXBL7riGSu",
+	"gkOMO6GqGtB+9DZeixP73VDPd0WV2uYFIkhkENIFDbW6e1ToPj86SQ0e7LOmZ1FmdVjWfaxWTkEhByLH",
+	"aLTvcPVlKHWHc7wj6Ha9/l8AAAD//8UbsV/sSQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

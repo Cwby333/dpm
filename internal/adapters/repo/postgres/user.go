@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"time"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v5"
 	// "log/slog"
 )
@@ -124,11 +125,51 @@ func (pg *Postgres) ReadUser(ctx context.Context, user models.User) (models.User
 	return UDBToUser(u), nil
 }
 
-func (pg *Postgres) GetPublicUsers(ctx context.Context) ([]models.User, error) {
+func (pg *Postgres) GetPublicUsers(ctx context.Context, uf models.UserFilter) ([]models.User, error) {
 	const op = "./internal/adapters/repo/postgres/user.go.GetPublicUsers()"
 
-	q := "SELECT id, username, register_at, likes, listening_count, favor_count FROM users WHERE private_profile = false"
-	rows, err := pg.pool.Query(ctx, q)
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	sql := psql.Select("id, username, register_at, likes, listening_count, favor_count").From("users").Where("private_profile = ?", false)
+
+	if uf.MinRegisterAt != nil {
+		sql = sql.Where("register_at >= ?", uf.MinRegisterAt)
+	}
+
+	if uf.MaxRegisterAt != nil {
+		sql = sql.Where("register_at <= ?", uf.MaxRegisterAt)
+	}
+
+	if uf.MinLikes != nil {
+		sql = sql.Where("likes >= ?", uf.MinLikes)
+	}
+
+	if uf.MaxLikes != nil {
+		sql = sql.Where("likes <= ?", uf.MaxLikes)
+	}
+
+	if uf.MinLisCount != nil {
+		sql = sql.Where("listening_count >= ?", uf.MinLisCount)
+	}
+
+	if uf.MaxLisCount != nil {
+		sql = sql.Where("listening_count <= ?", uf.MaxLisCount)
+	}
+
+	if uf.MinFavorCount != nil {
+		sql = sql.Where("favor_count >= ?", uf.MinFavorCount)
+	}
+
+	if uf.MaxFavorCount != nil {
+		sql = sql.Where("favor_count <= ?", uf.MaxFavorCount)
+	}
+
+	q, args, err := sql.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := pg.pool.Query(ctx, q, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%s %s: %w", op, q, err)
 	}

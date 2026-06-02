@@ -478,6 +478,16 @@ func wrapGetAllMusic(strict api.ServerInterface) http.HandlerFunc {
                 params.DurMax = &n
             }
         }
+		if v := r.URL.Query().Get("lis_count_min"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LisCountMin = &n
+            }
+        }
+		if v := r.URL.Query().Get("lis_count_max"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LisCountMax = &n
+            }
+        }
 
 		strict.GetAllMusic(w, r, params)
 	}
@@ -601,7 +611,50 @@ func wrapGetUserPlaylists(strict api.ServerInterface) http.HandlerFunc {
 
 func wrapGetUsers(strict api.ServerInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		strict.GetUsers(w, r)
+		params := api.GetUsersParams{}
+
+		if v := r.URL.Query().Get("lis_count_min"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				params.LisCountMin = &n
+			}
+		}
+		if v := r.URL.Query().Get("lis_count_max"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				params.LisCountMax = &n
+			}
+		}
+		if v := r.URL.Query().Get("reg_date_min"); v != "" {
+			if t, err := time.Parse(time.RFC3339, v); err == nil {
+				params.RegisterAtMin = &t
+			}
+		}
+		if v := r.URL.Query().Get("reg_date_max"); v != "" {
+			if t, err := time.Parse(time.RFC3339, v); err == nil {
+				params.RegisterAtMax = &t
+			}
+		}
+		if v := r.URL.Query().Get("likes_count_min"); v != "" {
+			if t, err := strconv.Atoi(v); err == nil {
+				params.LikesCountMin = &t
+			}
+		}
+		if v := r.URL.Query().Get("likes_count_max"); v != "" {
+			if t, err := strconv.Atoi(v); err == nil {
+				params.LikesCountMax = &t
+			}
+		}
+		if v := r.URL.Query().Get("favor_count_min"); v != "" {
+			if t, err := strconv.Atoi(v); err == nil {
+				params.FavorCountMin = &t
+			}
+		}
+		if v := r.URL.Query().Get("favor_count_max"); v != "" {
+			if t, err := strconv.Atoi(v); err == nil {
+				params.FavorCountMax = &t	
+			}
+		}
+
+		strict.GetUsers(w, r, params)
 	}
 }
 
@@ -829,6 +882,8 @@ func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequest
 		LikeMax: request.Params.LikesMax,
 		DurMin: request.Params.DurMin,
 		DurMax: request.Params.DurMax,
+		LisCountMin: request.Params.LisCountMin,
+		LisCountMax: request.Params.LisCountMax,
 	}
 	slog.Info(fmt.Sprintf("%v", mf))
 
@@ -1178,7 +1233,18 @@ func (h Handler) DeleteFavor(ctx context.Context, request api.DeleteFavorRequest
 func (h Handler) GetUsers(ctx context.Context, request api.GetUsersRequestObject) (api.GetUsersResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.GetUsers()"
 
-	users, err := h.uServices.GetPublicUsers(ctx)
+	uf := models.UserFilter{
+		MinRegisterAt: request.Params.RegisterAtMin,
+		MinLikes: request.Params.LikesCountMin,
+		MinFavorCount: request.Params.FavorCountMin,
+		MinLisCount: request.Params.LisCountMin,
+		MaxRegisterAt: request.Params.RegisterAtMax,
+		MaxLikes: request.Params.LikesCountMax,
+		MaxFavorCount: request.Params.FavorCountMax,
+		MaxLisCount: request.Params.LisCountMax,
+	}
+
+	users, err := h.uServices.GetPublicUsers(ctx, uf)
 	if err != nil {
 		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
 		return api.GetUsers500Response{}, err

@@ -149,8 +149,6 @@ func (s *MusicService) GetPresignURLSong(ctx context.Context, id string) (string
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	slog.Info(fmt.Sprintf("GET PRESING URL: %v", url))
-
 	return url, nil
 }
 

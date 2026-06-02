@@ -81,6 +81,49 @@ paths:
     description: "Get all users with public profiles"
     get:
       operationId: "getUsers"
+      parameters:
+        - name: lis_count_min
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: lis_count_max
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: likes_count_min
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: likes_count_max
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: favor_count_min
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: favor_count_max
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: register_at_min
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: register_at_max
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
       responses:
         200:
           description: "Success"
@@ -784,6 +827,16 @@ paths:
           schema:
             type: integer
         - name: dur_max
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: lis_count_min
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: lis_count_max
           in: query
           required: false
           schema:

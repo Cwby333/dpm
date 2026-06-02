@@ -16,4 +16,6 @@ type MusicFilterQuery struct {
 	LikeMax *int
 	DurMin *int
 	DurMax *int
+	LisCountMin *int
+	LisCountMax *int
 }

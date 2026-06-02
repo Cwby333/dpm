@@ -577,6 +577,25 @@
     .hamburger.active span:nth-child(2) { opacity: 0; }
     .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
 }
+
+.sort-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; align-items: center; }
+.sort-label { color: white; font-size: 0.85rem; font-weight: 600; margin-right: 0.25rem; opacity: 0.8; }
+.sort-btn {
+    padding: 0.4rem 0.8rem; border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.1); color: white; border-radius: 6px;
+    cursor: pointer; font-size: 0.8rem; transition: all 0.2s ease;
+}
+.sort-btn:hover { background: rgba(255,255,255,0.2); }
+.sort-btn.active { background: white; color: #667eea; border-color: white; font-weight: 600; }
+
+.search-input {
+    width: 100%; padding: 0.75rem 1rem; margin-bottom: 1rem;
+    border: 2px solid #e2e8f0; border-radius: 10px;
+    font-size: 1rem; background: white; color: #333;
+    transition: border-color 0.3s ease; outline: none;
+}
+.search-input:focus { border-color: #667eea; }
+.search-input::placeholder { color: #aaa; }
 </style>
 </head>
 <body>
@@ -624,6 +643,16 @@
             <span id="likesCount">0 треков</span>
         </div>
 
+        <div class="sort-bar">
+            <span class="sort-label">Сортировать:</span>
+            <button class="sort-btn" data-sort="name" onclick="sortLikes('name')">📝 Название</button>
+            <button class="sort-btn" data-sort="likes" onclick="sortLikes('likes')">❤️ Лайки</button>
+            <button class="sort-btn" data-sort="listening_count" onclick="sortLikes('listening_count')">🎧 Прослушивания</button>
+            <button class="sort-btn" data-sort="duration" onclick="sortLikes('duration')">⏱️ Длительность</button>
+        </div>
+
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск по названию..." oninput="filterLikes()">
+
         <div class="loading-container" id="loadingContainer">
             <div class="loading-spinner"></div>
             <p>Загрузка понравившихся треков...</p>
@@ -666,6 +695,9 @@
         // Конфигурация
         const apiBaseUrl = 'https://172.17.110.58:443';
         let likedTracks = [];
+        let sortField = '';
+        let sortAsc = true;
+        let searchQuery = '';
 
         // DOM элементы
         const loadingContainer = document.getElementById('loadingContainer');
@@ -674,6 +706,7 @@
         const statusDot = document.getElementById('statusDot');
         const statusText = document.getElementById('statusText');
         const likesCount = document.getElementById('likesCount');
+        const searchInput = document.getElementById('searchInput');
 
         // Добавление в историю прослушиваний (POST /listening-history)
         async function addToListeningHistory(musicId) {
@@ -801,6 +834,15 @@
 
                 console.log(`Загружено понравившихся треков: ${likedTracks.length}`);
 
+                sortField = '';
+                sortAsc = true;
+                document.querySelectorAll('.sort-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.textContent = b.textContent.replace(/ [▲▼]$/, '');
+                });
+                if (searchInput) searchInput.value = '';
+                searchQuery = '';
+
                 renderLikes();
 
                 updateStatus('success', 'Понравившиеся треки загружены');
@@ -846,6 +888,29 @@
             `;
         }
 
+        function sortLikes(field) {
+            if (sortField === field) {
+                sortAsc = !sortAsc;
+            } else {
+                sortField = field;
+                sortAsc = field === 'name';
+            }
+            document.querySelectorAll('.sort-btn').forEach(b => {
+                const isActive = b.dataset.sort === field;
+                b.classList.toggle('active', isActive);
+                let txt = b.textContent.replace(/ [▲▼]$/, '');
+                if (isActive) txt += sortAsc ? ' ▲' : ' ▼';
+                b.textContent = txt;
+            });
+            renderLikes();
+        }
+
+        function filterLikes() {
+            const input = document.getElementById('searchInput');
+            searchQuery = input ? input.value.trim().toLowerCase() : '';
+            renderLikes();
+        }
+
         function renderLikes() {
     if (!likedTracks || likedTracks.length === 0) {
         likesContainer.innerHTML = `
@@ -859,9 +924,50 @@
         return;
     }
 
+    let sorted = searchQuery
+        ? likedTracks.filter(t => (t.music_name || '').toLowerCase().includes(searchQuery))
+        : [...likedTracks];
+
+    if (sorted.length === 0) {
+        likesContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <h3>Ничего не найдено</h3>
+                <p>Попробуйте изменить запрос</p>
+            </div>
+        `;
+        return;
+    }
+
+    if (sortField) {
+        sorted.sort((a, b) => {
+            let va, vb;
+            switch (sortField) {
+                case 'name':
+                    va = (a.music_name || '').toLowerCase();
+                    vb = (b.music_name || '').toLowerCase();
+                    return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+                case 'likes':
+                    va = a.music_likes || 0;
+                    vb = b.music_likes || 0;
+                    return sortAsc ? va - vb : vb - va;
+                case 'listening_count':
+                    va = a.listening_count || 0;
+                    vb = b.listening_count || 0;
+                    return sortAsc ? va - vb : vb - va;
+                case 'duration':
+                    va = a.music_duration || 0;
+                    vb = b.music_duration || 0;
+                    return sortAsc ? va - vb : vb - va;
+                default:
+                    return 0;
+            }
+        });
+    }
+
     likesContainer.innerHTML = `
         <div class="likes-grid">
-            ${likedTracks.map(track => {
+            ${sorted.map(track => {
                 const musicId = track.music_id;
                 const musicName = escapeHtml(track.music_name || 'Без названия');
                 const artist = escapeHtml(track.uploader_username || track.uploader_id || 'Неизвестный исполнитель');
