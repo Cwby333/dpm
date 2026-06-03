@@ -265,6 +265,25 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
+	h.Mux.Handle("GET /playlist/my/likes", corsMiddleware(wrapGetLikedPlaylists(strict)))
+	h.Mux.Handle("OPTIONS /playlist/my/likes", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("POST /playlist/like", corsMiddleware(wrapPostLikePlaylist(strict)))
+	h.Mux.Handle("DELETE /playlist/like", corsMiddleware(wrapDeleteLikePlaylist(strict)))
+	h.Mux.Handle("OPTIONS /playlist/like", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
 	h.Mux.Handle("GET /playlist/my", corsMiddleware(wrapGetMyPlaylists(strict)))
 	h.Mux.Handle("OPTIONS /playlist/my", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
@@ -312,6 +331,63 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
+}
+
+func wrapGetLikedPlaylists(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapGetLikedTracks")
+			slog.Error(err.Error())
+			c = &http.Cookie{
+				Value: "",
+			}
+		} else {
+			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
+		}
+
+		strict.GetPlaylistMyLikes(w, r, api.GetPlaylistMyLikesParams{
+			AccessToken: c.Value,
+		})
+	}
+}
+
+func wrapPostLikePlaylist(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapGetLikedTracks")
+			slog.Error(err.Error())
+			c = &http.Cookie{
+				Value: "",
+			}
+		} else {
+			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
+		}
+
+		strict.PostPlaylistLike(w, r, api.PostPlaylistLikeParams{
+			AccessToken: c.Value,
+		})
+	}
+}
+
+func wrapDeleteLikePlaylist(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapGetLikedTracks")
+			slog.Error(err.Error())
+			c = &http.Cookie{
+				Value: "",
+			}
+		} else {
+			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
+		}
+
+		strict.DeletePlaylistLike(w, r, api.DeletePlaylistLikeParams{
+			AccessToken: c.Value,
+		})
+	}
 }
 
 func wrapDeleteAlbum(strict api.ServerInterface) http.HandlerFunc {
@@ -1944,6 +2020,7 @@ func (h Handler) GetMyPlaylists(ctx context.Context, request api.GetMyPlaylistsR
 		uploaderID := pl[i].UploaderID
 		cover := pl[i].Cover
 		private := pl[i].Private
+		likesCount := pl[i].LikesCount
 		username := pl[i].Username
 		resp = append(resp, api.PlaylistInfo{
 			Id:         &id,
@@ -1952,6 +2029,7 @@ func (h Handler) GetMyPlaylists(ctx context.Context, request api.GetMyPlaylistsR
 			Cover:      &cover,
 			Private:    &private,
 			Username:   &username,
+			LikesCount: &likesCount,
 		})
 	}
 
@@ -1975,6 +2053,7 @@ func (h Handler) GetPublicPlaylists(ctx context.Context, request api.GetPublicPl
 		cover := pl[i].Cover
 		private := pl[i].Private
 		username := pl[i].Username
+		likesCount := pl[i].LikesCount
 		resp = append(resp, api.PlaylistInfo{
 			Id:         &id,
 			Name:       &name,
@@ -1982,6 +2061,7 @@ func (h Handler) GetPublicPlaylists(ctx context.Context, request api.GetPublicPl
 			Cover:      &cover,
 			Private:    &private,
 			Username:   &username,
+			LikesCount: &likesCount,
 		})
 	}
 
@@ -2463,4 +2543,98 @@ func (h Handler) GetMusicMy(ctx context.Context, request api.GetMusicMyRequestOb
 			Music: pResp,
 		},
 	}, nil
+}
+
+func (h Handler) GetPlaylistMyLikes(ctx context.Context, request api.GetPlaylistMyLikesRequestObject) (api.GetPlaylistMyLikesResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetPlaylistMyLikes()"
+	
+	t := request.Params.AccessToken
+
+	if t == "" {
+		slog.Warn("GetPlaylistMyLikes token empty")
+		return api.GetPlaylistMyLikes500Response{}, errors.New("token empty")
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Error("GetPlaylistMyLikes error " + err.Error())
+		return api.GetPlaylistMyLikes500Response{}, err
+	}
+
+	userID := claims["sub"].(string)
+
+	pl, err := h.pService.GetLikedPlaylists(ctx, userID)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.GetPlaylistMyLikes500Response{}, err
+	}
+
+	plr := make([]api.PlaylistInfo, 0, len(pl))
+	for i := range pl {
+		plr = append(plr, api.PlaylistInfo{
+			Id: &pl[i].ID,
+			Name: &pl[i].Name,
+			Cover: &pl[i].Cover,
+			Username: &pl[i].Username,
+			UploaderId: &pl[i].UploaderID,
+			Private: &pl[i].Private,
+			LikesCount: &pl[i].LikesCount,
+		})
+	}
+
+	return api.GetPlaylistMyLikes200JSONResponse(plr), nil
+}
+
+func (h Handler) PostPlaylistLike(ctx context.Context, request api.PostPlaylistLikeRequestObject) (api.PostPlaylistLikeResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.PlaylistLike"
+
+	t := request.Params.AccessToken
+
+	if t == "" {
+		slog.Warn("PostPlaylistLike token empty")
+		return api.PostPlaylistLike500Response{}, errors.New("token empty")
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Error("PostPlaylistLike error " + err.Error())
+		return api.PostPlaylistLike500Response{}, err
+	}
+
+	userID := claims["sub"].(string)
+
+	err = h.pService.LikePlaylist(ctx, *request.Body.PlaylistId, userID)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.PostPlaylistLike500Response{}, err
+	}
+
+	return api.PostPlaylistLike200Response{}, nil
+}
+
+func (h Handler) DeletePlaylistLike(ctx context.Context, request api.DeletePlaylistLikeRequestObject) (api.DeletePlaylistLikeResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.DeletePlaylistLike"
+
+	t := request.Params.AccessToken
+
+	if t == "" {
+		slog.Warn("PostPlaylistLike token empty")
+		return api.DeletePlaylistLike500Response{}, errors.New("token empty")
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Error("PostPlaylistLike error " + err.Error())
+		return api.DeletePlaylistLike500Response{}, err
+	}
+
+	userID := claims["sub"].(string)
+
+	err = h.pService.DeleteLikePlaylist(ctx, *request.Body.PlaylistId, userID)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.DeletePlaylistLike500Response{}, err
+	}
+
+	return api.DeletePlaylistLike200Response{}, nil
 }

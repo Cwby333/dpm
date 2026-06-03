@@ -255,6 +255,7 @@
 			<div class="tabs">
 				<button class="tab-btn active" data-tab="my">Мои плейлисты</button>
 				<button class="tab-btn" data-tab="public">Публичные плейлисты</button>
+				<button class="tab-btn" data-tab="likes">❤️ Понравившиеся</button>
 			</div>
 
 			<div class="status-bar">
@@ -310,7 +311,12 @@
 				updateStatus('loading', 'Загрузка плейлистов...')
 
 				try {
-					const endpoint = tab === 'my' ? '/playlist/my' : '/playlist/public'
+					let endpoint
+					if (tab === 'likes') {
+						endpoint = '/playlist/my/likes'
+					} else {
+						endpoint = tab === 'my' ? '/playlist/my' : '/playlist/public'
+					}
 					const response = await fetch(`${apiBaseUrl}${endpoint}`, {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
@@ -338,12 +344,12 @@
 
 			function renderPlaylists(playlists) {
 				if (playlists.length === 0) {
-					const label = currentTab === 'my' ? 'своих' : 'публичных'
+					const label = currentTab === 'my' ? 'своих' : currentTab === 'likes' ? 'понравившихся' : 'публичных'
 					playlistsContainer.innerHTML = `
 						<div class="empty-state">
 							<div class="empty-state-icon">📋</div>
 							<h3>Нет ${label} плейлистов</h3>
-							<p>${currentTab === 'my' ? 'Создайте свой первый плейлист!' : 'Публичных плейлистов пока нет'}</p>
+							<p>${currentTab === 'my' ? 'Создайте свой первый плейлист!' : currentTab === 'likes' ? 'Лайкните плейлисты, чтобы они появились здесь' : 'Публичных плейлистов пока нет'}</p>
 						</div>
 					`
 					return
@@ -354,13 +360,14 @@
 						${playlists.map(pl => {
 							const isPrivate = pl.private === true || pl.private === 'true'
 							return `
-								<div class="playlist-card" onclick="window.location.href='playlist.html?id=${encodeURIComponent(pl.id || '')}&name=${encodeURIComponent(pl.name || 'Без названия')}&uploader=${encodeURIComponent(pl.username || pl.uploader_id || '')}&cover=${encodeURIComponent(pl.cover || '')}&private=${encodeURIComponent(pl.private ? 'true' : 'false')}'">
+								<div class="playlist-card" onclick="window.location.href='playlist.html?id=${encodeURIComponent(pl.id || '')}&name=${encodeURIComponent(pl.name || 'Без названия')}&uploader=${encodeURIComponent(pl.username || pl.uploader_id || '')}&cover=${encodeURIComponent(pl.cover || '')}&private=${encodeURIComponent(pl.private ? 'true' : 'false')}&likes_count=${encodeURIComponent(pl.likes_count || 0)}'">
 									<div class="playlist-cover" style="${pl.cover ? `background-image: url('${attrEscape(pl.cover)}'); background-size: cover; background-position: center;` : ''}">${pl.cover ? '' : '📋'}</div>
 									<div class="playlist-info">
 										<div class="playlist-name">${escapeHtml(pl.name || 'Без названия')}</div>
 										<div class="playlist-uploader">${escapeHtml(pl.username || pl.uploader_id || 'Неизвестный')}</div>
 										<div class="playlist-meta">
 											${isPrivate ? '<span class="private-badge">🔒 Приватный</span>' : '<span class="public-badge" style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;background:#c6f6d5;color:#276749;font-weight:600;">🌍 Публичный</span>'}
+											<span style="font-size:0.85rem;color:#999;">❤️ ${pl.likes_count || 0}</span>
 										</div>
 									</div>
 								</div>

@@ -22,6 +22,7 @@ type RepoMusic interface {
 	GetAllMusic(ctx context.Context, u models.User) ([]models.Music, []models.Like, error)
 	GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, userID string) ([]models.Music, []models.Like, error)
 	GetMusicByUploaderID(ctx context.Context, id string) ([]models.Music, error)
+	AddListening(ctx context.Context, id string) (error)
 }
 
 type S3 interface {
@@ -183,4 +184,15 @@ func (s *MusicService) GetMusicByUploaderID(ctx context.Context, id string) ([]m
 	}
 
 	return m, nil
+}
+
+func (s *MusicService) AddListening(ctx context.Context, id string) (error) {
+	const op = "./internal/services/music.go.AddListening()"
+
+	err := s.repo.AddListening(ctx, id)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }

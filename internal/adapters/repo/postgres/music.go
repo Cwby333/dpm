@@ -297,3 +297,15 @@ func (p *Postgres) GetMusicByUploaderID(ctx context.Context, id string) ([]model
 
 	return mr, nil
 }
+
+func (pg *Postgres) AddListening(ctx context.Context, id string) (error) {
+	const op = "./internal/adapters/repo/postgres/music.go.AddListening()"
+
+	q := "UPDATE music SET listening_count = listening_count + 1 WHERE id = $1"
+	_, err := pg.pool.Exec(ctx, q, id)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}

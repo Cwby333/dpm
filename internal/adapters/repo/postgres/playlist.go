@@ -16,6 +16,7 @@ type PlaylistDB struct {
 	UploaderID string `db:"uploader_id"`
 	Cover      string `db:"cover"`
 	Private    bool   `db:"private"`
+	LikesCount int `db:"count_likes"`
 }
 
 type PlaylistInfoDB struct {
@@ -25,6 +26,7 @@ type PlaylistInfoDB struct {
 	Cover      string `db:"cover"`
 	Private    bool   `db:"private"`
 	Username   string `db:"username"`
+	LikesCount int `db:"count_likes"`
 }
 
 func PlaylistDBToP(p PlaylistDB) models.Playlist {
@@ -34,6 +36,7 @@ func PlaylistDBToP(p PlaylistDB) models.Playlist {
 		Cover:      p.Cover,
 		UploaderID: p.UploaderID,
 		Private:    p.Private,
+		LikesCount: p.LikesCount,
 	}
 }
 
@@ -45,6 +48,7 @@ func PlaylistInfoDBToPI(p PlaylistInfoDB) models.PlaylistInfo {
 			UploaderID: p.UploaderID,
 			Cover:      p.Cover,
 			Private:    p.Private,
+			LikesCount: p.LikesCount,
 		}),
 		Username: p.Username,
 	}
@@ -65,7 +69,7 @@ func (pg *Postgres) CreatePlaylist(ctx context.Context, p models.Playlist) error
 func (pg *Postgres) GetPlaylist(ctx context.Context, id string) (models.Playlist, error) {
 	const op = "./internal/adapters/repo/postgres/playlist.go.GetPlaylist"
 
-	q := "SELECT id, name, uploader_id, cover, private FROM playlists WHERE id = $1"
+	q := "SELECT id, name, uploader_id, cover, private, count_likes FROM playlists WHERE id = $1"
 	rows, err := pg.pool.Query(ctx, q, id)
 	if err != nil {
 		return models.Playlist{}, fmt.Errorf("%s: SELECT %w", op, err)
@@ -82,7 +86,7 @@ func (pg *Postgres) GetPlaylist(ctx context.Context, id string) (models.Playlist
 func (pg *Postgres) GetUserPlaylists(ctx context.Context, userID string) ([]models.PlaylistInfo, error) {
 	const op = "./internal/adapters/repo/postgres/playlist.go.GetUserPlaylists()"
 
-	q := "SELECT p.id, p.name, p.uploader_id, p.cover, p.private, u.username FROM playlists p JOIN users u ON p.uploader_id = u.id WHERE p.uploader_id = $1"
+	q := "SELECT p.id, p.name, p.uploader_id, p.cover, p.private, u.username, p.count_likes FROM playlists p JOIN users u ON p.uploader_id = u.id WHERE p.uploader_id = $1"
 	rows, err := pg.pool.Query(ctx, q, userID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: SELECT: %w", op, err)
@@ -104,7 +108,7 @@ func (pg *Postgres) GetUserPlaylists(ctx context.Context, userID string) ([]mode
 func (pg *Postgres) GetPublicPlaylists(ctx context.Context) ([]models.PlaylistInfo, error) {
 	const op = "./internal/adapters/repo/postgres/playlist.go.GetPublicPlaylists()"
 
-	q := "SELECT p.id, p.name, p.uploader_id, p.cover, p.private, u.username FROM playlists p JOIN users u ON p.uploader_id = u.id WHERE p.private = false"
+	q := "SELECT p.id, p.name, p.uploader_id, p.cover, p.private, u.username, p.count_likes FROM playlists p JOIN users u ON p.uploader_id = u.id WHERE p.private = false"
 	rows, err := pg.pool.Query(ctx, q)
 	if err != nil {
 		return nil, fmt.Errorf("%s: SELECT: %w", op, err)
@@ -126,7 +130,7 @@ func (pg *Postgres) GetPublicPlaylists(ctx context.Context) ([]models.PlaylistIn
 func (pg *Postgres) GetPublicPlaylistsByID(ctx context.Context, id string) ([]models.PlaylistInfo, error) {
 	const op = "./internal/adapters/repo/postgres/playlist.go.GetPublicPlaylists()"
 
-	q := "SELECT p.id, p.name, p.uploader_id, p.cover, p.private, u.username FROM playlists p JOIN users u ON p.uploader_id = u.id WHERE p.private = $1 AND p.uploader_id = $2"
+	q := "SELECT p.id, p.name, p.uploader_id, p.cover, p.private, u.username, p.count_likes FROM playlists p JOIN users u ON p.uploader_id = u.id WHERE p.private = $1 AND p.uploader_id = $2"
 	rows, err := pg.pool.Query(ctx, q, false, id)
 	if err != nil {
 		return nil, fmt.Errorf("%s: SELECT: %w", op, err)
@@ -244,6 +248,65 @@ func (pg *Postgres) UpdatePlaylist(ctx context.Context, playlist models.Playlist
 	_, err = pg.pool.Exec(ctx, q2, args...)
 	if err != nil {
 		return fmt.Errorf("%s: Exec %w", op, err)
+	}
+
+	return nil
+}
+
+func (pg *Postgres) LikePlaylist(ctx context.Context, playlistID string, userID string) (error) {
+	const op = "./internal/adapters/repo/postgres/playlist.go.LikePlaylist"
+
+	q := "INSERT INTO playlist_likes(playlist_id, user_id) VALUES ($1, $2)"
+	_, err := pg.pool.Exec(ctx, q, playlistID, userID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	q = "UPDATE playlists SET count_likes = count_likes + 1 WHERE id = $1"
+	_, err = pg.pool.Exec(ctx, q, playlistID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (pg *Postgres) GetLikedPlaylists(ctx context.Context, userID string) ([]models.PlaylistInfo, error) {
+	const op = "./internal/adapters/repo/postgres/playlist.go.GetLikedPlaylists"
+
+	q := "SELECT p.id, p.name, p.uploader_id, p.cover, p.private, u.username, p.count_likes FROM playlists p JOIN playlist_likes pl ON p.id = pl.playlist_id JOIN users u ON p.uploader_id = u.id WHERE pl.user_id = $1 AND p.private = $2"
+
+	rows, err := pg.pool.Query(ctx, q, userID, false)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	pl, err := pgx.CollectRows(rows, pgx.RowToStructByName[PlaylistInfoDB])
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	plr := make([]models.PlaylistInfo, 0, len(pl))
+	for i := range pl {
+		plr = append(plr, PlaylistInfoDBToPI(pl[i]))
+	}
+
+	return plr, nil
+}
+
+func (pg *Postgres) DeleteLikePlaylist(ctx context.Context, playlistID string, userID string) (error) {
+	const op = "./internal/adapters/repo/postgres/playlist.go.DeleteLikePlaylist"
+
+	q := "DELETE FROM playlist_likes WHERE playlist_id = $1 AND user_id = $2"
+	_, err := pg.pool.Exec(ctx, q, playlistID, userID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	q = "UPDATE playlists SET count_likes = count_likes - 1 WHERE id = $1"
+	_, err = pg.pool.Exec(ctx, q, playlistID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	return nil

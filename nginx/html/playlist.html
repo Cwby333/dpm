@@ -322,6 +322,7 @@
 						<button class="btn btn-primary" id="playAllBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem;">
 							▶ Слушать все треки
 						</button>
+						<button class="btn btn-play" id="likePlaylistBtn" style="font-size: 1.3rem; padding: 0.65rem 1.2rem; border:none;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.2);color:white;transition:all 0.2s;" onclick="togglePlaylistLike()" title="Лайкнуть плейлист">🤍</button>
 						<button class="btn btn-danger" id="deletePlaylistBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem;">
 							🗑 Удалить плейлист
 						</button>
@@ -420,6 +421,7 @@
 	const playlistUploaderParam = params.get('uploader') || ''
 	const playlistCoverParam = params.get('cover') || ''
 	const playlistPrivateParam = params.get('private')
+	const playlistLikesCount = params.get('likes_count') || '0'
 
 	document.getElementById('playlistName').textContent = playlistNameParam
 	document.getElementById('playlistUploader').textContent = playlistUploaderParam
@@ -434,6 +436,60 @@
 	}
 
 			let availableForUpdate = false
+			let likedPlaylistIds = new Set()
+
+			async function loadLikedPlaylists() {
+				const stored = sessionStorage.getItem('likedPlaylistIds')
+				if (stored) {
+					try {
+						likedPlaylistIds = new Set(JSON.parse(stored))
+					} catch { likedPlaylistIds = new Set() }
+					updateLikeButton()
+					return
+				}
+				try {
+					const resp = await fetch(`${apiBaseUrl}/playlist/my/likes`, {
+						credentials: 'include'
+					})
+					if (resp.ok) {
+						const data = await resp.json()
+						const ids = Array.isArray(data) ? data.map(p => p.id).filter(Boolean) : []
+						likedPlaylistIds = new Set(ids)
+						sessionStorage.setItem('likedPlaylistIds', JSON.stringify(ids))
+					}
+				} catch (e) { console.error('Failed to load liked playlists', e) }
+				updateLikeButton()
+			}
+
+			function updateLikeButton() {
+				const btn = document.getElementById('likePlaylistBtn')
+				if (!btn) return
+				btn.textContent = likedPlaylistIds.has(playlistId) ? '❤️' : '🤍'
+			}
+
+			async function togglePlaylistLike() {
+				const isLiked = likedPlaylistIds.has(playlistId)
+				const method = isLiked ? 'DELETE' : 'POST'
+				try {
+					const resp = await fetch(`${apiBaseUrl}/playlist/like`, {
+						method,
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ playlist_id: playlistId }),
+						credentials: 'include'
+					})
+					if (resp.ok) {
+						if (isLiked) likedPlaylistIds.delete(playlistId)
+						else likedPlaylistIds.add(playlistId)
+						sessionStorage.setItem('likedPlaylistIds', JSON.stringify([...likedPlaylistIds]))
+						updateLikeButton()
+					} else if (resp.status === 401 || resp.status === 403) {
+						alert('Войдите в систему, чтобы лайкать плейлисты')
+					}
+				} catch (e) {
+					console.error('Error toggling playlist like', e)
+					alert('Ошибка при выполнении операции')
+				}
+			}
 
 			async function fetchPlaylistTracks() {
 				if (!playlistId) {
@@ -474,7 +530,7 @@
 						availableForUpdate = false
 					}
 
-					document.getElementById('playlistMeta').textContent = `${tracks.length} треков`
+					document.getElementById('playlistMeta').innerHTML = `${tracks.length} треков • ❤️ ${playlistLikesCount}`
 					renderTracks()
 					updateActionButtons()
 				} catch (error) {
@@ -592,7 +648,10 @@
 				if (addBtn) addBtn.style.display = show
 			}
 
-			document.addEventListener('DOMContentLoaded', fetchPlaylistTracks)
+			document.addEventListener('DOMContentLoaded', () => {
+				fetchPlaylistTracks()
+				loadLikedPlaylists()
+			})
 
 			document.getElementById('deletePlaylistBtn').addEventListener('click', async function() {
 				if (!confirm('Удалить этот плейлист? Это действие нельзя отменить.')) return

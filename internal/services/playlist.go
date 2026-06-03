@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"dpm/internal/models"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -19,6 +20,9 @@ type PlaylistRepo interface {
 	AddMusicToPlaylist(ctx context.Context, playlistID string, musicID string) error
 	DeletePlaylist(ctx context.Context, id string) error
 	UpdatePlaylist(ctx context.Context, playlist models.PlaylistUpdate) (error)
+	LikePlaylist(ctx context.Context, playlistID string, userID string) (error)
+	GetLikedPlaylists(ctx context.Context, userID string) ([]models.PlaylistInfo, error)
+	DeleteLikePlaylist(ctx context.Context, playlistID string, userID string) (error)
 }
 
 type PlaylistService struct {
@@ -218,4 +222,46 @@ func (s *PlaylistService) UpdatePlaylist(ctx context.Context, playlist models.Pl
 	}
 
 	return nil
+}
+
+func (s *PlaylistService) DeleteLikePlaylist(ctx context.Context, playlistID string, userID string) (error) {
+	const op = "./internal/services/playlist.go.DeleteLikePlaylist"
+
+	err := s.repo.DeleteLikePlaylist(ctx, playlistID, userID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (s *PlaylistService) LikePlaylist(ctx context.Context, playlistID string, userID string) (error) {
+	const op = "./internal/services/playlist.go.LikePlaylist()"
+
+	p, err := s.repo.GetPlaylist(ctx, playlistID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if p.Private == true {
+		return fmt.Errorf("%s: %w", op, errors.New("Can't like private playlist"))
+	}
+
+	err = s.repo.LikePlaylist(ctx, playlistID, userID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (s *PlaylistService) GetLikedPlaylists(ctx context.Context, userID string) ([]models.PlaylistInfo, error) {
+	const op = "./internal/services/playlist.go.GetLikedPlaylists()"
+
+	pl, err := s.repo.GetLikedPlaylists(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return pl, nil
 }

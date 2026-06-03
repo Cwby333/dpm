@@ -302,3 +302,15 @@ func (pg *Postgres) UpdateAlbum(ctx context.Context, album models.Album) (error)
 
 	return nil
 }
+
+func (pg *Postgres) LikeAlbum(ctx context.Context, albumID string, userID string) (error) {
+	const op = "./internal/adapters/repo/postgres/album.go.LikeAlbum()"
+
+	q := "INSERT INTO albums_likes(album_id, user_id) VALUES ($1, $2)"
+	_, err := pg.pool.Exec(ctx, q, albumID, userID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}

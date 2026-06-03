@@ -6,6 +6,7 @@ type Playlist struct {
 	UploaderID string
 	Cover      string
 	Private    bool
+	LikesCount int
 }
 
 type PlaylistInfo struct {
