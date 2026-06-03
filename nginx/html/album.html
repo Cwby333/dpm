@@ -287,6 +287,7 @@
 						<button class="btn btn-danger" id="deleteAlbumBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem; display:none;">
 							🗑 Удалить альбом
 						</button>
+						<button class="btn" id="likeAlbumBtn" onclick="toggleAlbumLike()" style="font-size:1.3rem;padding:0.65rem 1rem;display:none;border:none;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.2);color:white;transition:all 0.2s;">🤍</button>
 					</div>
 				</div>
 			</div>
@@ -350,6 +351,8 @@
 			const apiBaseUrl = 'https://172.17.110.58:443'
 			let tracks = []
 			let availableForUpdate = false
+			let likedAlbumIds = new Set()
+			let likesCount = 0
 
 			const loadingContainer = document.getElementById('loadingContainer')
 			const tracksContainer = document.getElementById('tracksContainer')
@@ -358,10 +361,72 @@
 			const albumId = params.get('id')
 			const albumNameParam = params.get('name') || 'Альбом'
 			const albumUploaderParam = params.get('uploader') || ''
+			likesCount = parseInt(params.get('likes_count') || '0', 10)
 
 			document.getElementById('albumName').textContent = albumNameParam
 			document.getElementById('albumUploader').textContent = albumUploaderParam
 			document.title = `Mute - ${albumNameParam}`
+
+			async function loadLikedAlbums() {
+				const stored = sessionStorage.getItem('likedAlbumIds')
+				if (stored) {
+					likedAlbumIds = new Set(JSON.parse(stored))
+					updateLikeButton()
+					document.getElementById('likeAlbumBtn').style.display = ''
+					return
+				}
+				try {
+					const resp = await fetch(`${apiBaseUrl}/album/my/likes`, {
+						credentials: 'include',
+					})
+					if (resp.ok) {
+						const data = await resp.json()
+						const ids = Array.isArray(data) ? data.map(a => a.id).filter(Boolean) : []
+						likedAlbumIds = new Set(ids)
+						sessionStorage.setItem('likedAlbumIds', JSON.stringify(ids))
+					}
+				} catch (e) {
+					console.error('Failed to load liked albums', e)
+				}
+				updateLikeButton()
+				document.getElementById('likeAlbumBtn').style.display = ''
+			}
+
+			function updateLikeButton() {
+				const btn = document.getElementById('likeAlbumBtn')
+				if (!btn) return
+				btn.textContent = likedAlbumIds.has(albumId) ? '❤️' : '🤍'
+			}
+
+			async function toggleAlbumLike() {
+				const isLiked = likedAlbumIds.has(albumId)
+				const method = isLiked ? 'DELETE' : 'POST'
+				try {
+					const resp = await fetch(`${apiBaseUrl}/album/like`, {
+						method,
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ album_id: albumId }),
+						credentials: 'include',
+					})
+					if (resp.ok) {
+						if (isLiked) {
+							likedAlbumIds.delete(albumId)
+							likesCount = Math.max(0, likesCount - 1)
+						} else {
+							likedAlbumIds.add(albumId)
+							likesCount += 1
+						}
+						sessionStorage.setItem('likedAlbumIds', JSON.stringify([...likedAlbumIds]))
+						updateLikeButton()
+						document.getElementById('albumMeta').textContent = `${tracks.length} треков • ❤️ ${likesCount}`
+					} else if (resp.status === 401 || resp.status === 403) {
+						alert('Войдите в систему, чтобы лайкать альбомы')
+					}
+				} catch (e) {
+					console.error('Error toggling album like', e)
+					alert('Ошибка при выполнении операции')
+				}
+			}
 
 			async function fetchAlbumTracks() {
 				if (!albumId) {
@@ -402,9 +467,10 @@
 						availableForUpdate = false
 					}
 
-					document.getElementById('albumMeta').textContent = `${tracks.length} треков`
+					document.getElementById('albumMeta').textContent = `${tracks.length} треков • ❤️ ${likesCount}`
 					renderTracks()
 					updateActionButtons()
+					loadLikedAlbums()
 				} catch (error) {
 					console.error('Ошибка загрузки:', error)
 					tracksContainer.style.display = 'block'

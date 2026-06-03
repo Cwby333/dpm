@@ -14,14 +14,14 @@ type PlaylistRepo interface {
 	CreatePlaylist(ctx context.Context, p models.Playlist) error
 	GetPlaylist(ctx context.Context, id string) (models.Playlist, error)
 	GetPlaylistMusic(ctx context.Context, id string) ([]models.LikedTrack, error)
-	GetUserPlaylists(ctx context.Context, userID string) ([]models.PlaylistInfo, error)
-	GetPublicPlaylists(ctx context.Context) ([]models.PlaylistInfo, error)
+	GetUserPlaylists(ctx context.Context, userID string, plf models.PlaylistFilter) ([]models.PlaylistInfo, error)
+	GetPublicPlaylists(ctx context.Context, plf models.PlaylistFilter) ([]models.PlaylistInfo, error)
 	GetPublicPlaylistsByID(ctx context.Context, id string) ([]models.PlaylistInfo, error)
 	AddMusicToPlaylist(ctx context.Context, playlistID string, musicID string) error
 	DeletePlaylist(ctx context.Context, id string) error
 	UpdatePlaylist(ctx context.Context, playlist models.PlaylistUpdate) (error)
 	LikePlaylist(ctx context.Context, playlistID string, userID string) (error)
-	GetLikedPlaylists(ctx context.Context, userID string) ([]models.PlaylistInfo, error)
+	GetLikedPlaylists(ctx context.Context, userID string, plf models.PlaylistFilter) ([]models.PlaylistInfo, error)
 	DeleteLikePlaylist(ctx context.Context, playlistID string, userID string) (error)
 }
 
@@ -67,10 +67,10 @@ func (s *PlaylistService) Create(ctx context.Context, name string, uploaderID st
 	return playlistID, nil
 }
 
-func (s *PlaylistService) GetMyPlaylists(ctx context.Context, userID string) ([]models.PlaylistInfo, error) {
+func (s *PlaylistService) GetMyPlaylists(ctx context.Context, userID string, plf models.PlaylistFilter) ([]models.PlaylistInfo, error) {
 	const op = "./internal/services/playlist.go.GetMyPlaylists()"
 
-	pl, err := s.repo.GetUserPlaylists(ctx, userID)
+	pl, err := s.repo.GetUserPlaylists(ctx, userID, plf)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -87,10 +87,10 @@ func (s *PlaylistService) GetMyPlaylists(ctx context.Context, userID string) ([]
 	return pl, nil
 }
 
-func (s *PlaylistService) GetPublicPlaylists(ctx context.Context) ([]models.PlaylistInfo, error) {
+func (s *PlaylistService) GetPublicPlaylists(ctx context.Context, plf models.PlaylistFilter) ([]models.PlaylistInfo, error) {
 	const op = "./internal/services/playlist.go.GetPublicPlaylists()"
 
-	pl, err := s.repo.GetPublicPlaylists(ctx)
+	pl, err := s.repo.GetPublicPlaylists(ctx, plf)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -255,10 +255,10 @@ func (s *PlaylistService) LikePlaylist(ctx context.Context, playlistID string, u
 	return nil
 }
 
-func (s *PlaylistService) GetLikedPlaylists(ctx context.Context, userID string) ([]models.PlaylistInfo, error) {
+func (s *PlaylistService) GetLikedPlaylists(ctx context.Context, userID string, plf models.PlaylistFilter) ([]models.PlaylistInfo, error) {
 	const op = "./internal/services/playlist.go.GetLikedPlaylists()"
 
-	pl, err := s.repo.GetLikedPlaylists(ctx, userID)
+	pl, err := s.repo.GetLikedPlaylists(ctx, userID, plf)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}

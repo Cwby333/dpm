@@ -19,12 +19,15 @@ type AlbumRepo interface {
 	DeleteAlbum(ctx context.Context, id string) error
 	GetAlbumsMusic(ctx context.Context, id string) ([]models.LikedTrack, error)
 	GetAlbumInfo(ctx context.Context, id string) (models.AlbumInfo, error)
-	GetAlbumsInfo(ctx context.Context) ([]models.AlbumInfo, error)
+	GetAlbumsInfo(ctx context.Context, af models.AlbumFilter) ([]models.AlbumInfo, error)
 	GetUserAlbums(ctx context.Context, userID string) ([]models.AlbumInfo, error)
 	AddMusicToAlbum(ctx context.Context, albumID string, musicID string) error
-	GetUploadedByUserAlbums(ctx context.Context, id string) ([]models.Album, error)
+	GetUploadedByUserAlbums(ctx context.Context, id string, af models.AlbumFilter) ([]models.Album, error)
 	CreateMusic(ctx context.Context, product models.Music) error
 	UpdateAlbum(ctx context.Context, album models.Album) (error)
+	LikeAlbum(ctx context.Context, albumID string, userID string) (error)
+	DeleteLikeAlbum(ctx context.Context, albumID string, userID string) (error)
+	GetLikedAlbums(ctx context.Context, userID string, af models.AlbumFilter) ([]models.AlbumInfo, error)
 }
 
 type AlbumsService struct {
@@ -103,10 +106,10 @@ func (s *AlbumsService) GetAlbumInfo(ctx context.Context, id string) (models.Alb
 	return a, nil
 }
 
-func (s *AlbumsService) GetAlbumsInfo(ctx context.Context) ([]models.AlbumInfo, error) {
+func (s *AlbumsService) GetAlbumsInfo(ctx context.Context, af models.AlbumFilter) ([]models.AlbumInfo, error) {
 	const op = "./internal/services/album.go.GetAlbumsInfo()"
 
-	a, err := s.repo.GetAlbumsInfo(ctx)
+	a, err := s.repo.GetAlbumsInfo(ctx, af)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -207,6 +210,51 @@ func (s *AlbumsService) GetUserAlbums(ctx context.Context, userID string) ([]mod
 	return a, nil
 }
 
+func (s *AlbumsService) LikeAlbum(ctx context.Context, albumID string, userID string) (error) {
+	const op = "./internal/services/album.go.LikeAlbum()"
+	slog.Debug(op, slog.String("albumID", albumID), slog.String("userID", userID))
+
+	err := s.repo.LikeAlbum(ctx, albumID, userID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (s *AlbumsService) DeleteLikeAlbum(ctx context.Context, albumID string, userID string) (error) {
+	const op = "./internal/services/album.go.DeleteLikeAlbum()"
+	slog.Debug(op, slog.String("albumID", albumID), slog.String("userID", userID))
+
+	err := s.repo.DeleteLikeAlbum(ctx, albumID, userID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
+func (s *AlbumsService) GetLikedAlbums(ctx context.Context, userID string, af models.AlbumFilter) ([]models.AlbumInfo, error) {
+	const op = "./internal/services/album.go.GetLikedAlbums()"
+	slog.Debug(op, slog.String("userID", userID))
+
+	al, err := s.repo.GetLikedAlbums(ctx, userID, af)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	for i := range al {
+		if al[i].Cover != "" {
+			url, err := s.GetAlbumCoverPresignURL(ctx, al[i].Cover)
+			if err == nil {
+				al[i].Cover = url
+			}
+		}
+	}
+
+	return al, nil
+}
+
 func (s *AlbumsService) GetAlbumCoverPresignURL(ctx context.Context, coverKey string) (string, error) {
 	const op = "./internal/services/album.go.GetAlbumCoverPresignURL()"
 
@@ -238,10 +286,10 @@ func parseMP3Duration(data []byte) int {
 	return int(math.Round((float64(count) * 26.0) / 1000.0))
 }
 
-func (s *AlbumsService) GetUploadedByUserAlbums(ctx context.Context, id string) ([]models.Album, error) {
+func (s *AlbumsService) GetUploadedByUserAlbums(ctx context.Context, id string, af models.AlbumFilter) ([]models.Album, error) {
 	const op = "./internal/services/album.go.GetUploadedByUserAlbums()"
 
-	a, err := s.repo.GetUploadedByUserAlbums(ctx, id)
+	a, err := s.repo.GetUploadedByUserAlbums(ctx, id, af)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}

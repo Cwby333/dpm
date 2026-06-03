@@ -70,8 +70,6 @@ func (s UserService) createTokens(ctx context.Context, user models.User) (access
 func (s UserService) CheckAccessToken(ctx context.Context, token string) (jwt.MapClaims, error) {
 	const op = "./internal/services/tokens.go.CheckAccessToken()"
 
-	slog.Info("CheckAccessToken")
-
 	sk := s.Key
 
 	t, err := jwt.ParseWithClaims(token, jwt.MapClaims{}, func(t *jwt.Token) (any, error) {

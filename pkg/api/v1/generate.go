@@ -27,6 +27,7 @@ import (
 type Album struct {
 	Cover            *string `json:"cover,omitempty"`
 	Id               *string `json:"id,omitempty"`
+	LikesCount       *int    `json:"likes_count,omitempty"`
 	Name             *string `json:"name,omitempty"`
 	UploaderId       *string `json:"uploader_id,omitempty"`
 	UploaderUsername *string `json:"uploader_username,omitempty"`
@@ -163,8 +164,43 @@ type Register struct {
 	Username       *string `json:"username,omitempty"`
 }
 
+// GetAlbumsParams defines parameters for GetAlbums.
+type GetAlbumsParams struct {
+	LikesMin *int `form:"likes_min,omitempty" json:"likes_min,omitempty"`
+	LikesMax *int `form:"likes_max,omitempty" json:"likes_max,omitempty"`
+}
+
+// DeleteAlbumLikeJSONBody defines parameters for DeleteAlbumLike.
+type DeleteAlbumLikeJSONBody struct {
+	AlbumId *string `json:"album_id,omitempty"`
+}
+
+// DeleteAlbumLikeParams defines parameters for DeleteAlbumLike.
+type DeleteAlbumLikeParams struct {
+	AccessToken string `form:"Access-Token" json:"Access-Token"`
+}
+
+// PostAlbumLikeJSONBody defines parameters for PostAlbumLike.
+type PostAlbumLikeJSONBody struct {
+	AlbumId *string `json:"album_id,omitempty"`
+}
+
+// PostAlbumLikeParams defines parameters for PostAlbumLike.
+type PostAlbumLikeParams struct {
+	AccessToken string `form:"Access-Token" json:"Access-Token"`
+}
+
 // GetAlbumMyParams defines parameters for GetAlbumMy.
 type GetAlbumMyParams struct {
+	LikesMin    *int   `form:"likes_min,omitempty" json:"likes_min,omitempty"`
+	LikesMax    *int   `form:"likes_max,omitempty" json:"likes_max,omitempty"`
+	AccessToken string `form:"Access-Token" json:"Access-Token"`
+}
+
+// GetAlbumMyLikesParams defines parameters for GetAlbumMyLikes.
+type GetAlbumMyLikesParams struct {
+	LikesMin    *int   `form:"likes_min,omitempty" json:"likes_min,omitempty"`
+	LikesMax    *int   `form:"likes_max,omitempty" json:"likes_max,omitempty"`
 	AccessToken string `form:"Access-Token" json:"Access-Token"`
 }
 
@@ -307,12 +343,22 @@ type PostPlaylistLikeParams struct {
 
 // GetMyPlaylistsParams defines parameters for GetMyPlaylists.
 type GetMyPlaylistsParams struct {
+	LikesMin    *int   `form:"likes_min,omitempty" json:"likes_min,omitempty"`
+	LikesMax    *int   `form:"likes_max,omitempty" json:"likes_max,omitempty"`
 	AccessToken string `form:"Access-Token" json:"Access-Token"`
 }
 
 // GetPlaylistMyLikesParams defines parameters for GetPlaylistMyLikes.
 type GetPlaylistMyLikesParams struct {
+	LikesMin    *int   `form:"likes_min,omitempty" json:"likes_min,omitempty"`
+	LikesMax    *int   `form:"likes_max,omitempty" json:"likes_max,omitempty"`
 	AccessToken string `form:"Access-Token" json:"Access-Token"`
+}
+
+// GetPublicPlaylistsParams defines parameters for GetPublicPlaylists.
+type GetPublicPlaylistsParams struct {
+	LikesMin *int `form:"likes_min,omitempty" json:"likes_min,omitempty"`
+	LikesMax *int `form:"likes_max,omitempty" json:"likes_max,omitempty"`
 }
 
 // DeletePlaylistParams defines parameters for DeletePlaylist.
@@ -360,6 +406,12 @@ type GetUsersParams struct {
 	RegisterAtMax *time.Time `form:"register_at_max,omitempty" json:"register_at_max,omitempty"`
 }
 
+// DeleteAlbumLikeJSONRequestBody defines body for DeleteAlbumLike for application/json ContentType.
+type DeleteAlbumLikeJSONRequestBody DeleteAlbumLikeJSONBody
+
+// PostAlbumLikeJSONRequestBody defines body for PostAlbumLike for application/json ContentType.
+type PostAlbumLikeJSONRequestBody PostAlbumLikeJSONBody
+
 // DeleteFavorJSONRequestBody defines body for DeleteFavor for application/json ContentType.
 type DeleteFavorJSONRequestBody DeleteFavorJSONBody
 
@@ -400,10 +452,19 @@ type RegisterJSONRequestBody RegisterJSONBody
 type ServerInterface interface {
 
 	// (GET /album)
-	GetAlbums(w http.ResponseWriter, r *http.Request)
+	GetAlbums(w http.ResponseWriter, r *http.Request, params GetAlbumsParams)
+
+	// (DELETE /album/like)
+	DeleteAlbumLike(w http.ResponseWriter, r *http.Request, params DeleteAlbumLikeParams)
+
+	// (POST /album/like)
+	PostAlbumLike(w http.ResponseWriter, r *http.Request, params PostAlbumLikeParams)
 
 	// (GET /album/my)
 	GetAlbumMy(w http.ResponseWriter, r *http.Request, params GetAlbumMyParams)
+
+	// (GET /album/my/likes)
+	GetAlbumMyLikes(w http.ResponseWriter, r *http.Request, params GetAlbumMyLikesParams)
 
 	// (DELETE /album/{albumID})
 	DeleteAlbumAlbumID(w http.ResponseWriter, r *http.Request, albumID string, params DeleteAlbumAlbumIDParams)
@@ -469,7 +530,7 @@ type ServerInterface interface {
 	GetPlaylistMyLikes(w http.ResponseWriter, r *http.Request, params GetPlaylistMyLikesParams)
 
 	// (GET /playlist/public)
-	GetPublicPlaylists(w http.ResponseWriter, r *http.Request)
+	GetPublicPlaylists(w http.ResponseWriter, r *http.Request, params GetPublicPlaylistsParams)
 
 	// (DELETE /playlist/{playlistID})
 	DeletePlaylist(w http.ResponseWriter, r *http.Request, playlistID string, params DeletePlaylistParams)
@@ -511,8 +572,103 @@ type MiddlewareFunc func(http.Handler) http.Handler
 // GetAlbums operation middleware
 func (siw *ServerInterfaceWrapper) GetAlbums(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAlbumsParams
+
+	// ------------- Optional query parameter "likes_min" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "likes_min", r.URL.Query(), &params.LikesMin)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "likes_min", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "likes_max" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "likes_max", r.URL.Query(), &params.LikesMax)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "likes_max", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetAlbums(w, r)
+		siw.Handler.GetAlbums(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteAlbumLike operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAlbumLike(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteAlbumLikeParams
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = value
+
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
+			return
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAlbumLike(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostAlbumLike operation middleware
+func (siw *ServerInterfaceWrapper) PostAlbumLike(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostAlbumLikeParams
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = value
+
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
+			return
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostAlbumLike(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -529,6 +685,22 @@ func (siw *ServerInterfaceWrapper) GetAlbumMy(w http.ResponseWriter, r *http.Req
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetAlbumMyParams
+
+	// ------------- Optional query parameter "likes_min" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "likes_min", r.URL.Query(), &params.LikesMin)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "likes_min", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "likes_max" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "likes_max", r.URL.Query(), &params.LikesMax)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "likes_max", Err: err})
+		return
+	}
 
 	{
 		var cookie *http.Cookie
@@ -550,6 +722,59 @@ func (siw *ServerInterfaceWrapper) GetAlbumMy(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetAlbumMy(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAlbumMyLikes operation middleware
+func (siw *ServerInterfaceWrapper) GetAlbumMyLikes(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAlbumMyLikesParams
+
+	// ------------- Optional query parameter "likes_min" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "likes_min", r.URL.Query(), &params.LikesMin)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "likes_min", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "likes_max" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "likes_max", r.URL.Query(), &params.LikesMax)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "likes_max", Err: err})
+		return
+	}
+
+	{
+		var cookie *http.Cookie
+
+		if cookie, err = r.Cookie("Access-Token"); err == nil {
+			var value string
+			err = runtime.BindStyledParameterWithOptions("simple", "Access-Token", cookie.Value, &value, runtime.BindStyledParameterOptions{Explode: true, Required: true})
+			if err != nil {
+				siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Access-Token", Err: err})
+				return
+			}
+			params.AccessToken = value
+
+		} else {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "Access-Token"})
+			return
+		}
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAlbumMyLikes(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1267,6 +1492,22 @@ func (siw *ServerInterfaceWrapper) GetMyPlaylists(w http.ResponseWriter, r *http
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetMyPlaylistsParams
 
+	// ------------- Optional query parameter "likes_min" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "likes_min", r.URL.Query(), &params.LikesMin)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "likes_min", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "likes_max" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "likes_max", r.URL.Query(), &params.LikesMax)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "likes_max", Err: err})
+		return
+	}
+
 	{
 		var cookie *http.Cookie
 
@@ -1304,6 +1545,22 @@ func (siw *ServerInterfaceWrapper) GetPlaylistMyLikes(w http.ResponseWriter, r *
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetPlaylistMyLikesParams
 
+	// ------------- Optional query parameter "likes_min" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "likes_min", r.URL.Query(), &params.LikesMin)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "likes_min", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "likes_max" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "likes_max", r.URL.Query(), &params.LikesMax)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "likes_max", Err: err})
+		return
+	}
+
 	{
 		var cookie *http.Cookie
 
@@ -1336,8 +1593,29 @@ func (siw *ServerInterfaceWrapper) GetPlaylistMyLikes(w http.ResponseWriter, r *
 // GetPublicPlaylists operation middleware
 func (siw *ServerInterfaceWrapper) GetPublicPlaylists(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetPublicPlaylistsParams
+
+	// ------------- Optional query parameter "likes_min" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "likes_min", r.URL.Query(), &params.LikesMin)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "likes_min", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "likes_max" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "likes_max", r.URL.Query(), &params.LikesMax)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "likes_max", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetPublicPlaylists(w, r)
+		siw.Handler.GetPublicPlaylists(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1812,7 +2090,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc("GET "+options.BaseURL+"/album", wrapper.GetAlbums)
+	m.HandleFunc("DELETE "+options.BaseURL+"/album/like", wrapper.DeleteAlbumLike)
+	m.HandleFunc("POST "+options.BaseURL+"/album/like", wrapper.PostAlbumLike)
 	m.HandleFunc("GET "+options.BaseURL+"/album/my", wrapper.GetAlbumMy)
+	m.HandleFunc("GET "+options.BaseURL+"/album/my/likes", wrapper.GetAlbumMyLikes)
 	m.HandleFunc("DELETE "+options.BaseURL+"/album/{albumID}", wrapper.DeleteAlbumAlbumID)
 	m.HandleFunc("GET "+options.BaseURL+"/album/{albumID}", wrapper.GetAlbumID)
 	m.HandleFunc("DELETE "+options.BaseURL+"/favor", wrapper.DeleteFavor)
@@ -1881,6 +2162,7 @@ type GetProfileJSONResponse struct {
 }
 
 type GetAlbumsRequestObject struct {
+	Params GetAlbumsParams
 }
 
 type GetAlbumsResponseObject interface {
@@ -1905,6 +2187,56 @@ func (response GetAlbums500JSONResponse) VisitGetAlbumsResponse(w http.ResponseW
 	return json.NewEncoder(w).Encode(response)
 }
 
+type DeleteAlbumLikeRequestObject struct {
+	Params DeleteAlbumLikeParams
+	Body   *DeleteAlbumLikeJSONRequestBody
+}
+
+type DeleteAlbumLikeResponseObject interface {
+	VisitDeleteAlbumLikeResponse(w http.ResponseWriter) error
+}
+
+type DeleteAlbumLike200Response struct {
+}
+
+func (response DeleteAlbumLike200Response) VisitDeleteAlbumLikeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type DeleteAlbumLike500Response struct {
+}
+
+func (response DeleteAlbumLike500Response) VisitDeleteAlbumLikeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
+type PostAlbumLikeRequestObject struct {
+	Params PostAlbumLikeParams
+	Body   *PostAlbumLikeJSONRequestBody
+}
+
+type PostAlbumLikeResponseObject interface {
+	VisitPostAlbumLikeResponse(w http.ResponseWriter) error
+}
+
+type PostAlbumLike200Response struct {
+}
+
+func (response PostAlbumLike200Response) VisitPostAlbumLikeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type PostAlbumLike500Response struct {
+}
+
+func (response PostAlbumLike500Response) VisitPostAlbumLikeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
 type GetAlbumMyRequestObject struct {
 	Params GetAlbumMyParams
 }
@@ -1926,6 +2258,31 @@ type GetAlbumMy500Response struct {
 }
 
 func (response GetAlbumMy500Response) VisitGetAlbumMyResponse(w http.ResponseWriter) error {
+	w.WriteHeader(500)
+	return nil
+}
+
+type GetAlbumMyLikesRequestObject struct {
+	Params GetAlbumMyLikesParams
+}
+
+type GetAlbumMyLikesResponseObject interface {
+	VisitGetAlbumMyLikesResponse(w http.ResponseWriter) error
+}
+
+type GetAlbumMyLikes200JSONResponse []Album
+
+func (response GetAlbumMyLikes200JSONResponse) VisitGetAlbumMyLikesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAlbumMyLikes500Response struct {
+}
+
+func (response GetAlbumMyLikes500Response) VisitGetAlbumMyLikesResponse(w http.ResponseWriter) error {
 	w.WriteHeader(500)
 	return nil
 }
@@ -2486,6 +2843,7 @@ func (response GetPlaylistMyLikes500Response) VisitGetPlaylistMyLikesResponse(w 
 }
 
 type GetPublicPlaylistsRequestObject struct {
+	Params GetPublicPlaylistsParams
 }
 
 type GetPublicPlaylistsResponseObject interface {
@@ -2800,8 +3158,17 @@ type StrictServerInterface interface {
 	// (GET /album)
 	GetAlbums(ctx context.Context, request GetAlbumsRequestObject) (GetAlbumsResponseObject, error)
 
+	// (DELETE /album/like)
+	DeleteAlbumLike(ctx context.Context, request DeleteAlbumLikeRequestObject) (DeleteAlbumLikeResponseObject, error)
+
+	// (POST /album/like)
+	PostAlbumLike(ctx context.Context, request PostAlbumLikeRequestObject) (PostAlbumLikeResponseObject, error)
+
 	// (GET /album/my)
 	GetAlbumMy(ctx context.Context, request GetAlbumMyRequestObject) (GetAlbumMyResponseObject, error)
+
+	// (GET /album/my/likes)
+	GetAlbumMyLikes(ctx context.Context, request GetAlbumMyLikesRequestObject) (GetAlbumMyLikesResponseObject, error)
 
 	// (DELETE /album/{albumID})
 	DeleteAlbumAlbumID(ctx context.Context, request DeleteAlbumAlbumIDRequestObject) (DeleteAlbumAlbumIDResponseObject, error)
@@ -2927,8 +3294,10 @@ type strictHandler struct {
 }
 
 // GetAlbums operation middleware
-func (sh *strictHandler) GetAlbums(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) GetAlbums(w http.ResponseWriter, r *http.Request, params GetAlbumsParams) {
 	var request GetAlbumsRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetAlbums(ctx, request.(GetAlbumsRequestObject))
@@ -2943,6 +3312,72 @@ func (sh *strictHandler) GetAlbums(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetAlbumsResponseObject); ok {
 		if err := validResponse.VisitGetAlbumsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteAlbumLike operation middleware
+func (sh *strictHandler) DeleteAlbumLike(w http.ResponseWriter, r *http.Request, params DeleteAlbumLikeParams) {
+	var request DeleteAlbumLikeRequestObject
+
+	request.Params = params
+
+	var body DeleteAlbumLikeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteAlbumLike(ctx, request.(DeleteAlbumLikeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteAlbumLike")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteAlbumLikeResponseObject); ok {
+		if err := validResponse.VisitDeleteAlbumLikeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostAlbumLike operation middleware
+func (sh *strictHandler) PostAlbumLike(w http.ResponseWriter, r *http.Request, params PostAlbumLikeParams) {
+	var request PostAlbumLikeRequestObject
+
+	request.Params = params
+
+	var body PostAlbumLikeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostAlbumLike(ctx, request.(PostAlbumLikeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostAlbumLike")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostAlbumLikeResponseObject); ok {
+		if err := validResponse.VisitPostAlbumLikeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -2969,6 +3404,32 @@ func (sh *strictHandler) GetAlbumMy(w http.ResponseWriter, r *http.Request, para
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetAlbumMyResponseObject); ok {
 		if err := validResponse.VisitGetAlbumMyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAlbumMyLikes operation middleware
+func (sh *strictHandler) GetAlbumMyLikes(w http.ResponseWriter, r *http.Request, params GetAlbumMyLikesParams) {
+	var request GetAlbumMyLikesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAlbumMyLikes(ctx, request.(GetAlbumMyLikesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAlbumMyLikes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAlbumMyLikesResponseObject); ok {
+		if err := validResponse.VisitGetAlbumMyLikesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -3590,8 +4051,10 @@ func (sh *strictHandler) GetPlaylistMyLikes(w http.ResponseWriter, r *http.Reque
 }
 
 // GetPublicPlaylists operation middleware
-func (sh *strictHandler) GetPublicPlaylists(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) GetPublicPlaylists(w http.ResponseWriter, r *http.Request, params GetPublicPlaylistsParams) {
 	var request GetPublicPlaylistsRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetPublicPlaylists(ctx, request.(GetPublicPlaylistsRequestObject))
@@ -3865,44 +4328,46 @@ func (sh *strictHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Request
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"AP//iOFG3+FWAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

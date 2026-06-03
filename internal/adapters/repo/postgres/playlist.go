@@ -83,11 +83,29 @@ func (pg *Postgres) GetPlaylist(ctx context.Context, id string) (models.Playlist
 	return PlaylistDBToP(p), nil
 }
 
-func (pg *Postgres) GetUserPlaylists(ctx context.Context, userID string) ([]models.PlaylistInfo, error) {
+func (pg *Postgres) GetUserPlaylists(ctx context.Context, userID string, plf models.PlaylistFilter) ([]models.PlaylistInfo, error) {
 	const op = "./internal/adapters/repo/postgres/playlist.go.GetUserPlaylists()"
 
-	q := "SELECT p.id, p.name, p.uploader_id, p.cover, p.private, u.username, p.count_likes FROM playlists p JOIN users u ON p.uploader_id = u.id WHERE p.uploader_id = $1"
-	rows, err := pg.pool.Query(ctx, q, userID)
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	sql := psql.Select("p.id, p.name, p.uploader_id, p.cover, p.private, u.username, p.count_likes").From("playlists p").Join("users u ON p.uploader_id = u.id").Where("p.uploader_id = ?", userID)
+
+	slog.Info(fmt.Sprintf("%+v", plf))
+	if plf.LikesMin != nil {
+		sql = sql.Where("p.count_likes >= ?", plf.LikesMin)
+	}
+
+	if plf.LikesMax != nil {
+		sql = sql.Where("p.count_likes <= ?", plf.LikesMax)
+	}
+
+	q, args, err := sql.ToSql()
+	slog.Info(q)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := pg.pool.Query(ctx, q, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%s: SELECT: %w", op, err)
 	}
@@ -105,11 +123,28 @@ func (pg *Postgres) GetUserPlaylists(ctx context.Context, userID string) ([]mode
 	return pl, nil
 }
 
-func (pg *Postgres) GetPublicPlaylists(ctx context.Context) ([]models.PlaylistInfo, error) {
+func (pg *Postgres) GetPublicPlaylists(ctx context.Context, plf models.PlaylistFilter) ([]models.PlaylistInfo, error) {
 	const op = "./internal/adapters/repo/postgres/playlist.go.GetPublicPlaylists()"
 
-	q := "SELECT p.id, p.name, p.uploader_id, p.cover, p.private, u.username, p.count_likes FROM playlists p JOIN users u ON p.uploader_id = u.id WHERE p.private = false"
-	rows, err := pg.pool.Query(ctx, q)
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	sql := psql.Select("p.id, p.name, p.uploader_id, p.cover, p.private, u.username, p.count_likes").From("playlists p").Join("users u ON p.uploader_id = u.id").Where("p.private = ?", false)
+
+	slog.Info(fmt.Sprintf("%+v", plf))
+	if plf.LikesMin != nil {
+		sql = sql.Where("p.count_likes >= ?", plf.LikesMin)
+	}
+
+	if plf.LikesMax != nil {
+		sql = sql.Where("p.count_likes <= ?", plf.LikesMax)
+	}
+
+	q, args, err := sql.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, &err)
+	}
+	
+	rows, err := pg.pool.Query(ctx, q, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%s: SELECT: %w", op, err)
 	}
@@ -271,12 +306,28 @@ func (pg *Postgres) LikePlaylist(ctx context.Context, playlistID string, userID 
 	return nil
 }
 
-func (pg *Postgres) GetLikedPlaylists(ctx context.Context, userID string) ([]models.PlaylistInfo, error) {
+func (pg *Postgres) GetLikedPlaylists(ctx context.Context, userID string, plf models.PlaylistFilter) ([]models.PlaylistInfo, error) {
 	const op = "./internal/adapters/repo/postgres/playlist.go.GetLikedPlaylists"
 
-	q := "SELECT p.id, p.name, p.uploader_id, p.cover, p.private, u.username, p.count_likes FROM playlists p JOIN playlist_likes pl ON p.id = pl.playlist_id JOIN users u ON p.uploader_id = u.id WHERE pl.user_id = $1 AND p.private = $2"
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	rows, err := pg.pool.Query(ctx, q, userID, false)
+	sql := psql.Select("p.id, p.name, p.uploader_id, p.cover, p.private, u.username, p.count_likes").From("playlists p").Join("playlist_likes pl ON p.id = pl.playlist_id").Join("users u ON p.uploader_id = u.id").Where("pl.user_id = ? AND p.private = ?", userID, false)
+
+	slog.Info(fmt.Sprintf("%+v", plf))
+	if plf.LikesMin != nil {
+		sql = sql.Where("p.count_likes >= ?", plf.LikesMin)
+	}
+
+	if plf.LikesMax != nil {
+		sql = sql.Where("p.count_likes <= ?", plf.LikesMax)
+	}
+
+	q, args, err := sql.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := pg.pool.Query(ctx, q, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}

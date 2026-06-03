@@ -218,6 +218,55 @@
 }
 .sort-btn:hover { background: rgba(255,255,255,0.2); }
 .sort-btn.active { background: white; color: #667eea; border-color: white; font-weight: 600; }
+.search-input {
+    width: 100%; padding: 0.75rem 1rem; margin-bottom: 1rem;
+    border: 2px solid #e2e8f0; border-radius: 10px;
+    font-size: 1rem; background: white; color: #333;
+    transition: border-color 0.3s ease; outline: none;
+}
+.search-input:focus { border-color: #667eea; }
+.search-input::placeholder { color: #aaa; }
+.filter-bar {
+    background: rgba(255,255,255,0.95);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.filter-group label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.filter-group input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    width: 90px;
+    outline: none;
+}
+.filter-group input:focus { border-color: #667eea; }
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+.filter-actions .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
 </style>
 	</head>
 	<body>
@@ -271,6 +320,23 @@
 				<button class="sort-btn" data-sort="likes" onclick="sortPlaylists('likes')">❤️ Лайки</button>
 			</div>
 
+			<input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск по названию..." oninput="filterPlaylists()">
+
+			<div class="filter-bar">
+				<div class="filter-group">
+					<label>Лайков от</label>
+					<input type="number" id="filterLikesMin" min="0" placeholder="0">
+				</div>
+				<div class="filter-group">
+					<label>Лайков до</label>
+					<input type="number" id="filterLikesMax" min="0" placeholder="∞">
+				</div>
+				<div class="filter-actions">
+					<button class="btn btn-primary" id="filterApplyBtn">Применить</button>
+					<button class="btn btn-outline" id="filterResetBtn">Сбросить</button>
+				</div>
+			</div>
+
 			<div class="status-bar">
 				<div class="status-info">
 					<span class="status-dot" id="statusDot"></span>
@@ -313,6 +379,7 @@
 			let sortField = ''
 			let sortAsc = true
 			let allPlaylists = []
+			let searchQuery = ''
 
 			const loadingContainer = document.getElementById('loadingContainer')
 			const playlistsContainer = document.getElementById('playlistsContainer')
@@ -327,13 +394,21 @@
 				updateStatus('loading', 'Загрузка плейлистов...')
 
 				try {
+					const params = new URLSearchParams()
+					const likesMin = document.getElementById('filterLikesMin').value
+					const likesMax = document.getElementById('filterLikesMax').value
+					if (likesMin) params.set('likes_min', likesMin)
+					if (likesMax) params.set('likes_max', likesMax)
+					const qs = params.toString()
+
 					let endpoint
 					if (tab === 'likes') {
 						endpoint = '/playlist/my/likes'
 					} else {
 						endpoint = tab === 'my' ? '/playlist/my' : '/playlist/public'
 					}
-					const response = await fetch(`${apiBaseUrl}${endpoint}`, {
+					const url = `${apiBaseUrl}${endpoint}${qs ? '?' + qs : ''}`
+					const response = await fetch(url, {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',
@@ -355,6 +430,12 @@
 						b.textContent = b.textContent.replace(/ [▲▼]$/, '')
 					})
 
+					const searchInput = document.getElementById('searchInput')
+					if (searchInput) {
+						searchInput.value = ''
+						searchQuery = ''
+					}
+
 					renderPlaylists()
 				} catch (error) {
 					console.error('Ошибка загрузки:', error)
@@ -368,13 +449,17 @@
 			function renderPlaylists() {
 				let playlists = [...allPlaylists]
 
+				if (searchQuery) {
+					playlists = playlists.filter(pl => (pl.name || '').toLowerCase().includes(searchQuery))
+				}
+
 				if (playlists.length === 0) {
 					const label = currentTab === 'my' ? 'своих' : currentTab === 'likes' ? 'понравившихся' : 'публичных'
 					playlistsContainer.innerHTML = `
 						<div class="empty-state">
 							<div class="empty-state-icon">📋</div>
-							<h3>Нет ${label} плейлистов</h3>
-							<p>${currentTab === 'my' ? 'Создайте свой первый плейлист!' : currentTab === 'likes' ? 'Лайкните плейлисты, чтобы они появились здесь' : 'Публичных плейлистов пока нет'}</p>
+							<h3>${searchQuery ? 'Ничего не найдено' : 'Нет ' + label + ' плейлистов'}</h3>
+							<p>${searchQuery ? 'Попробуйте изменить запрос' : currentTab === 'my' ? 'Создайте свой первый плейлист!' : currentTab === 'likes' ? 'Лайкните плейлисты, чтобы они появились здесь' : 'Публичных плейлистов пока нет'}</p>
 						</div>
 					`
 					return
@@ -437,6 +522,12 @@
 				renderPlaylists()
 			}
 
+			function filterPlaylists() {
+				const input = document.getElementById('searchInput')
+				searchQuery = input ? input.value.trim().toLowerCase() : ''
+				renderPlaylists()
+			}
+
 			function escapeHtml(text) {
 				if (!text) return ''
 				const div = document.createElement('div')
@@ -488,6 +579,13 @@
 					currentTab = this.dataset.tab
 					fetchPlaylists(currentTab)
 				})
+			})
+
+			document.getElementById('filterApplyBtn').addEventListener('click', () => fetchPlaylists(currentTab))
+			document.getElementById('filterResetBtn').addEventListener('click', () => {
+				document.getElementById('filterLikesMin').value = ''
+				document.getElementById('filterLikesMax').value = ''
+				fetchPlaylists(currentTab)
 			})
 
 			document.addEventListener('DOMContentLoaded', () => fetchPlaylists('my'))

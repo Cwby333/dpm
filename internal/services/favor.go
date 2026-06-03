@@ -4,6 +4,7 @@ import (
 	"context"
 	"dpm/internal/models"
 	"fmt"
+	"log/slog"
 )
 
 type FavorRepo interface {
@@ -24,6 +25,8 @@ func NewFavorService(repo FavorRepo) *FavorService {
 
 func (s FavorService) CreateFavor(ctx context.Context, lh models.ListeningHistory) error {
 	const op = "./internal/services/favor.go.CreateFavor()"
+
+	slog.Info("Create favor service")
 
 	err := s.repo.CreateFavor(ctx, lh)
 	if err != nil {

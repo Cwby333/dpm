@@ -20,3 +20,8 @@ type PlaylistUpdate struct {
 	Cover *string
 	Private *bool
 }
+
+type PlaylistFilter struct {
+	LikesMin *int
+	LikesMax *int
+}

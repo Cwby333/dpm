@@ -234,7 +234,7 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
-	h.Mux.Handle("GET /album", corsMiddleware(http.HandlerFunc(strict.GetAlbums)))
+	h.Mux.Handle("GET /album", corsMiddleware(wrapGetAlbums(strict)))
 	h.Mux.Handle("POST /album", corsMiddleware(http.HandlerFunc(h.UploadAlbum)))
 	h.Mux.Handle("GET /album/my", corsMiddleware(wrapGetMyAlbums(strict)))
 	h.Mux.Handle("OPTIONS /album", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -284,6 +284,25 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
+	h.Mux.Handle("GET /album/my/likes", corsMiddleware(wrapGetLikedAlbums(strict)))
+	h.Mux.Handle("OPTIONS /album/my/likes", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
+	h.Mux.Handle("POST /album/like", corsMiddleware(wrapPostLikeAlbum(strict)))
+	h.Mux.Handle("DELETE /album/like", corsMiddleware(wrapDeleteLikeAlbum(strict)))
+	h.Mux.Handle("OPTIONS /album/like", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
 	h.Mux.Handle("GET /playlist/my", corsMiddleware(wrapGetMyPlaylists(strict)))
 	h.Mux.Handle("OPTIONS /playlist/my", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
@@ -293,7 +312,7 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
-	h.Mux.Handle("GET /playlist/public", corsMiddleware(http.HandlerFunc(strict.GetPublicPlaylists)))
+	h.Mux.Handle("GET /playlist/public", corsMiddleware(wrapGetPublicPlaylists(strict)))
 	h.Mux.Handle("OPTIONS /playlist/public", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
@@ -342,8 +361,50 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 	}))
 }
 
+func wrapGetAlbums(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		params := api.GetAlbumsParams{}
+
+		if v := r.URL.Query().Get("likes_min"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LikesMin = &n
+            }
+        }
+        if v := r.URL.Query().Get("likes_max"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LikesMax = &n
+            }
+        }
+
+		strict.GetAlbums(w, r, params)
+	}
+}
+
+func wrapGetPublicPlaylists(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		params := api.GetPublicPlaylistsParams{}
+
+		if v := r.URL.Query().Get("likes_min"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LikesMin = &n
+            }
+        }
+        if v := r.URL.Query().Get("likes_max"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LikesMax = &n
+            }
+        }
+
+		slog.Info(fmt.Sprintf("%+v", params))
+
+		strict.GetPublicPlaylists(w, r, params)
+	}
+}
+
 func wrapGetLikedPlaylists(strict api.ServerInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		params := api.GetPlaylistMyLikesParams{}
+		
 		c, err := r.Cookie("Access-Token")
 		if err != nil {
 			slog.Info("wrapGetLikedTracks")
@@ -355,9 +416,20 @@ func wrapGetLikedPlaylists(strict api.ServerInterface) http.HandlerFunc {
 			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
 		}
 
-		strict.GetPlaylistMyLikes(w, r, api.GetPlaylistMyLikesParams{
-			AccessToken: c.Value,
-		})
+		params.AccessToken = c.Value
+
+		if v := r.URL.Query().Get("likes_min"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LikesMin = &n
+            }
+        }
+        if v := r.URL.Query().Get("likes_max"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LikesMax = &n
+            }
+        }
+
+		strict.GetPlaylistMyLikes(w, r, params)
 	}
 }
 
@@ -399,6 +471,62 @@ func wrapDeleteLikePlaylist(strict api.ServerInterface) http.HandlerFunc {
 	}
 }
 
+func wrapGetLikedAlbums(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		params := api.GetAlbumMyLikesParams{}
+		
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapGetLikedAlbums")
+			slog.Error(err.Error())
+			c = &http.Cookie{Value: ""}
+		}
+
+		params.AccessToken = c.Value
+
+		if v := r.URL.Query().Get("likes_min"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LikesMin = &n
+            }
+        }
+        if v := r.URL.Query().Get("likes_max"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LikesMax = &n
+            }
+        }
+
+		strict.GetAlbumMyLikes(w, r, params)
+	}
+}
+
+func wrapPostLikeAlbum(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapPostLikeAlbum")
+			slog.Error(err.Error())
+			c = &http.Cookie{Value: ""}
+		}
+		strict.PostAlbumLike(w, r, api.PostAlbumLikeParams{
+			AccessToken: c.Value,
+		})
+	}
+}
+
+func wrapDeleteLikeAlbum(strict api.ServerInterface) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c, err := r.Cookie("Access-Token")
+		if err != nil {
+			slog.Info("wrapDeleteLikeAlbum")
+			slog.Error(err.Error())
+			c = &http.Cookie{Value: ""}
+		}
+		strict.DeleteAlbumLike(w, r, api.DeleteAlbumLikeParams{
+			AccessToken: c.Value,
+		})
+	}
+}
+
 func wrapDeleteAlbum(strict api.ServerInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, err := r.Cookie("Access-Token")
@@ -435,6 +563,8 @@ func wrapGetMusicMy(strict api.ServerInterface) http.HandlerFunc {
 
 func wrapGetMyAlbums(strict api.ServerInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		params := api.GetAlbumMyParams{}
+		
 		c, err := r.Cookie("Access-Token")
 		if err != nil {
 			slog.Info("wrapGetLikedTracks")
@@ -446,7 +576,20 @@ func wrapGetMyAlbums(strict api.ServerInterface) http.HandlerFunc {
 			slog.Info(fmt.Sprintf("%v: %v", c.Name, c.Value))
 		}
 
-		strict.GetAlbumMy(w, r, api.GetAlbumMyParams{AccessToken: c.Value})
+		params.AccessToken = c.Value
+
+		if v := r.URL.Query().Get("likes_min"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LikesMin = &n
+            }
+        }
+        if v := r.URL.Query().Get("likes_max"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LikesMax = &n
+            }
+        }
+
+		strict.GetAlbumMy(w, r, params)
 	}
 }
 
@@ -745,12 +888,28 @@ func wrapGetUsers(strict api.ServerInterface) http.HandlerFunc {
 
 func wrapGetMyPlaylists(strict api.ServerInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		params := api.GetMyPlaylistsParams{}
+
 		c, err := r.Cookie("Access-Token")
 		if err != nil {
 			slog.Error(err.Error())
 			c = &http.Cookie{}
 		}
-		strict.GetMyPlaylists(w, r, api.GetMyPlaylistsParams{AccessToken: c.Value})
+
+		params.AccessToken = c.Value
+
+		if v := r.URL.Query().Get("likes_min"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LikesMin = &n
+            }
+        }
+        if v := r.URL.Query().Get("likes_max"); v != "" {
+            if n, parseErr := strconv.Atoi(v); parseErr == nil {
+                params.LikesMax = &n
+            }
+        }
+
+		strict.GetMyPlaylists(w, r, params)
 	}
 }
 
@@ -1903,7 +2062,12 @@ func (h Handler) GetAlbumMy(ctx context.Context, request api.GetAlbumMyRequestOb
 
 	id := claims["sub"].(string)
 
-	a, err := h.aService.GetUploadedByUserAlbums(ctx, id)
+	af := models.AlbumFilter{
+		LikesMin: request.Params.LikesMin,
+		LikesMax: request.Params.LikesMax,
+	}
+
+	a, err := h.aService.GetUploadedByUserAlbums(ctx, id, af)
 	if err != nil {
 		slog.Error(fmt.Sprintf("%s: %s", "GetAlbumsMy get", err.Error()))
 		return api.GetAlbumMy500Response{}, err
@@ -1926,12 +2090,6 @@ func (h Handler) PostMusicPlay(ctx context.Context, request api.PostMusicPlayReq
 	if err != nil {
 		slog.Error(err.Error())
 		return api.PostMusicPlay500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
-	}
-
-	err = h.mService.AddListening(ctx, *request.Body.MusicId)
-	if err != nil {
-		slog.Error(err.Error())
-		return api.PostMusicPlay500JSONResponse(err.Error()), err
 	}
 
 	return api.PostMusicPlay200JSONResponse{
@@ -2022,7 +2180,12 @@ func (h Handler) GetMyPlaylists(ctx context.Context, request api.GetMyPlaylistsR
 
 	userID := claims["sub"].(string)
 
-	pl, err := h.pService.GetMyPlaylists(ctx, userID)
+	plf := models.PlaylistFilter{
+		LikesMin: request.Params.LikesMin,
+		LikesMax: request.Params.LikesMax,
+	}
+
+	pl, err := h.pService.GetMyPlaylists(ctx, userID, plf)
 	if err != nil {
 		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
 		return api.GetMyPlaylists500JSONResponse(err.Error()), err
@@ -2054,7 +2217,12 @@ func (h Handler) GetMyPlaylists(ctx context.Context, request api.GetMyPlaylistsR
 func (h Handler) GetPublicPlaylists(ctx context.Context, request api.GetPublicPlaylistsRequestObject) (api.GetPublicPlaylistsResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.GetPublicPlaylists()"
 
-	pl, err := h.pService.GetPublicPlaylists(ctx)
+	plf := models.PlaylistFilter{
+		LikesMin: request.Params.LikesMin,
+		LikesMax: request.Params.LikesMax,
+	}
+
+	pl, err := h.pService.GetPublicPlaylists(ctx, plf)
 	if err != nil {
 		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
 		return api.GetPublicPlaylists500JSONResponse(err.Error()), err
@@ -2320,7 +2488,12 @@ func (h Handler) AddMusicToPlaylist(ctx context.Context, request api.AddMusicToP
 func (h Handler) GetAlbums(ctx context.Context, request api.GetAlbumsRequestObject) (api.GetAlbumsResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.GetAlbums()"
 
-	a, err := h.aService.GetAlbumsInfo(ctx)
+	af := models.AlbumFilter{
+		LikesMin: request.Params.LikesMin,
+		LikesMax: request.Params.LikesMax,
+	}
+
+	a, err := h.aService.GetAlbumsInfo(ctx, af)
 	if err != nil {
 		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
 		return api.GetAlbums500JSONResponse(err.Error()), err
@@ -2342,6 +2515,7 @@ func (h Handler) GetAlbums(ctx context.Context, request api.GetAlbumsRequestObje
 			UploaderId: &a[i].UploaderID,
 			UploaderUsername: &a[i].Username,
 			Cover: &coverURL,
+			LikesCount: &a[i].LikesCount,
 		})
 	}
 
@@ -2408,6 +2582,98 @@ func (h Handler) GetAlbumID(ctx context.Context, request api.GetAlbumIDRequestOb
 		Tracks: &al,
 		AvailableUpdate: &availableUpdate,
 	}, nil
+}
+
+func (h Handler) GetAlbumMyLikes(ctx context.Context, request api.GetAlbumMyLikesRequestObject) (api.GetAlbumMyLikesResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.GetAlbumMyLikes()"
+	slog.Debug(op)
+
+	t := request.Params.AccessToken
+	if t == "" {
+		return api.GetAlbumMyLikes500Response{}, errors.New("token empty")
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.GetAlbumMyLikes500Response{}, err
+	}
+
+	userID := claims["sub"].(string)
+
+	af := models.AlbumFilter{
+		LikesMin: request.Params.LikesMin,
+		LikesMax: request.Params.LikesMax,
+	}
+
+	slog.Info(fmt.Sprintf("%+v", af))
+
+	al, err := h.aService.GetLikedAlbums(ctx, userID, af)
+	if err != nil {
+		slog.Error(fmt.Sprintf("%s: %s", "GetLikedAlbums", err.Error()))
+		return api.GetAlbumMyLikes500Response{}, err
+	}
+
+	alr := make([]api.Album, 0, len(al))
+	for i := range al {
+		alr = append(alr, api.Album{
+			Id:               &al[i].ID,
+			Name:             &al[i].Name,
+			UploaderId:       &al[i].UploaderID,
+			UploaderUsername: &al[i].Username,
+			Cover:            &al[i].Cover,
+			LikesCount:       &al[i].LikesCount,
+		})
+	}
+
+	return api.GetAlbumMyLikes200JSONResponse(alr), nil
+}
+
+func (h Handler) PostAlbumLike(ctx context.Context, request api.PostAlbumLikeRequestObject) (api.PostAlbumLikeResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.PostAlbumLike()"
+	slog.Debug(fmt.Sprintf("%s: %s", "LikeAlbum", op))
+
+	t := request.Params.AccessToken
+	if t == "" {
+		return api.PostAlbumLike500Response{}, errors.New("token empty")
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		return api.PostAlbumLike500Response{}, err
+	}
+
+	userID := claims["sub"].(string)
+	err = h.aService.LikeAlbum(ctx, *request.Body.AlbumId, userID)
+	if err != nil {
+		slog.Error(fmt.Sprintf("%s: %s", "LikeAlbum", err.Error()))
+		return api.PostAlbumLike500Response{}, err
+	}
+
+	return api.PostAlbumLike200Response{}, nil
+}
+
+func (h Handler) DeleteAlbumLike(ctx context.Context, request api.DeleteAlbumLikeRequestObject) (api.DeleteAlbumLikeResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.DeleteAlbumLike()"
+	slog.Debug(op)
+
+	t := request.Params.AccessToken
+	if t == "" {
+		return api.DeleteAlbumLike500Response{}, errors.New("token empty")
+	}
+
+	claims, err := h.uServices.CheckAccessToken(ctx, t)
+	if err != nil {
+		return api.DeleteAlbumLike500Response{}, err
+	}
+
+	userID := claims["sub"].(string)
+	err = h.aService.DeleteLikeAlbum(ctx, *request.Body.AlbumId, userID)
+	if err != nil {
+		return api.DeleteAlbumLike500Response{}, err
+	}
+
+	return api.DeleteAlbumLike200Response{}, nil
 }
 
 func (h Handler) UpdateAlbum(w http.ResponseWriter, r *http.Request) {
@@ -2578,7 +2844,14 @@ func (h Handler) GetPlaylistMyLikes(ctx context.Context, request api.GetPlaylist
 
 	userID := claims["sub"].(string)
 
-	pl, err := h.pService.GetLikedPlaylists(ctx, userID)
+	plf := models.PlaylistFilter{
+		LikesMin: request.Params.LikesMin,
+		LikesMax: request.Params.LikesMax,
+	}
+
+	slog.Info(fmt.Sprintf("%s: %+v", "GetPlaylistMyLikes: ", plf))
+
+	pl, err := h.pService.GetLikedPlaylists(ctx, userID, plf)
 	if err != nil {
 		slog.Error(err.Error())
 		return api.GetPlaylistMyLikes500Response{}, err

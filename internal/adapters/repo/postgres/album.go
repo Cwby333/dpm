@@ -15,6 +15,7 @@ type Album struct {
 	Name string `db:"name"`
 	UploaderID string `db:"uploader_id"`
 	Cover string `db:"cover"`
+	LikesCount int `db:"count_likes"`
 }
 
 type AlbumInfo struct {
@@ -28,6 +29,7 @@ func AlbumDBToAlbum(a Album) models.Album {
 		Name: a.Name,
 		UploaderID: a.UploaderID,
 		Cover: a.Cover,
+		LikesCount: a.LikesCount,
 	}
 }
 
@@ -107,8 +109,9 @@ func (pg *Postgres) DeleteAlbum(ctx context.Context, id string) (error) {
 
 func (pg *Postgres) GetAlbum(ctx context.Context, id string) (models.Album, error) {
 	const op = "./internal/adapters/repo/postgres/album.go.GetAlbum()"
+	slog.Debug(op, slog.String("albumID", id))
 
-	q := "SELECT name, uploader_id, cover FROM albums WHERE id = $1"
+	q := "SELECT name, uploader_id, cover, count_likes FROM albums WHERE id = $1"
 	rows, err := pg.pool.Query(ctx, q, id)
 	if err != nil {
 		return models.Album{}, fmt.Errorf("%s: %w", op, err)
@@ -117,8 +120,9 @@ func (pg *Postgres) GetAlbum(ctx context.Context, id string) (models.Album, erro
 	name := ""
 	uploaderID := ""
 	cover := ""
+	likesCount := 0
 	for rows.Next() {
-		err = rows.Scan(&name, &uploaderID, &cover)
+		err = rows.Scan(&name, &uploaderID, &cover, &likesCount)
 		if err != nil {
 			return models.Album{}, fmt.Errorf("%s: %w", op, err)
 		}
@@ -129,6 +133,7 @@ func (pg *Postgres) GetAlbum(ctx context.Context, id string) (models.Album, erro
 		Name: name,
 		UploaderID: uploaderID,
 		Cover: cover,
+		LikesCount: likesCount,
 	}, nil
 }
 
@@ -157,8 +162,9 @@ func (pg *Postgres) GetAlbumsMusic(ctx context.Context, id string) ([]models.Lik
 
 func (pg *Postgres) GetAlbumInfo(ctx context.Context, id string) (models.AlbumInfo, error) {
 	const op = "./internal/adapters/repo/postgres/album.go.GetAlbumInfo()"
+	slog.Debug(op, slog.String("albumID", id))
 
-	q := "SELECT a.id, a.name, a.uploader_id, a.cover, u.username FROM albums a JOIN users u ON a.uploader_id = u.id WHERE a.id = $1"
+	q := "SELECT a.id, a.name, a.uploader_id, a.cover, a.count_likes, u.username FROM albums a JOIN users u ON a.uploader_id = u.id WHERE a.id = $1"
 	rows, err := pg.pool.Query(ctx, q, id)
 	if err != nil {
 		return models.AlbumInfo{}, fmt.Errorf("%s: %w", op, err)
@@ -172,11 +178,28 @@ func (pg *Postgres) GetAlbumInfo(ctx context.Context, id string) (models.AlbumIn
 	return AlbumInfoDBToai(a), nil
 }
 
-func (pg *Postgres) GetAlbumsInfo(ctx context.Context) ([]models.AlbumInfo, error) {
+func (pg *Postgres) GetAlbumsInfo(ctx context.Context, af models.AlbumFilter) ([]models.AlbumInfo, error) {
 	const op = "./internal/adapters/repo/postgres/album.go.GetAlbumsInfo()"
+	slog.Debug(op)
 
-	q := "SELECT a.id, a.name, a.uploader_id, a.cover, u.username FROM albums a JOIN users u ON a.uploader_id = u.id"
-	rows, err := pg.pool.Query(ctx, q)
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	sql := psql.Select("a.id, a.name, a.uploader_id, a.cover, a.count_likes, u.username").From("albums a").Join("users u ON a.uploader_id = u.id")
+
+	if af.LikesMin != nil {
+		sql = sql.Where("count_likes >= ?", af.LikesMin)
+	}
+
+	if af.LikesMax != nil {
+		sql = sql.Where("count_likes <= ?", af.LikesMax)
+	}
+
+	q, args, err := sql.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := pg.pool.Query(ctx, q, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -196,8 +219,9 @@ func (pg *Postgres) GetAlbumsInfo(ctx context.Context) ([]models.AlbumInfo, erro
 
 func (pg *Postgres) GetUserAlbums(ctx context.Context, userID string) ([]models.AlbumInfo, error) {
 	const op = "./internal/adapters/repo/postgres/album.go.GetUserAlbums()"
+	slog.Debug(op, slog.String("userID", userID))
 
-	q := "SELECT a.id, a.name, a.uploader_id, a.cover, u.username FROM albums a JOIN users u ON a.uploader_id = u.id WHERE a.uploader_id = $1"
+	q := "SELECT a.id, a.name, a.uploader_id, a.cover, a.count_likes, u.username FROM albums a JOIN users u ON a.uploader_id = u.id WHERE a.uploader_id = $1"
 	rows, err := pg.pool.Query(ctx, q, userID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
@@ -216,11 +240,28 @@ func (pg *Postgres) GetUserAlbums(ctx context.Context, userID string) ([]models.
 	return al, nil
 }
 
-func (pg *Postgres) GetUploadedByUserAlbums(ctx context.Context, id string) ([]models.Album, error) {
+func (pg *Postgres) GetUploadedByUserAlbums(ctx context.Context, id string, af models.AlbumFilter) ([]models.Album, error) {
 	const op = "./internal/adapters/repo/postgres/album.go.GetUploadedByUserAlbums()"
+	slog.Debug(op, slog.String("userID", id))
 
-	q := "SELECT id, name, cover FROM albums WHERE uploader_id = $1"
-	rows, err := pg.pool.Query(ctx, q, id)
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	sql := psql.Select("id, name, cover, count_likes").Where("uploader_id = ?", id)
+
+	if af.LikesMin != nil {
+		sql = sql.Where("count_likes >= ?", af.LikesMin)
+	}
+
+	if af.LikesMax != nil {
+		sql = sql.Where("count_likes <= ?", af.LikesMax)
+	}
+
+	q, args, err := sql.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := pg.pool.Query(ctx, q, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -229,8 +270,9 @@ func (pg *Postgres) GetUploadedByUserAlbums(ctx context.Context, id string) ([]m
 	aID := ""
 	name := ""
 	cover := ""
+	likesCount := 0
 	for rows.Next() {
-		err = rows.Scan(&aID, &name, &cover)
+		err = rows.Scan(&aID, &name, &cover, &likesCount)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -239,6 +281,7 @@ func (pg *Postgres) GetUploadedByUserAlbums(ctx context.Context, id string) ([]m
 			ID: aID,
 			Name: name,
 			Cover: cover,
+			LikesCount: likesCount,
 		})
 	}
 
@@ -303,8 +346,28 @@ func (pg *Postgres) UpdateAlbum(ctx context.Context, album models.Album) (error)
 	return nil
 }
 
+func (pg *Postgres) DeleteLikeAlbum(ctx context.Context, albumID string, userID string) (error) {
+	const op = "./internal/adapters/repo/postgres/album.go.DeleteLikeAlbum()"
+	slog.Debug(op, slog.String("albumID", albumID), slog.String("userID", userID))
+
+	q := "DELETE FROM albums_likes WHERE album_id = $1 AND user_id = $2"
+	_, err := pg.pool.Exec(ctx, q, albumID, userID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	q = "UPDATE albums SET count_likes = count_likes - 1 WHERE id = $1"
+	_, err = pg.pool.Exec(ctx, q, albumID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
+}
+
 func (pg *Postgres) LikeAlbum(ctx context.Context, albumID string, userID string) (error) {
 	const op = "./internal/adapters/repo/postgres/album.go.LikeAlbum()"
+	slog.Debug(op, slog.String("albumID", albumID), slog.String("userID", userID))
 
 	q := "INSERT INTO albums_likes(album_id, user_id) VALUES ($1, $2)"
 	_, err := pg.pool.Exec(ctx, q, albumID, userID)
@@ -312,5 +375,50 @@ func (pg *Postgres) LikeAlbum(ctx context.Context, albumID string, userID string
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
+	q = "UPDATE albums SET count_likes = count_likes + 1 WHERE id = $1"
+	_, err = pg.pool.Exec(ctx, q, albumID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
 	return nil
+}
+
+func (pg *Postgres) GetLikedAlbums(ctx context.Context, userID string, af models.AlbumFilter) ([]models.AlbumInfo, error) {
+	const op = "./internal/adapters/repo/postgres/album.go.GetLikedAlbums()"
+	slog.Debug(op, slog.String("userID", userID))
+
+	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+
+	sql := psql.Select("a.id, a.name, a.uploader_id, a.cover, a.count_likes, u.username").From("albums a").Join("albums_likes al ON a.id = al.album_id").Join("users u ON a.uploader_id = u.id").Where("al.user_id = ?", userID)
+
+	if af.LikesMin != nil {
+		sql = sql.Where("count_likes >= ?", af.LikesMin)
+	}
+
+	if af.LikesMax != nil {
+		sql = sql.Where("count_likes <= ?", af.LikesMax)
+	}
+
+	q, args, err := sql.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	rows, err := pg.pool.Query(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	a, err := pgx.CollectRows(rows, pgx.RowToStructByName[AlbumInfo])
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	al := make([]models.AlbumInfo, 0, len(a))
+	for i := range a {
+		al = append(al, AlbumInfoDBToai(a[i]))
+	}
+
+	return al, nil
 }
