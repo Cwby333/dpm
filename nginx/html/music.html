@@ -1137,6 +1137,12 @@
 			// Воспроизведение музыки (отправляет POST в историю)
 			async function playMusic(musicId, musicName, artistName, songUrl) {
 				const added = await addToListeningHistory(musicId)
+				fetch(`${apiBaseUrl}/music/inc-lis-count`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ music_id: musicId }),
+					credentials: 'include',
+				}).catch(err => console.warn('inc-lis-count error:', err))
 				if (added) {
 					showNotification(
 						`🎵 "${musicName}" добавлен в историю прослушиваний`,

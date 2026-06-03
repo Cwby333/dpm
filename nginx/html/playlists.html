@@ -210,6 +210,14 @@
     .hamburger.active span:nth-child(2) { opacity: 0; }
     .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
 }
+.sort-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; align-items: center; }
+.sort-btn {
+    padding: 0.4rem 0.8rem; border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.1); color: white; border-radius: 6px;
+    cursor: pointer; font-size: 0.8rem; transition: all 0.2s ease;
+}
+.sort-btn:hover { background: rgba(255,255,255,0.2); }
+.sort-btn.active { background: white; color: #667eea; border-color: white; font-weight: 600; }
 </style>
 	</head>
 	<body>
@@ -258,6 +266,11 @@
 				<button class="tab-btn" data-tab="likes">❤️ Понравившиеся</button>
 			</div>
 
+			<div class="sort-bar">
+				<button class="sort-btn" data-sort="name" onclick="sortPlaylists('name')">📝 Название</button>
+				<button class="sort-btn" data-sort="likes" onclick="sortPlaylists('likes')">❤️ Лайки</button>
+			</div>
+
 			<div class="status-bar">
 				<div class="status-info">
 					<span class="status-dot" id="statusDot"></span>
@@ -297,6 +310,9 @@
 			const apiBaseUrl = 'https://172.17.110.58:443'
 			let currentTab = 'my'
 			let isLoading = false
+			let sortField = ''
+			let sortAsc = true
+			let allPlaylists = []
 
 			const loadingContainer = document.getElementById('loadingContainer')
 			const playlistsContainer = document.getElementById('playlistsContainer')
@@ -328,11 +344,18 @@
 					}
 
 					const data = await response.json()
-					const playlists = Array.isArray(data) ? data : []
+					allPlaylists = Array.isArray(data) ? data : []
 
 					updateStatus('success', 'Плейлисты загружены')
-					playlistsCount.textContent = `${playlists.length} плейлистов`
-					renderPlaylists(playlists)
+					playlistsCount.textContent = `${allPlaylists.length} плейлистов`
+
+					sortField = ''
+					document.querySelectorAll('.sort-btn').forEach(b => {
+						b.classList.remove('active')
+						b.textContent = b.textContent.replace(/ [▲▼]$/, '')
+					})
+
+					renderPlaylists()
 				} catch (error) {
 					console.error('Ошибка загрузки:', error)
 					updateStatus('error', 'Ошибка загрузки')
@@ -342,7 +365,9 @@
 				}
 			}
 
-			function renderPlaylists(playlists) {
+			function renderPlaylists() {
+				let playlists = [...allPlaylists]
+
 				if (playlists.length === 0) {
 					const label = currentTab === 'my' ? 'своих' : currentTab === 'likes' ? 'понравившихся' : 'публичных'
 					playlistsContainer.innerHTML = `
@@ -353,6 +378,24 @@
 						</div>
 					`
 					return
+				}
+
+				if (sortField) {
+					playlists.sort((a, b) => {
+						let va, vb
+						switch (sortField) {
+							case 'name':
+								va = (a.name || '').toLowerCase()
+								vb = (b.name || '').toLowerCase()
+								return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va)
+							case 'likes':
+								va = a.likes_count || 0
+								vb = b.likes_count || 0
+								return sortAsc ? va - vb : vb - va
+							default:
+								return 0
+						}
+					})
 				}
 
 				playlistsContainer.innerHTML = `
@@ -375,6 +418,23 @@
 						}).join('')}
 					</div>
 				`
+			}
+
+			function sortPlaylists(field) {
+				if (sortField === field) {
+					sortAsc = !sortAsc
+				} else {
+					sortField = field
+					sortAsc = field === 'name'
+				}
+				document.querySelectorAll('.sort-btn').forEach(b => {
+					const isActive = b.dataset.sort === field
+					b.classList.toggle('active', isActive)
+					let txt = b.textContent.replace(/ [▲▼]$/, '')
+					if (isActive) txt += sortAsc ? ' ▲' : ' ▼'
+					b.textContent = txt
+				})
+				renderPlaylists()
 			}
 
 			function escapeHtml(text) {

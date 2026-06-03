@@ -121,6 +121,7 @@ const PlayerCore = (function () {
 			}, 500)
 
 			addToListeningHistory(musicId)
+			incrementListenCount(musicId)
 
 			return true
 		} catch (err) {
@@ -291,6 +292,25 @@ const PlayerCore = (function () {
 		} catch (err) {
 			warn('addToListeningHistory: ошибка:', err)
 			return false
+		}
+	}
+
+	async function incrementListenCount(musicId) {
+		try {
+			log(`incrementListenCount: ${musicId}`)
+			const response = await fetch(`${apiBaseUrl}/music/inc-lis-count`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ music_id: musicId }),
+				credentials: 'include',
+			})
+			if (response.ok) {
+				log('incrementListenCount: OK')
+			} else {
+				warn(`incrementListenCount: статус ${response.status}`)
+			}
+		} catch (err) {
+			warn('incrementListenCount: ошибка:', err)
 		}
 	}
 

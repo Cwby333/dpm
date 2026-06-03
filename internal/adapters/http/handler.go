@@ -331,6 +331,15 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
+	h.Mux.Handle("POST /music/inc-lis-count", corsMiddleware(http.HandlerFunc(strict.PostMusicIncLisCount)))
+	h.Mux.Handle("OPTIONS /music/inc-lis-count", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
 }
 
 func wrapGetLikedPlaylists(strict api.ServerInterface) http.HandlerFunc {
@@ -1076,7 +1085,7 @@ func (h Handler) AddListeningToLH(ctx context.Context, request api.AddListeningT
 	t := request.Params.AccessToken
 
 	if t == "" {
-		slog.Info("DeleteFavor token empty")
+		slog.Info("AddListeningHistory empty")
 		return api.AddListeningToLH500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
 	}
 
@@ -1167,7 +1176,7 @@ func (h Handler) DeleteListeningFromLH(ctx context.Context, request api.DeleteLi
 	t := request.Params.AccessToken
 
 	if t == "" {
-		slog.Info("DeleteFavor token empty")
+		slog.Info("DeleteListeningFromLH token empty")
 		return api.DeleteListeningFromLH500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
 	}
 
@@ -1199,7 +1208,7 @@ func (h Handler) AddFavor(ctx context.Context, request api.AddFavorRequestObject
 	t := request.Params.AccessToken
 
 	if t == "" {
-		slog.Info("DeleteFavor token empty")
+		slog.Info("AddFavor token empty")
 		return api.AddFavor500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
 	}
 
@@ -1229,7 +1238,7 @@ func (h Handler) GetFavor(ctx context.Context, request api.GetFavorRequestObject
 	t := request.Params.AccessToken
 
 	if t == "" {
-		slog.Info("DeleteFavor token empty")
+		slog.Info("getfavor token empty")
 		return api.GetFavor500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
 	}
 
@@ -1917,6 +1926,12 @@ func (h Handler) PostMusicPlay(ctx context.Context, request api.PostMusicPlayReq
 	if err != nil {
 		slog.Error(err.Error())
 		return api.PostMusicPlay500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	}
+
+	err = h.mService.AddListening(ctx, *request.Body.MusicId)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.PostMusicPlay500JSONResponse(err.Error()), err
 	}
 
 	return api.PostMusicPlay200JSONResponse{
@@ -2637,4 +2652,18 @@ func (h Handler) DeletePlaylistLike(ctx context.Context, request api.DeletePlayl
 	}
 
 	return api.DeletePlaylistLike200Response{}, nil
+}
+
+func (h Handler) PostMusicIncLisCount(ctx context.Context, request api.PostMusicIncLisCountRequestObject) (api.PostMusicIncLisCountResponseObject, error) {
+	const op = "./internal/adapters/http/handler.go.IncLisCount"
+
+	slog.Info("IncMusicLisCount get req")
+
+	err := h.mService.AddListening(ctx, *request.Body.MusicId)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.PostMusicIncLisCount500Response{}, err
+	}
+
+	return api.PostMusicIncLisCount200Response{}, nil
 }
