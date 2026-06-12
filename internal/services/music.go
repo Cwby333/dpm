@@ -176,8 +176,9 @@ func (s *MusicService) UploadHLSMusic(ctx context.Context, mData map[string]mode
 	}
 
 	cmd := exec.Command("ffmpeg", "-i", mp3Path,
+		"-vn",
 		"-c:a", "aac", "-b:a", "128k",
-		"-hls_time", "5",
+		"-hls_time", "10",
 		"-hls_list_size", "0",
 		"-hls_segment_filename", filepath.Join(tmpDir, "seg%d.ts"),
 		filepath.Join(tmpDir, "playlist.m3u8"),

@@ -2092,13 +2092,6 @@ func (h Handler) PostMusicPlay(ctx context.Context, request api.PostMusicPlayReq
 		return api.PostMusicPlay500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
 	}
 
-	m3u8, err := h.mService.GetPresignURLSong(ctx, *request.Body.MusicId + "-hls/playlist.m3u8")
-	if err != nil {
-		return api.PostMusicPlay500JSONResponse(err.Error()), nil
-	}
-
-	segKeys, err := h.mService.ListObjects(ctx, )
-
 	return api.PostMusicPlay200JSONResponse{
 		PresignUrl: &url,
 	}, nil
