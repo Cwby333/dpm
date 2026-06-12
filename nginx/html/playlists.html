@@ -5,42 +5,85 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Mute - Плейлисты</title>
 		<style>
-			* { margin: 0; padding: 0; box-sizing: border-box; }
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
 			body {
 				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-				min-height: 100vh; color: #333;
+				min-height: 100vh;
+				color: #333;
 			}
 			.navbar {
 				background: rgba(255, 255, 255, 0.95);
 				backdrop-filter: blur(10px);
 				box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-				position: fixed; width: 100%; top: 0; z-index: 1000;
+				position: fixed;
+				width: 100%;
+				top: 0;
+				z-index: 1000;
 			}
 			.nav-container {
-				max-width: 1200px; margin: 0 auto;
-				padding: 1rem 2rem; display: flex;
-				justify-content: space-between; align-items: center;
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: 1rem 2rem;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
 			}
-			.logo { display: flex; align-items: center; gap: 10px; }
-			.logo-icon { font-size: 2rem; line-height: 1; }
+			.logo {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+			.logo-icon {
+				font-size: 2rem;
+				line-height: 1;
+			}
 			.logo-text {
-				font-size: 1.5rem; font-weight: 700;
+				font-size: 1.5rem;
+				font-weight: 700;
 				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-				-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
 			}
-			.nav-links { display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; }
+			.nav-links {
+				display: flex;
+				gap: 2rem;
+				align-items: center;
+				flex-wrap: wrap;
+			}
 			.nav-links a {
-				text-decoration: none; color: #555; font-weight: 500;
-				transition: color 0.3s ease; padding: 0.5rem 1rem; border-radius: 6px;
+				text-decoration: none;
+				color: #555;
+				font-weight: 500;
+				transition: color 0.3s ease;
+				padding: 0.5rem 1rem;
+				border-radius: 6px;
 			}
-			.nav-links a:hover { color: #667eea; background: rgba(102,126,234,0.1); }
-			.nav-links .active { color: #667eea; background: rgba(102,126,234,0.1); }
-			.auth-buttons { display: flex; gap: 1rem; }
+			.nav-links a:hover {
+				color: #667eea;
+				background: rgba(102, 126, 234, 0.1);
+			}
+			.nav-links .active {
+				color: #667eea;
+				background: rgba(102, 126, 234, 0.1);
+			}
+			.auth-buttons {
+				display: flex;
+				gap: 1rem;
+			}
 			.btn {
-				padding: 0.5rem 1.5rem; border-radius: 6px; text-decoration: none;
-				font-weight: 500; transition: all 0.3s ease; border: none;
-				cursor: pointer; font-size: 1rem;
+				padding: 0.5rem 1.5rem;
+				border-radius: 6px;
+				text-decoration: none;
+				font-weight: 500;
+				transition: all 0.3s ease;
+				border: none;
+				cursor: pointer;
+				font-size: 1rem;
 			}
 			.btn-primary {
 				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -48,226 +91,453 @@
 			}
 			.btn-primary:hover {
 				transform: translateY(-2px);
-				box-shadow: 0 5px 20px rgba(102,126,234,0.4);
+				box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
 			}
 			.btn-outline {
-				border: 2px solid #667eea; color: #667eea; background: transparent;
+				border: 2px solid #667eea;
+				color: #667eea;
+				background: transparent;
 			}
-			.btn-outline:hover { background: #667eea; color: white; }
+			.btn-outline:hover {
+				background: #667eea;
+				color: white;
+			}
 			.main-content {
-				max-width: 1200px; margin: 140px auto 0; padding: 2rem;
+				max-width: 1200px;
+				margin: 140px auto 0;
+				padding: 2rem;
 			}
 			.page-header {
-				display: flex; justify-content: space-between; align-items: center;
-				margin-bottom: 2rem; color: white; flex-wrap: wrap; gap: 1rem;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 2rem;
+				color: white;
+				flex-wrap: wrap;
+				gap: 1rem;
 			}
 			.page-header h1 {
-				font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+				font-size: 2.5rem;
+				text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 			}
 			.tabs {
-				display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;
+				display: flex;
+				gap: 1rem;
+				margin-bottom: 2rem;
+				flex-wrap: wrap;
 			}
 			.tab-btn {
-				padding: 0.75rem 1.5rem; border: 2px solid rgba(255,255,255,0.5);
-				background: transparent; color: white; border-radius: 8px;
-				cursor: pointer; font-size: 1rem; font-weight: 500;
+				padding: 0.75rem 1.5rem;
+				border: 2px solid rgba(255, 255, 255, 0.5);
+				background: transparent;
+				color: white;
+				border-radius: 8px;
+				cursor: pointer;
+				font-size: 1rem;
+				font-weight: 500;
 				transition: all 0.3s ease;
 			}
-			.tab-btn:hover { background: rgba(255,255,255,0.1); }
-			.tab-btn.active { background: white; color: #667eea; border-color: white; }
+			.tab-btn:hover {
+				background: rgba(255, 255, 255, 0.1);
+			}
+			.tab-btn.active {
+				background: white;
+				color: #667eea;
+				border-color: white;
+			}
 			.playlists-grid {
 				display: grid;
 				grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-				gap: 1.5rem; margin-top: 1rem;
+				gap: 1.5rem;
+				margin-top: 1rem;
 			}
 			.playlist-card {
-				background: white; border-radius: 12px; overflow: hidden;
-				box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-				transition: transform 0.3s ease, box-shadow 0.3s ease;
+				background: white;
+				border-radius: 12px;
+				overflow: hidden;
+				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+				transition:
+					transform 0.3s ease,
+					box-shadow 0.3s ease;
 				cursor: pointer;
 			}
 			.playlist-card:hover {
 				transform: translateY(-5px);
-				box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+				box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
 			}
 			.playlist-cover {
 				height: 200px;
 				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-				display: flex; align-items: center; justify-content: center;
-				color: white; font-size: 4rem;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: white;
+				font-size: 4rem;
 			}
-			.playlist-info { padding: 1.5rem; }
-			.playlist-name { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; color: #333; }
-			.playlist-uploader { font-size: 0.9rem; color: #667eea; margin-bottom: 0.25rem; }
-			.playlist-meta { font-size: 0.85rem; color: #999; display: flex; gap: 0.5rem; align-items: center; }
+			.playlist-info {
+				padding: 1.5rem;
+			}
+			.playlist-name {
+				font-size: 1.2rem;
+				font-weight: 600;
+				margin-bottom: 0.5rem;
+				color: #333;
+			}
+			.playlist-uploader {
+				font-size: 0.9rem;
+				color: #667eea;
+				margin-bottom: 0.25rem;
+			}
+			.playlist-meta {
+				font-size: 0.85rem;
+				color: #999;
+				display: flex;
+				gap: 0.5rem;
+				align-items: center;
+			}
 			.private-badge {
-				font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px;
-				background: #fefcbf; color: #975a16; font-weight: 600;
+				font-size: 0.7rem;
+				padding: 0.15rem 0.5rem;
+				border-radius: 4px;
+				background: #fefcbf;
+				color: #975a16;
+				font-weight: 600;
 			}
 			.refresh-btn {
-				padding: 0.75rem 1.5rem; background: white; color: #667eea;
-				border: none; border-radius: 8px; cursor: pointer; font-size: 1rem;
-				display: flex; align-items: center; gap: 0.5rem;
-				transition: all 0.3s ease; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+				padding: 0.75rem 1.5rem;
+				background: white;
+				color: #667eea;
+				border: none;
+				border-radius: 8px;
+				cursor: pointer;
+				font-size: 1rem;
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				transition: all 0.3s ease;
+				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 			}
-			.refresh-btn:hover { background: #f0f0f0; transform: rotate(180deg); }
+			.refresh-btn:hover {
+				background: #f0f0f0;
+				transform: rotate(180deg);
+			}
 			.status-bar {
-				display: flex; justify-content: space-between; align-items: center;
-				margin-bottom: 1rem; color: white; font-size: 0.9rem;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin-bottom: 1rem;
+				color: white;
+				font-size: 0.9rem;
 			}
-			.status-info { display: flex; align-items: center; gap: 0.5rem; }
-			.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #48bb78; }
-			.status-dot.error { background: #f56565; }
-			.status-dot.loading { background: #fbbf24; }
+			.status-info {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+			}
+			.status-dot {
+				width: 8px;
+				height: 8px;
+				border-radius: 50%;
+				background: #48bb78;
+			}
+			.status-dot.error {
+				background: #f56565;
+			}
+			.status-dot.loading {
+				background: #fbbf24;
+			}
 			.loading-container {
-				display: none; flex-direction: column; align-items: center;
-				justify-content: center; padding: 4rem; background: white;
-				border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+				display: none;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				padding: 4rem;
+				background: white;
+				border-radius: 10px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 			}
 			.loading-spinner {
-				width: 50px; height: 50px; border: 5px solid #f3f3f3;
-				border-top: 5px solid #667eea; border-radius: 50%;
-				animation: spin 1s linear infinite; margin-bottom: 1rem;
+				width: 50px;
+				height: 50px;
+				border: 5px solid #f3f3f3;
+				border-top: 5px solid #667eea;
+				border-radius: 50%;
+				animation: spin 1s linear infinite;
+				margin-bottom: 1rem;
 			}
-			@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
 			.empty-state {
-				text-align: center; padding: 4rem; background: white;
-				border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+				text-align: center;
+				padding: 4rem;
+				background: white;
+				border-radius: 10px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 			}
-			.empty-state-icon { font-size: 5rem; margin-bottom: 1rem; opacity: 0.5; }
-			.empty-state h3 { color: #333; margin-bottom: 0.5rem; }
-			.empty-state p { color: #666; }
+			.empty-state-icon {
+				font-size: 5rem;
+				margin-bottom: 1rem;
+				opacity: 0.5;
+			}
+			.empty-state h3 {
+				color: #333;
+				margin-bottom: 0.5rem;
+			}
+			.empty-state p {
+				color: #666;
+			}
 			.error-container {
-				background: white; border-radius: 10px; padding: 2rem;
-				text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+				background: white;
+				border-radius: 10px;
+				padding: 2rem;
+				text-align: center;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 			}
-			.error-icon { font-size: 4rem; margin-bottom: 1rem; }
-			.error-container h3 { color: #c53030; margin-bottom: 0.5rem; }
-			.error-container p { color: #666; margin-bottom: 1.5rem; }
+			.error-icon {
+				font-size: 4rem;
+				margin-bottom: 1rem;
+			}
+			.error-container h3 {
+				color: #c53030;
+				margin-bottom: 0.5rem;
+			}
+			.error-container p {
+				color: #666;
+				margin-bottom: 1.5rem;
+			}
 			.footer {
-				background: #1a1a2e; color: white; padding: 3rem 2rem 1rem; margin-top: 4rem;
+				background: #1a1a2e;
+				color: white;
+				padding: 3rem 2rem 1rem;
+				margin-top: 4rem;
 			}
 			.footer-content {
-				max-width: 1200px; margin: 0 auto;
-				display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				max-width: 1200px;
+				margin: 0 auto;
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 				gap: 3rem;
 			}
-			.footer-section h4 { margin-bottom: 1rem; color: #667eea; }
-			.footer-section ul { list-style: none; }
-			.footer-section ul li { margin-bottom: 0.5rem; }
-			.footer-section a { color: #999; text-decoration: none; transition: color 0.3s ease; }
-			.footer-section a:hover { color: #667eea; }
+			.footer-section h4 {
+				margin-bottom: 1rem;
+				color: #667eea;
+			}
+			.footer-section ul {
+				list-style: none;
+			}
+			.footer-section ul li {
+				margin-bottom: 0.5rem;
+			}
+			.footer-section a {
+				color: #999;
+				text-decoration: none;
+				transition: color 0.3s ease;
+			}
+			.footer-section a:hover {
+				color: #667eea;
+			}
 			.footer-bottom {
-				max-width: 1200px; margin: 2rem auto 0; padding-top: 2rem;
-				border-top: 1px solid rgba(255,255,255,0.1);
-				text-align: center; color: #999; font-size: 0.9rem;
+				max-width: 1200px;
+				margin: 2rem auto 0;
+				padding-top: 2rem;
+				border-top: 1px solid rgba(255, 255, 255, 0.1);
+				text-align: center;
+				color: #999;
+				font-size: 0.9rem;
 			}
 			@media (max-width: 768px) {
-				.nav-container { flex-direction: column; gap: 1rem; }
-				.nav-links { flex-direction: column; width: 100%; }
-				.auth-buttons { width: 100%; justify-content: center; }
-				.page-header { flex-direction: column; align-items: stretch; }
-				.playlists-grid { grid-template-columns: 1fr; }
-				.tabs { justify-content: center; }
+				.nav-container {
+					flex-direction: column;
+					gap: 1rem;
+				}
+				.nav-links {
+					flex-direction: column;
+					width: 100%;
+				}
+				.auth-buttons {
+					width: 100%;
+					justify-content: center;
+				}
+				.page-header {
+					flex-direction: column;
+					align-items: stretch;
+				}
+				.playlists-grid {
+					grid-template-columns: 1fr;
+				}
+				.tabs {
+					justify-content: center;
+				}
 			}
-@media (max-width: 768px) { .main-content { margin-top: 260px; } }
+			@media (max-width: 768px) {
+				.main-content {
+					margin-top: 260px;
+				}
+			}
 
-.hamburger {
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    gap: 5px;
-    background: none !important;
-    border: none !important;
-    border-radius: 0 !important;
-    cursor: pointer;
-    padding: 8px;
-    width: auto !important;
-    height: auto !important;
-    font-size: inherit !important;
-    color: inherit !important;
-    box-shadow: none !important;
-}
-.hamburger span {
-    display: block;
-    width: 25px;
-    height: 3px;
-    background: #555;
-    border-radius: 3px;
-    transition: all 0.3s ease;
-}
-.hamburger:hover span { background: #667eea; }
+			.hamburger {
+				display: none;
+				flex-direction: column;
+				justify-content: center;
+				gap: 5px;
+				background: none !important;
+				border: none !important;
+				border-radius: 0 !important;
+				cursor: pointer;
+				padding: 8px;
+				width: auto !important;
+				height: auto !important;
+				font-size: inherit !important;
+				color: inherit !important;
+				box-shadow: none !important;
+			}
+			.hamburger span {
+				display: block;
+				width: 25px;
+				height: 3px;
+				background: #555;
+				border-radius: 3px;
+				transition: all 0.3s ease;
+			}
+			.hamburger:hover span {
+				background: #667eea;
+			}
 
-@media (max-width: 797px) {
-    .nav-container { flex-direction: row !important; flex-wrap: wrap; }
-    .hamburger { display: flex; margin-left: auto; }
-    .nav-links { display: none; flex-basis: 100%; flex-direction: column; width: 100%; gap: 0.25rem; padding: 0.5rem 0; }
-    .nav-links.active { display: flex; }
-    .nav-links a { width: 100%; }
-    .auth-buttons { flex-direction: column; width: 100%; gap: 0.5rem; }
-    .auth-buttons .btn { text-align: center; }
-    .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
-    .hamburger.active span:nth-child(2) { opacity: 0; }
-    .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
-}
-.sort-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; align-items: center; }
-.sort-btn {
-    padding: 0.4rem 0.8rem; border: 1px solid rgba(255,255,255,0.3);
-    background: rgba(255,255,255,0.1); color: white; border-radius: 6px;
-    cursor: pointer; font-size: 0.8rem; transition: all 0.2s ease;
-}
-.sort-btn:hover { background: rgba(255,255,255,0.2); }
-.sort-btn.active { background: white; color: #667eea; border-color: white; font-weight: 600; }
-.search-input {
-    width: 100%; padding: 0.75rem 1rem; margin-bottom: 1rem;
-    border: 2px solid #e2e8f0; border-radius: 10px;
-    font-size: 1rem; background: white; color: #333;
-    transition: border-color 0.3s ease; outline: none;
-}
-.search-input:focus { border-color: #667eea; }
-.search-input::placeholder { color: #aaa; }
-.filter-bar {
-    background: rgba(255,255,255,0.95);
-    border-radius: 10px;
-    padding: 1rem 1.5rem;
-    margin-bottom: 1rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    align-items: flex-end;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-}
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-.filter-group label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #666;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-.filter-group input {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    width: 90px;
-    outline: none;
-}
-.filter-group input:focus { border-color: #667eea; }
-.filter-actions {
-    display: flex;
-    gap: 0.5rem;
-    align-items: flex-end;
-}
-.filter-actions .btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-}
-</style>
+			@media (max-width: 797px) {
+				.nav-container {
+					flex-direction: row !important;
+					flex-wrap: wrap;
+				}
+				.hamburger {
+					display: flex;
+					margin-left: auto;
+				}
+				.nav-links {
+					display: none;
+					flex-basis: 100%;
+					flex-direction: column;
+					width: 100%;
+					gap: 0.25rem;
+					padding: 0.5rem 0;
+				}
+				.nav-links.active {
+					display: flex;
+				}
+				.nav-links a {
+					width: 100%;
+				}
+				.auth-buttons {
+					flex-direction: column;
+					width: 100%;
+					gap: 0.5rem;
+				}
+				.auth-buttons .btn {
+					text-align: center;
+				}
+				.hamburger.active span:nth-child(1) {
+					transform: rotate(45deg) translate(5px, 5px);
+				}
+				.hamburger.active span:nth-child(2) {
+					opacity: 0;
+				}
+				.hamburger.active span:nth-child(3) {
+					transform: rotate(-45deg) translate(5px, -5px);
+				}
+			}
+			.sort-bar {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+				margin-bottom: 1rem;
+				align-items: center;
+			}
+			.sort-btn {
+				padding: 0.4rem 0.8rem;
+				border: 1px solid rgba(255, 255, 255, 0.3);
+				background: rgba(255, 255, 255, 0.1);
+				color: white;
+				border-radius: 6px;
+				cursor: pointer;
+				font-size: 0.8rem;
+				transition: all 0.2s ease;
+			}
+			.sort-btn:hover {
+				background: rgba(255, 255, 255, 0.2);
+			}
+			.sort-btn.active {
+				background: white;
+				color: #667eea;
+				border-color: white;
+				font-weight: 600;
+			}
+			.search-input {
+				width: 100%;
+				padding: 0.75rem 1rem;
+				margin-bottom: 1rem;
+				border: 2px solid #e2e8f0;
+				border-radius: 10px;
+				font-size: 1rem;
+				background: white;
+				color: #333;
+				transition: border-color 0.3s ease;
+				outline: none;
+			}
+			.search-input:focus {
+				border-color: #667eea;
+			}
+			.search-input::placeholder {
+				color: #aaa;
+			}
+			.filter-bar {
+				background: rgba(255, 255, 255, 0.95);
+				border-radius: 10px;
+				padding: 1rem 1.5rem;
+				margin-bottom: 1rem;
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.75rem;
+				align-items: flex-end;
+				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+			}
+			.filter-group {
+				display: flex;
+				flex-direction: column;
+				gap: 0.25rem;
+			}
+			.filter-group label {
+				font-size: 0.75rem;
+				font-weight: 600;
+				color: #666;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+			}
+			.filter-group input {
+				padding: 0.5rem 0.75rem;
+				border: 1px solid #e2e8f0;
+				border-radius: 6px;
+				font-size: 0.9rem;
+				width: 90px;
+				outline: none;
+			}
+			.filter-group input:focus {
+				border-color: #667eea;
+			}
+			.filter-actions {
+				display: flex;
+				gap: 0.5rem;
+				align-items: flex-end;
+			}
+			.filter-actions .btn {
+				padding: 0.5rem 1rem;
+				font-size: 0.85rem;
+			}
+		</style>
 	</head>
 	<body>
 		<nav class="navbar">
@@ -303,8 +573,13 @@
 		<div class="main-content">
 			<div class="page-header">
 				<h1>📋 Плейлисты</h1>
-				<div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-					<button class="btn btn-primary" onclick="window.location.href='playlist-create.html'">➕ Создать плейлист</button>
+				<div style="display: flex; gap: 0.75rem; flex-wrap: wrap">
+					<button
+						class="btn btn-primary"
+						onclick="window.location.href = 'playlist-create.html'"
+					>
+						➕ Создать плейлист
+					</button>
 					<button class="refresh-btn" id="refreshBtn">🔄</button>
 				</div>
 			</div>
@@ -316,20 +591,38 @@
 			</div>
 
 			<div class="sort-bar">
-				<button class="sort-btn" data-sort="name" onclick="sortPlaylists('name')">📝 Название</button>
-				<button class="sort-btn" data-sort="likes" onclick="sortPlaylists('likes')">❤️ Лайки</button>
+				<button
+					class="sort-btn"
+					data-sort="name"
+					onclick="sortPlaylists('name')"
+				>
+					📝 Название
+				</button>
+				<button
+					class="sort-btn"
+					data-sort="likes"
+					onclick="sortPlaylists('likes')"
+				>
+					❤️ Лайки
+				</button>
 			</div>
 
-			<input type="text" class="search-input" id="searchInput" placeholder="🔍 Поиск по названию..." oninput="filterPlaylists()">
+			<input
+				type="text"
+				class="search-input"
+				id="searchInput"
+				placeholder="🔍 Поиск по названию..."
+				oninput="filterPlaylists()"
+			/>
 
 			<div class="filter-bar">
 				<div class="filter-group">
 					<label>Лайков от</label>
-					<input type="number" id="filterLikesMin" min="0" placeholder="0">
+					<input type="number" id="filterLikesMin" min="0" placeholder="0" />
 				</div>
 				<div class="filter-group">
 					<label>Лайков до</label>
-					<input type="number" id="filterLikesMax" min="0" placeholder="∞">
+					<input type="number" id="filterLikesMax" min="0" placeholder="∞" />
 				</div>
 				<div class="filter-actions">
 					<button class="btn btn-primary" id="filterApplyBtn">Применить</button>
@@ -373,7 +666,7 @@
 		</footer>
 
 		<script>
-			const apiBaseUrl = 'https://172.17.110.58:443'
+			const apiBaseUrl = 'https://mutestreamingservice.ru'
 			let currentTab = 'my'
 			let isLoading = false
 			let sortField = ''
@@ -450,11 +743,18 @@
 				let playlists = [...allPlaylists]
 
 				if (searchQuery) {
-					playlists = playlists.filter(pl => (pl.name || '').toLowerCase().includes(searchQuery))
+					playlists = playlists.filter(pl =>
+						(pl.name || '').toLowerCase().includes(searchQuery),
+					)
 				}
 
 				if (playlists.length === 0) {
-					const label = currentTab === 'my' ? 'своих' : currentTab === 'likes' ? 'понравившихся' : 'публичных'
+					const label =
+						currentTab === 'my'
+							? 'своих'
+							: currentTab === 'likes'
+								? 'понравившихся'
+								: 'публичных'
 					playlistsContainer.innerHTML = `
 						<div class="empty-state">
 							<div class="empty-state-icon">📋</div>
@@ -485,9 +785,10 @@
 
 				playlistsContainer.innerHTML = `
 					<div class="playlists-grid">
-						${playlists.map(pl => {
-							const isPrivate = pl.private === true || pl.private === 'true'
-							return `
+						${playlists
+							.map(pl => {
+								const isPrivate = pl.private === true || pl.private === 'true'
+								return `
 								<div class="playlist-card" onclick="window.location.href='playlist.html?id=${encodeURIComponent(pl.id || '')}&name=${encodeURIComponent(pl.name || 'Без названия')}&uploader=${encodeURIComponent(pl.username || pl.uploader_id || '')}&cover=${encodeURIComponent(pl.cover || '')}&private=${encodeURIComponent(pl.private ? 'true' : 'false')}&likes_count=${encodeURIComponent(pl.likes_count || 0)}'">
 									<div class="playlist-cover" style="${pl.cover ? `background-image: url('${attrEscape(pl.cover)}'); background-size: cover; background-position: center;` : ''}">${pl.cover ? '' : '📋'}</div>
 									<div class="playlist-info">
@@ -500,7 +801,8 @@
 									</div>
 								</div>
 							`
-						}).join('')}
+							})
+							.join('')}
 					</div>
 				`
 			}
@@ -537,7 +839,10 @@
 
 			function attrEscape(text) {
 				if (!text) return ''
-				return text.replace(/'/g, '&#39;').replace(/\\/g, '\\\\').replace(/\n/g, ' ')
+				return text
+					.replace(/'/g, '&#39;')
+					.replace(/\\/g, '\\\\')
+					.replace(/\n/g, ' ')
 			}
 
 			function showLoading() {
@@ -556,8 +861,11 @@
 				statusText.textContent = message
 				statusDot.className = 'status-dot'
 				statusDot.style.background =
-					type === 'success' ? '#48bb78' :
-					type === 'error' ? '#f56565' : '#fbbf24'
+					type === 'success'
+						? '#48bb78'
+						: type === 'error'
+							? '#f56565'
+							: '#fbbf24'
 			}
 
 			function showError(message) {
@@ -573,41 +881,48 @@
 			}
 
 			document.querySelectorAll('.tab-btn').forEach(btn => {
-				btn.addEventListener('click', function() {
-					document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'))
+				btn.addEventListener('click', function () {
+					document
+						.querySelectorAll('.tab-btn')
+						.forEach(b => b.classList.remove('active'))
 					this.classList.add('active')
 					currentTab = this.dataset.tab
 					fetchPlaylists(currentTab)
 				})
 			})
 
-			document.getElementById('filterApplyBtn').addEventListener('click', () => fetchPlaylists(currentTab))
-			document.getElementById('filterResetBtn').addEventListener('click', () => {
-				document.getElementById('filterLikesMin').value = ''
-				document.getElementById('filterLikesMax').value = ''
-				fetchPlaylists(currentTab)
-			})
+			document
+				.getElementById('filterApplyBtn')
+				.addEventListener('click', () => fetchPlaylists(currentTab))
+			document
+				.getElementById('filterResetBtn')
+				.addEventListener('click', () => {
+					document.getElementById('filterLikesMin').value = ''
+					document.getElementById('filterLikesMax').value = ''
+					fetchPlaylists(currentTab)
+				})
 
 			document.addEventListener('DOMContentLoaded', () => fetchPlaylists('my'))
 			refreshBtn.addEventListener('click', () => fetchPlaylists(currentTab))
 		</script>
 
-	<script>
-		document.addEventListener('DOMContentLoaded', function() {
-			var hb = document.getElementById('hamburgerBtn');
-			if (hb) {
-				hb.addEventListener('click', function() {
-					document.querySelector('.nav-links').classList.toggle('active');
-					this.classList.toggle('active');
-				});
-			}
-			document.querySelectorAll('.nav-links a').forEach(function(link) {
-				link.addEventListener('click', function() {
-					document.querySelector('.nav-links').classList.remove('active');
-					var h = document.getElementById('hamburgerBtn');
-					if (h) h.classList.remove('active');
-				});
-			});
-		});
-	</script></body>
+		<script>
+			document.addEventListener('DOMContentLoaded', function () {
+				var hb = document.getElementById('hamburgerBtn')
+				if (hb) {
+					hb.addEventListener('click', function () {
+						document.querySelector('.nav-links').classList.toggle('active')
+						this.classList.toggle('active')
+					})
+				}
+				document.querySelectorAll('.nav-links a').forEach(function (link) {
+					link.addEventListener('click', function () {
+						document.querySelector('.nav-links').classList.remove('active')
+						var h = document.getElementById('hamburgerBtn')
+						if (h) h.classList.remove('active')
+					})
+				})
+			})
+		</script>
+	</body>
 </html>

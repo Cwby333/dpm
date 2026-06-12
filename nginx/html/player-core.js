@@ -8,7 +8,7 @@ const PlayerCore = (function () {
 	let updateInterval = null
 	let playlist = null
 	let currentIndex = -1
-	const apiBaseUrl = 'https://172.17.110.58:443'
+	const apiBaseUrl = 'https://mutestreamingservice.ru'
 
 	function log(...args) {
 		console.log('[PlayerCore]', ...args)
@@ -74,7 +74,9 @@ const PlayerCore = (function () {
 			}
 
 			audioElement.addEventListener('ended', () => {
-				log(`ended: "${currentMusicName}" завершился (repeatMode=${repeatMode}, playlist=${!!playlist}, index=${currentIndex}/${playlist ? playlist.length - 1 : 'n/a'})`)
+				log(
+					`ended: "${currentMusicName}" завершился (repeatMode=${repeatMode}, playlist=${!!playlist}, index=${currentIndex}/${playlist ? playlist.length - 1 : 'n/a'})`,
+				)
 				if (repeatMode === 1) {
 					log('ended: повтор одного трека')
 					audioElement.currentTime = 0
@@ -200,7 +202,9 @@ const PlayerCore = (function () {
 			currentIndex++
 		}
 		const track = playlist[currentIndex]
-		log(`next: → трек ${currentIndex + 1}/${playlist.length} — "${track.musicName}"`)
+		log(
+			`next: → трек ${currentIndex + 1}/${playlist.length} — "${track.musicName}"`,
+		)
 		return play(track.musicId, track.musicName, track.artistName)
 	}
 
@@ -221,7 +225,9 @@ const PlayerCore = (function () {
 		}
 		currentIndex--
 		const track = playlist[currentIndex]
-		log(`prev: ← трек ${currentIndex + 1}/${playlist.length} — "${track.musicName}"`)
+		log(
+			`prev: ← трек ${currentIndex + 1}/${playlist.length} — "${track.musicName}"`,
+		)
 		return play(track.musicId, track.musicName, track.artistName)
 	}
 

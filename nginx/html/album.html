@@ -5,7 +5,11 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Mute - Альбом</title>
 		<style>
-			* { margin: 0; padding: 0; box-sizing: border-box; }
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
 			body {
 				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -29,26 +33,57 @@
 				justify-content: space-between;
 				align-items: center;
 			}
-			.logo { display: flex; align-items: center; gap: 10px; }
-			.logo-icon { font-size: 2rem; line-height: 1; }
+			.logo {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+			.logo-icon {
+				font-size: 2rem;
+				line-height: 1;
+			}
 			.logo-text {
-				font-size: 1.5rem; font-weight: 700;
+				font-size: 1.5rem;
+				font-weight: 700;
 				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 				-webkit-background-clip: text;
 				-webkit-text-fill-color: transparent;
 			}
-			.nav-links { display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; }
-			.nav-links a {
-				text-decoration: none; color: #555; font-weight: 500;
-				transition: color 0.3s ease; padding: 0.5rem 1rem; border-radius: 6px;
+			.nav-links {
+				display: flex;
+				gap: 2rem;
+				align-items: center;
+				flex-wrap: wrap;
 			}
-			.nav-links a:hover { color: #667eea; background: rgba(102,126,234,0.1); }
-			.nav-links .active { color: #667eea; background: rgba(102,126,234,0.1); }
-			.auth-buttons { display: flex; gap: 1rem; }
+			.nav-links a {
+				text-decoration: none;
+				color: #555;
+				font-weight: 500;
+				transition: color 0.3s ease;
+				padding: 0.5rem 1rem;
+				border-radius: 6px;
+			}
+			.nav-links a:hover {
+				color: #667eea;
+				background: rgba(102, 126, 234, 0.1);
+			}
+			.nav-links .active {
+				color: #667eea;
+				background: rgba(102, 126, 234, 0.1);
+			}
+			.auth-buttons {
+				display: flex;
+				gap: 1rem;
+			}
 			.btn {
-				padding: 0.5rem 1.5rem; border-radius: 6px; text-decoration: none;
-				font-weight: 500; transition: all 0.3s ease; border: none;
-				cursor: pointer; font-size: 1rem;
+				padding: 0.5rem 1.5rem;
+				border-radius: 6px;
+				text-decoration: none;
+				font-weight: 500;
+				transition: all 0.3s ease;
+				border: none;
+				cursor: pointer;
+				font-size: 1rem;
 			}
 			.btn-primary {
 				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -56,186 +91,395 @@
 			}
 			.btn-primary:hover {
 				transform: translateY(-2px);
-				box-shadow: 0 5px 20px rgba(102,126,234,0.4);
+				box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
 			}
 			.btn-outline {
-				border: 2px solid #667eea; color: #667eea; background: transparent;
+				border: 2px solid #667eea;
+				color: #667eea;
+				background: transparent;
 			}
-			.btn-outline:hover { background: #667eea; color: white; }
+			.btn-outline:hover {
+				background: #667eea;
+				color: white;
+			}
 			.main-content {
-				max-width: 1200px; margin: 140px auto 0; padding: 2rem;
+				max-width: 1200px;
+				margin: 140px auto 0;
+				padding: 2rem;
 			}
 			.album-header {
-				background: white; border-radius: 16px; padding: 2rem;
-				margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-				display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;
+				background: white;
+				border-radius: 16px;
+				padding: 2rem;
+				margin-bottom: 2rem;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+				display: flex;
+				align-items: center;
+				gap: 2rem;
+				flex-wrap: wrap;
 			}
 			.album-cover-large {
-				width: 180px; height: 180px;
+				width: 180px;
+				height: 180px;
 				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-				border-radius: 12px; display: flex; align-items: center;
-				justify-content: center; color: white; font-size: 5rem;
+				border-radius: 12px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: white;
+				font-size: 5rem;
 				flex-shrink: 0;
 			}
-			.album-info h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #333; }
-			.album-info .album-uploader { color: #667eea; font-size: 1rem; margin-bottom: 0.25rem; }
-			.album-info .album-meta { color: #999; font-size: 0.9rem; }
+			.album-info h1 {
+				font-size: 2rem;
+				margin-bottom: 0.5rem;
+				color: #333;
+			}
+			.album-info .album-uploader {
+				color: #667eea;
+				font-size: 1rem;
+				margin-bottom: 0.25rem;
+			}
+			.album-info .album-meta {
+				color: #999;
+				font-size: 0.9rem;
+			}
 			.back-link {
-				display: inline-block; margin-bottom: 1rem; color: white;
-				text-decoration: none; font-size: 1rem; opacity: 0.8;
+				display: inline-block;
+				margin-bottom: 1rem;
+				color: white;
+				text-decoration: none;
+				font-size: 1rem;
+				opacity: 0.8;
 				transition: opacity 0.3s ease;
 			}
-			.back-link:hover { opacity: 1; }
+			.back-link:hover {
+				opacity: 1;
+			}
 			.section-title {
-				color: white; font-size: 1.5rem; margin-bottom: 1rem;
-				text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+				color: white;
+				font-size: 1.5rem;
+				margin-bottom: 1rem;
+				text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 			}
 			.loading-container {
-				display: none; flex-direction: column; align-items: center;
-				justify-content: center; padding: 4rem; background: white;
-				border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+				display: none;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				padding: 4rem;
+				background: white;
+				border-radius: 10px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 			}
 			.loading-spinner {
-				width: 50px; height: 50px; border: 5px solid #f3f3f3;
-				border-top: 5px solid #667eea; border-radius: 50%;
-				animation: spin 1s linear infinite; margin-bottom: 1rem;
+				width: 50px;
+				height: 50px;
+				border: 5px solid #f3f3f3;
+				border-top: 5px solid #667eea;
+				border-radius: 50%;
+				animation: spin 1s linear infinite;
+				margin-bottom: 1rem;
 			}
-			@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-			.tracks-list { display: flex; flex-direction: column; gap: 0.75rem; }
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
+			.tracks-list {
+				display: flex;
+				flex-direction: column;
+				gap: 0.75rem;
+			}
 			.track-card {
-				background: white; border-radius: 10px; padding: 1rem 1.5rem;
-				display: flex; align-items: center; gap: 1rem;
-				box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-				transition: transform 0.2s ease, box-shadow 0.2s ease;
+				background: white;
+				border-radius: 10px;
+				padding: 1rem 1.5rem;
+				display: flex;
+				align-items: center;
+				gap: 1rem;
+				box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+				transition:
+					transform 0.2s ease,
+					box-shadow 0.2s ease;
 				cursor: pointer;
 			}
 			.track-card:hover {
-				transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+				transform: translateX(5px);
+				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
 			}
 			.track-index {
-				width: 28px; color: #999; font-weight: 600; text-align: center;
+				width: 28px;
+				color: #999;
+				font-weight: 600;
+				text-align: center;
 				flex-shrink: 0;
 			}
 			.track-cover-small {
-				width: 48px; height: 48px;
+				width: 48px;
+				height: 48px;
 				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-				border-radius: 8px; flex-shrink: 0; background-size: cover;
+				border-radius: 8px;
+				flex-shrink: 0;
+				background-size: cover;
 				background-position: center;
 			}
-			.track-info { flex: 1; min-width: 0; }
-			.track-name { font-weight: 600; color: #333; margin-bottom: 0.2rem; }
-			.track-artist { font-size: 0.85rem; color: #667eea; }
+			.track-info {
+				flex: 1;
+				min-width: 0;
+			}
+			.track-name {
+				font-weight: 600;
+				color: #333;
+				margin-bottom: 0.2rem;
+			}
+			.track-artist {
+				font-size: 0.85rem;
+				color: #667eea;
+			}
 			.track-meta {
-				display: flex; align-items: center; gap: 1rem;
-				color: #999; font-size: 0.85rem; flex-shrink: 0;
+				display: flex;
+				align-items: center;
+				gap: 1rem;
+				color: #999;
+				font-size: 0.85rem;
+				flex-shrink: 0;
 			}
-			.track-likes { color: #e53e3e; }
+			.track-likes {
+				color: #e53e3e;
+			}
 			.empty-state {
-				text-align: center; padding: 4rem; background: white;
-				border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+				text-align: center;
+				padding: 4rem;
+				background: white;
+				border-radius: 10px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 			}
-			.empty-state-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
-			.empty-state h3 { color: #333; margin-bottom: 0.5rem; }
-			.empty-state p { color: #666; }
+			.empty-state-icon {
+				font-size: 4rem;
+				margin-bottom: 1rem;
+				opacity: 0.5;
+			}
+			.empty-state h3 {
+				color: #333;
+				margin-bottom: 0.5rem;
+			}
+			.empty-state p {
+				color: #666;
+			}
 			.btn-danger {
-				background: #e53e3e; color: white;
+				background: #e53e3e;
+				color: white;
 			}
-			.btn-danger:hover { background: #c53030; }
+			.btn-danger:hover {
+				background: #c53030;
+			}
 			.modal-overlay {
-				display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-				background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center;
+				display: none;
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.5);
+				z-index: 2000;
+				justify-content: center;
 				align-items: center;
 			}
-			.modal-overlay.active { display: flex; }
+			.modal-overlay.active {
+				display: flex;
+			}
 			.modal-content {
-				background: white; border-radius: 16px; width: 90%; max-width: 420px;
-				max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+				background: white;
+				border-radius: 16px;
+				width: 90%;
+				max-width: 420px;
+				max-height: 80vh;
+				overflow-y: auto;
+				box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 			}
 			.modal-header {
-				display: flex; justify-content: space-between; align-items: center;
-				padding: 1.5rem 2rem; border-bottom: 1px solid #e2e8f0;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				padding: 1.5rem 2rem;
+				border-bottom: 1px solid #e2e8f0;
 			}
-			.modal-header h3 { font-size: 1.3rem; color: #333; }
+			.modal-header h3 {
+				font-size: 1.3rem;
+				color: #333;
+			}
 			.modal-close {
-				background: none; border: none; font-size: 1.5rem; cursor: pointer;
-				color: #999; padding: 0.25rem;
+				background: none;
+				border: none;
+				font-size: 1.5rem;
+				cursor: pointer;
+				color: #999;
+				padding: 0.25rem;
 			}
-			.modal-close:hover { color: #333; }
-			.modal-body { padding: 1.5rem 2rem; }
-			.edit-field { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.35rem; }
+			.modal-close:hover {
+				color: #333;
+			}
+			.modal-body {
+				padding: 1.5rem 2rem;
+			}
+			.edit-field {
+				margin-bottom: 1rem;
+				display: flex;
+				flex-direction: column;
+				gap: 0.35rem;
+			}
 			.edit-field label {
-				font-size: 0.8rem; font-weight: 600; color: #666;
-				text-transform: uppercase; letter-spacing: 0.5px;
+				font-size: 0.8rem;
+				font-weight: 600;
+				color: #666;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
 			}
 			.footer {
-				background: #1a1a2e; color: white; padding: 3rem 2rem 1rem; margin-top: 4rem;
+				background: #1a1a2e;
+				color: white;
+				padding: 3rem 2rem 1rem;
+				margin-top: 4rem;
 			}
 			.footer-content {
-				max-width: 1200px; margin: 0 auto;
-				display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				max-width: 1200px;
+				margin: 0 auto;
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 				gap: 3rem;
 			}
-			.footer-section h4 { margin-bottom: 1rem; color: #667eea; }
-			.footer-section ul { list-style: none; }
-			.footer-section ul li { margin-bottom: 0.5rem; }
-			.footer-section a { color: #999; text-decoration: none; transition: color 0.3s ease; }
-			.footer-section a:hover { color: #667eea; }
+			.footer-section h4 {
+				margin-bottom: 1rem;
+				color: #667eea;
+			}
+			.footer-section ul {
+				list-style: none;
+			}
+			.footer-section ul li {
+				margin-bottom: 0.5rem;
+			}
+			.footer-section a {
+				color: #999;
+				text-decoration: none;
+				transition: color 0.3s ease;
+			}
+			.footer-section a:hover {
+				color: #667eea;
+			}
 			.footer-bottom {
-				max-width: 1200px; margin: 2rem auto 0; padding-top: 2rem;
-				border-top: 1px solid rgba(255,255,255,0.1);
-				text-align: center; color: #999; font-size: 0.9rem;
+				max-width: 1200px;
+				margin: 2rem auto 0;
+				padding-top: 2rem;
+				border-top: 1px solid rgba(255, 255, 255, 0.1);
+				text-align: center;
+				color: #999;
+				font-size: 0.9rem;
 			}
 			@media (max-width: 768px) {
-				.nav-container { flex-direction: column; gap: 1rem; }
-				.nav-links { flex-direction: column; width: 100%; }
-				.auth-buttons { width: 100%; justify-content: center; }
-				.album-header { flex-direction: column; text-align: center; }
-				.track-card { flex-wrap: wrap; }
-				.track-meta { width: 100%; justify-content: flex-end; }
+				.nav-container {
+					flex-direction: column;
+					gap: 1rem;
+				}
+				.nav-links {
+					flex-direction: column;
+					width: 100%;
+				}
+				.auth-buttons {
+					width: 100%;
+					justify-content: center;
+				}
+				.album-header {
+					flex-direction: column;
+					text-align: center;
+				}
+				.track-card {
+					flex-wrap: wrap;
+				}
+				.track-meta {
+					width: 100%;
+					justify-content: flex-end;
+				}
 			}
-@media (max-width: 768px) { .main-content { margin-top: 260px; } }
-		
-.hamburger {
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    gap: 5px;
-    background: none !important;
-    border: none !important;
-    border-radius: 0 !important;
-    cursor: pointer;
-    padding: 8px;
-    width: auto !important;
-    height: auto !important;
-    font-size: inherit !important;
-    color: inherit !important;
-    box-shadow: none !important;
-}
-.hamburger span {
-    display: block;
-    width: 25px;
-    height: 3px;
-    background: #555;
-    border-radius: 3px;
-    transition: all 0.3s ease;
-}
-.hamburger:hover span {
-    background: #667eea;
-}
+			@media (max-width: 768px) {
+				.main-content {
+					margin-top: 260px;
+				}
+			}
 
-@media (max-width: 797px) {
-    .nav-container { flex-direction: row !important; flex-wrap: wrap; }
-    .hamburger { display: flex; margin-left: auto; }
-    .nav-links { display: none; flex-basis: 100%; flex-direction: column; width: 100%; gap: 0.25rem; padding: 0.5rem 0; }
-    .nav-links.active { display: flex; }
-    .nav-links a { width: 100%; }
-    .auth-buttons { flex-direction: column; width: 100%; gap: 0.5rem; }
-    .auth-buttons .btn { text-align: center; }
-    .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
-    .hamburger.active span:nth-child(2) { opacity: 0; }
-    .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
-}
-</style>
+			.hamburger {
+				display: none;
+				flex-direction: column;
+				justify-content: center;
+				gap: 5px;
+				background: none !important;
+				border: none !important;
+				border-radius: 0 !important;
+				cursor: pointer;
+				padding: 8px;
+				width: auto !important;
+				height: auto !important;
+				font-size: inherit !important;
+				color: inherit !important;
+				box-shadow: none !important;
+			}
+			.hamburger span {
+				display: block;
+				width: 25px;
+				height: 3px;
+				background: #555;
+				border-radius: 3px;
+				transition: all 0.3s ease;
+			}
+			.hamburger:hover span {
+				background: #667eea;
+			}
+
+			@media (max-width: 797px) {
+				.nav-container {
+					flex-direction: row !important;
+					flex-wrap: wrap;
+				}
+				.hamburger {
+					display: flex;
+					margin-left: auto;
+				}
+				.nav-links {
+					display: none;
+					flex-basis: 100%;
+					flex-direction: column;
+					width: 100%;
+					gap: 0.25rem;
+					padding: 0.5rem 0;
+				}
+				.nav-links.active {
+					display: flex;
+				}
+				.nav-links a {
+					width: 100%;
+				}
+				.auth-buttons {
+					flex-direction: column;
+					width: 100%;
+					gap: 0.5rem;
+				}
+				.auth-buttons .btn {
+					text-align: center;
+				}
+				.hamburger.active span:nth-child(1) {
+					transform: rotate(45deg) translate(5px, 5px);
+				}
+				.hamburger.active span:nth-child(2) {
+					opacity: 0;
+				}
+				.hamburger.active span:nth-child(3) {
+					transform: rotate(-45deg) translate(5px, -5px);
+				}
+			}
+		</style>
 	</head>
 	<body>
 		<nav class="navbar">
@@ -277,17 +521,54 @@
 					<h1 id="albumName">Загрузка...</h1>
 					<div class="album-uploader" id="albumUploader"></div>
 					<div class="album-meta" id="albumMeta"></div>
-					<div class="album-actions" style="margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
-						<button class="btn btn-primary" id="playAllBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem;">
+					<div
+						class="album-actions"
+						style="
+							margin-top: 1rem;
+							display: flex;
+							gap: 0.75rem;
+							flex-wrap: wrap;
+						"
+					>
+						<button
+							class="btn btn-primary"
+							id="playAllBtn"
+							style="font-size: 1.05rem; padding: 0.65rem 1.8rem"
+						>
 							▶ Слушать все треки
 						</button>
-						<button class="btn btn-primary" id="editAlbumBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem; display:none;">
+						<button
+							class="btn btn-primary"
+							id="editAlbumBtn"
+							style="font-size: 1.05rem; padding: 0.65rem 1.8rem; display: none"
+						>
 							✏️ Редактировать
 						</button>
-						<button class="btn btn-danger" id="deleteAlbumBtn" style="font-size: 1.05rem; padding: 0.65rem 1.8rem; display:none;">
+						<button
+							class="btn btn-danger"
+							id="deleteAlbumBtn"
+							style="font-size: 1.05rem; padding: 0.65rem 1.8rem; display: none"
+						>
 							🗑 Удалить альбом
 						</button>
-						<button class="btn" id="likeAlbumBtn" onclick="toggleAlbumLike()" style="font-size:1.3rem;padding:0.65rem 1rem;display:none;border:none;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.2);color:white;transition:all 0.2s;">🤍</button>
+						<button
+							class="btn"
+							id="likeAlbumBtn"
+							onclick="toggleAlbumLike()"
+							style="
+								font-size: 1.3rem;
+								padding: 0.65rem 1rem;
+								display: none;
+								border: none;
+								border-radius: 8px;
+								cursor: pointer;
+								background: rgba(255, 255, 255, 0.2);
+								color: white;
+								transition: all 0.2s;
+							"
+						>
+							🤍
+						</button>
 					</div>
 				</div>
 			</div>
@@ -303,32 +584,73 @@
 		</div>
 
 		<footer class="footer">
-
-		<div class="modal-overlay" id="editAlbumModal">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h3>✏️ Редактировать альбом</h3>
-					<button class="modal-close" onclick="closeEditAlbumModal()">✕</button>
-				</div>
-				<div class="modal-body">
-					<div class="edit-form">
-						<div class="edit-field">
-							<label for="editAlbumName">Название</label>
-							<input type="text" id="editAlbumName" class="modal-search" style="width:100%;padding:0.75rem 1rem;border:2px solid #e2e8f0;border-radius:10px;font-size:1rem;outline:none;">
+			<div class="modal-overlay" id="editAlbumModal">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h3>✏️ Редактировать альбом</h3>
+						<button class="modal-close" onclick="closeEditAlbumModal()">
+							✕
+						</button>
+					</div>
+					<div class="modal-body">
+						<div class="edit-form">
+							<div class="edit-field">
+								<label for="editAlbumName">Название</label>
+								<input
+									type="text"
+									id="editAlbumName"
+									class="modal-search"
+									style="
+										width: 100%;
+										padding: 0.75rem 1rem;
+										border: 2px solid #e2e8f0;
+										border-radius: 10px;
+										font-size: 1rem;
+										outline: none;
+									"
+								/>
+							</div>
+							<div class="edit-field">
+								<label for="editAlbumCover">Обложка</label>
+								<input
+									type="file"
+									id="editAlbumCover"
+									accept="image/*"
+									style="padding: 0.5rem 0; font-size: 0.9rem"
+								/>
+							</div>
+							<div
+								class="edit-actions"
+								style="display: flex; gap: 0.75rem; margin-top: 1rem"
+							>
+								<button
+									class="btn btn-primary"
+									id="editAlbumSaveBtn"
+									style="flex: 1"
+								>
+									Сохранить
+								</button>
+								<button
+									class="btn btn-outline"
+									onclick="closeEditAlbumModal()"
+									style="flex: 1"
+								>
+									Отмена
+								</button>
+							</div>
+							<div
+								id="editAlbumError"
+								style="
+									color: #e53e3e;
+									font-size: 0.85rem;
+									margin-top: 0.75rem;
+									display: none;
+								"
+							></div>
 						</div>
-						<div class="edit-field">
-							<label for="editAlbumCover">Обложка</label>
-							<input type="file" id="editAlbumCover" accept="image/*" style="padding:0.5rem 0;font-size:0.9rem;">
-						</div>
-						<div class="edit-actions" style="display:flex;gap:0.75rem;margin-top:1rem;">
-							<button class="btn btn-primary" id="editAlbumSaveBtn" style="flex:1;">Сохранить</button>
-							<button class="btn btn-outline" onclick="closeEditAlbumModal()" style="flex:1;">Отмена</button>
-						</div>
-						<div id="editAlbumError" style="color:#e53e3e;font-size:0.85rem;margin-top:0.75rem;display:none;"></div>
 					</div>
 				</div>
 			</div>
-		</div>
 			<div class="footer-content">
 				<div class="footer-section">
 					<h4>Mute</h4>
@@ -348,7 +670,7 @@
 		</footer>
 
 		<script>
-			const apiBaseUrl = 'https://172.17.110.58:443'
+			const apiBaseUrl = 'https://mutestreamingservice.ru'
 			let tracks = []
 			let availableForUpdate = false
 			let likedAlbumIds = new Set()
@@ -381,7 +703,9 @@
 					})
 					if (resp.ok) {
 						const data = await resp.json()
-						const ids = Array.isArray(data) ? data.map(a => a.id).filter(Boolean) : []
+						const ids = Array.isArray(data)
+							? data.map(a => a.id).filter(Boolean)
+							: []
 						likedAlbumIds = new Set(ids)
 						sessionStorage.setItem('likedAlbumIds', JSON.stringify(ids))
 					}
@@ -416,9 +740,13 @@
 							likedAlbumIds.add(albumId)
 							likesCount += 1
 						}
-						sessionStorage.setItem('likedAlbumIds', JSON.stringify([...likedAlbumIds]))
+						sessionStorage.setItem(
+							'likedAlbumIds',
+							JSON.stringify([...likedAlbumIds]),
+						)
 						updateLikeButton()
-						document.getElementById('albumMeta').textContent = `${tracks.length} треков • ❤️ ${likesCount}`
+						document.getElementById('albumMeta').textContent =
+							`${tracks.length} треков • ❤️ ${likesCount}`
 					} else if (resp.status === 401 || resp.status === 403) {
 						alert('Войдите в систему, чтобы лайкать альбомы')
 					}
@@ -444,11 +772,14 @@
 				tracksContainer.style.display = 'none'
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/album/${encodeURIComponent(albumId)}`, {
-						method: 'GET',
-						headers: { Accept: 'application/json' },
-						credentials: 'include',
-					})
+					const response = await fetch(
+						`${apiBaseUrl}/album/${encodeURIComponent(albumId)}`,
+						{
+							method: 'GET',
+							headers: { Accept: 'application/json' },
+							credentials: 'include',
+						},
+					)
 
 					if (!response.ok) {
 						throw new Error(`HTTP ошибка! Статус: ${response.status}`)
@@ -467,7 +798,8 @@
 						availableForUpdate = false
 					}
 
-					document.getElementById('albumMeta').textContent = `${tracks.length} треков • ❤️ ${likesCount}`
+					document.getElementById('albumMeta').textContent =
+						`${tracks.length} треков • ❤️ ${likesCount}`
 					renderTracks()
 					updateActionButtons()
 					loadLikedAlbums()
@@ -502,7 +834,9 @@
 					artistName: t.uploader_username || t.uploader_id || 'Неизвестный',
 				}))
 
-				console.log(`[Album] Сохранение плейлиста из ${playlist.length} треков в sessionStorage, startIndex=${startIndex}`)
+				console.log(
+					`[Album] Сохранение плейлиста из ${playlist.length} треков в sessionStorage, startIndex=${startIndex}`,
+				)
 				sessionStorage.setItem('albumPlaylist', JSON.stringify(playlist))
 
 				const playerUrl = `player-window.html?playlist=album&startIndex=${startIndex}`
@@ -512,11 +846,17 @@
 					globalPlayerWindow.focus()
 				} else {
 					console.log('[Album] Открытие нового окна плеера')
-					globalPlayerWindow = window.open(playerUrl, 'MusicPlayer', 'width=450,height=420,resizable=yes')
+					globalPlayerWindow = window.open(
+						playerUrl,
+						'MusicPlayer',
+						'width=450,height=420,resizable=yes',
+					)
 				}
 			}
 
-			document.getElementById('playAllBtn').addEventListener('click', () => playAllTracks(0))
+			document
+				.getElementById('playAllBtn')
+				.addEventListener('click', () => playAllTracks(0))
 
 			function formatDuration(seconds) {
 				if (!seconds) return '0:00'
@@ -534,7 +874,10 @@
 
 			function attrEscape(text) {
 				if (!text) return ''
-				return text.replace(/'/g, '&#39;').replace(/\\/g, '\\\\').replace(/\n/g, ' ')
+				return text
+					.replace(/'/g, '&#39;')
+					.replace(/\\/g, '\\\\')
+					.replace(/\n/g, ' ')
 			}
 
 			function updateActionButtons() {
@@ -545,24 +888,30 @@
 				if (deleteBtn) deleteBtn.style.display = show
 			}
 
-			document.getElementById('deleteAlbumBtn').addEventListener('click', async function() {
-				if (!confirm('Удалить этот альбом? Это действие нельзя отменить.')) return
-				try {
-					const resp = await fetch(`${apiBaseUrl}/album/${encodeURIComponent(albumId)}`, {
-						method: 'DELETE',
-						credentials: 'include',
-					})
-					if (resp.ok) {
-						window.location.href = 'albums.html'
-					} else if (resp.status === 403) {
-						alert('Вы не можете удалить этот альбом')
-					} else {
+			document
+				.getElementById('deleteAlbumBtn')
+				.addEventListener('click', async function () {
+					if (!confirm('Удалить этот альбом? Это действие нельзя отменить.'))
+						return
+					try {
+						const resp = await fetch(
+							`${apiBaseUrl}/album/${encodeURIComponent(albumId)}`,
+							{
+								method: 'DELETE',
+								credentials: 'include',
+							},
+						)
+						if (resp.ok) {
+							window.location.href = 'albums.html'
+						} else if (resp.status === 403) {
+							alert('Вы не можете удалить этот альбом')
+						} else {
+							alert('Ошибка при удалении альбома')
+						}
+					} catch (e) {
 						alert('Ошибка при удалении альбома')
 					}
-				} catch (e) {
-					alert('Ошибка при удалении альбома')
-				}
-			})
+				})
 
 			function openEditAlbumModal() {
 				document.getElementById('editAlbumName').value = albumNameParam
@@ -575,50 +924,59 @@
 				document.getElementById('editAlbumModal').classList.remove('active')
 			}
 
-			document.getElementById('editAlbumSaveBtn').addEventListener('click', async function() {
-				const name = document.getElementById('editAlbumName').value.trim()
-				const coverFile = document.getElementById('editAlbumCover').files[0]
-				const errorEl = document.getElementById('editAlbumError')
+			document
+				.getElementById('editAlbumSaveBtn')
+				.addEventListener('click', async function () {
+					const name = document.getElementById('editAlbumName').value.trim()
+					const coverFile = document.getElementById('editAlbumCover').files[0]
+					const errorEl = document.getElementById('editAlbumError')
 
-				const nameChanged = name && name !== albumNameParam
-				const coverChanged = !!coverFile
-				if (!nameChanged && !coverChanged) {
-					errorEl.textContent = 'Измените хотя бы одно поле'
-					errorEl.style.display = 'block'
-					return
-				}
-
-				const fd = new FormData()
-				if (nameChanged) fd.append('name', name)
-				if (coverChanged) fd.append('cover', coverFile)
-
-				try {
-					const resp = await fetch(`${apiBaseUrl}/album/${encodeURIComponent(albumId)}`, {
-						method: 'PATCH',
-						body: fd,
-						credentials: 'include',
-					})
-					if (resp.ok) {
-						location.reload()
-					} else if (resp.status === 403) {
-						errorEl.textContent = 'Вы не можете редактировать этот альбом'
+					const nameChanged = name && name !== albumNameParam
+					const coverChanged = !!coverFile
+					if (!nameChanged && !coverChanged) {
+						errorEl.textContent = 'Измените хотя бы одно поле'
 						errorEl.style.display = 'block'
-					} else {
-						const txt = await resp.text()
-						errorEl.textContent = txt || 'Ошибка при сохранении'
+						return
+					}
+
+					const fd = new FormData()
+					if (nameChanged) fd.append('name', name)
+					if (coverChanged) fd.append('cover', coverFile)
+
+					try {
+						const resp = await fetch(
+							`${apiBaseUrl}/album/${encodeURIComponent(albumId)}`,
+							{
+								method: 'PATCH',
+								body: fd,
+								credentials: 'include',
+							},
+						)
+						if (resp.ok) {
+							location.reload()
+						} else if (resp.status === 403) {
+							errorEl.textContent = 'Вы не можете редактировать этот альбом'
+							errorEl.style.display = 'block'
+						} else {
+							const txt = await resp.text()
+							errorEl.textContent = txt || 'Ошибка при сохранении'
+							errorEl.style.display = 'block'
+						}
+					} catch (e) {
+						errorEl.textContent = 'Ошибка сети'
 						errorEl.style.display = 'block'
 					}
-				} catch (e) {
-					errorEl.textContent = 'Ошибка сети'
-					errorEl.style.display = 'block'
-				}
-			})
+				})
 
-			document.getElementById('editAlbumModal').addEventListener('click', function(e) {
-				if (e.target === this) closeEditAlbumModal()
-			})
+			document
+				.getElementById('editAlbumModal')
+				.addEventListener('click', function (e) {
+					if (e.target === this) closeEditAlbumModal()
+				})
 
-			document.getElementById('editAlbumBtn').addEventListener('click', openEditAlbumModal)
+			document
+				.getElementById('editAlbumBtn')
+				.addEventListener('click', openEditAlbumModal)
 
 			function renderTracks() {
 				if (tracks.length === 0) {
@@ -642,12 +1000,15 @@
 
 				tracksContainer.innerHTML = `
 					<div class="tracks-list">
-						${tracks.map((track, i) => {
-							const coverStyle = track.music_cover
-								? `background-image: url('${attrEscape(track.music_cover)}')`
-								: ''
-							const duration = formatDuration(track.music_duration || track.dur_sec)
-							return `
+						${tracks
+							.map((track, i) => {
+								const coverStyle = track.music_cover
+									? `background-image: url('${attrEscape(track.music_cover)}')`
+									: ''
+								const duration = formatDuration(
+									track.music_duration || track.dur_sec,
+								)
+								return `
 								<div class="track-card" onclick="playAllTracks(${i})">
 									<div class="track-index">${i + 1}</div>
 									<div class="track-cover-small" style="${coverStyle}"></div>
@@ -662,30 +1023,32 @@
 								</div>
 								</div>
 							`
-						}).join('')}
+							})
+							.join('')}
 					</div>
 				`
 			}
 
 			document.addEventListener('DOMContentLoaded', fetchAlbumTracks)
 		</script>
-	
-	<script>
-		document.addEventListener('DOMContentLoaded', function() {
-			var hb = document.getElementById('hamburgerBtn');
-			if (hb) {
-				hb.addEventListener('click', function() {
-					document.querySelector('.nav-links').classList.toggle('active');
-					this.classList.toggle('active');
-				});
-			}
-			document.querySelectorAll('.nav-links a').forEach(function(link) {
-				link.addEventListener('click', function() {
-					document.querySelector('.nav-links').classList.remove('active');
-					var h = document.getElementById('hamburgerBtn');
-					if (h) h.classList.remove('active');
-				});
-			});
-		});
-	</script></body>
+
+		<script>
+			document.addEventListener('DOMContentLoaded', function () {
+				var hb = document.getElementById('hamburgerBtn')
+				if (hb) {
+					hb.addEventListener('click', function () {
+						document.querySelector('.nav-links').classList.toggle('active')
+						this.classList.toggle('active')
+					})
+				}
+				document.querySelectorAll('.nav-links a').forEach(function (link) {
+					link.addEventListener('click', function () {
+						document.querySelector('.nav-links').classList.remove('active')
+						var h = document.getElementById('hamburgerBtn')
+						if (h) h.classList.remove('active')
+					})
+				})
+			})
+		</script>
+	</body>
 </html>

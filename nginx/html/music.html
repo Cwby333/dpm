@@ -426,14 +426,16 @@
 				right: 0;
 				background: white;
 				border-radius: 8px;
-				box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+				box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
 				z-index: 100;
 				min-width: 200px;
 				max-height: 250px;
 				overflow-y: auto;
 				display: none;
 			}
-			.playlist-dropdown.active { display: block; }
+			.playlist-dropdown.active {
+				display: block;
+			}
 			.playlist-dropdown-item {
 				padding: 0.75rem 1rem;
 				cursor: pointer;
@@ -442,8 +444,13 @@
 				color: #333;
 				border-bottom: 1px solid #f0f0f0;
 			}
-			.playlist-dropdown-item:hover { background: #f0f0ff; color: #667eea; }
-			.playlist-dropdown-item:last-child { border-bottom: none; }
+			.playlist-dropdown-item:hover {
+				background: #f0f0ff;
+				color: #667eea;
+			}
+			.playlist-dropdown-item:last-child {
+				border-bottom: none;
+			}
 			.playlist-dropdown-empty {
 				padding: 1rem;
 				text-align: center;
@@ -497,7 +504,7 @@
 			}
 
 			.filter-bar {
-				background: rgba(255,255,255,0.95);
+				background: rgba(255, 255, 255, 0.95);
 				border-radius: 10px;
 				padding: 1rem 1.5rem;
 				margin-bottom: 1rem;
@@ -505,7 +512,7 @@
 				flex-wrap: wrap;
 				gap: 0.75rem;
 				align-items: flex-end;
-				box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 			}
 			.filter-group {
 				display: flex;
@@ -759,59 +766,116 @@
 					grid-template-columns: 1fr;
 				}
 			}
-@media (max-width: 768px) { .main-content { margin-top: 260px; } }
-		
-.hamburger {
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    gap: 5px;
-    background: none !important;
-    border: none !important;
-    border-radius: 0 !important;
-    cursor: pointer;
-    padding: 8px;
-    width: auto !important;
-    height: auto !important;
-    font-size: inherit !important;
-    color: inherit !important;
-    box-shadow: none !important;
-}
-.hamburger span {
-    display: block;
-    width: 25px;
-    height: 3px;
-    background: #555;
-    border-radius: 3px;
-    transition: all 0.3s ease;
-}
-.hamburger:hover span {
-    background: #667eea;
-}
+			@media (max-width: 768px) {
+				.main-content {
+					margin-top: 260px;
+				}
+			}
 
-@media (max-width: 797px) {
-    .nav-container { flex-direction: row !important; flex-wrap: wrap; }
-    .hamburger { display: flex; margin-left: auto; }
-    .nav-links { display: none; flex-basis: 100%; flex-direction: column; width: 100%; gap: 0.25rem; padding: 0.5rem 0; }
-    .nav-links.active { display: flex; }
-    .nav-links a { width: 100%; }
-    .auth-buttons { flex-direction: column; width: 100%; gap: 0.5rem; }
-    .auth-buttons .btn { text-align: center; }
-    .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
-    .hamburger.active span:nth-child(2) { opacity: 0; }
-    .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
-}
+			.hamburger {
+				display: none;
+				flex-direction: column;
+				justify-content: center;
+				gap: 5px;
+				background: none !important;
+				border: none !important;
+				border-radius: 0 !important;
+				cursor: pointer;
+				padding: 8px;
+				width: auto !important;
+				height: auto !important;
+				font-size: inherit !important;
+				color: inherit !important;
+				box-shadow: none !important;
+			}
+			.hamburger span {
+				display: block;
+				width: 25px;
+				height: 3px;
+				background: #555;
+				border-radius: 3px;
+				transition: all 0.3s ease;
+			}
+			.hamburger:hover span {
+				background: #667eea;
+			}
 
-.sort-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; align-items: center; }
-.sort-label { color: white; font-size: 0.85rem; font-weight: 600; margin-right: 0.25rem; opacity: 0.8; }
-.sort-btn {
-    padding: 0.4rem 0.8rem; border: 1px solid rgba(255,255,255,0.3);
-    background: rgba(255,255,255,0.1); color: white; border-radius: 6px;
-    cursor: pointer; font-size: 0.8rem; transition: all 0.2s ease;
-}
-.sort-btn:hover { background: rgba(255,255,255,0.2); }
-.sort-btn.active { background: white; color: #667eea; border-color: white; font-weight: 600; }
-</style>
+			@media (max-width: 797px) {
+				.nav-container {
+					flex-direction: row !important;
+					flex-wrap: wrap;
+				}
+				.hamburger {
+					display: flex;
+					margin-left: auto;
+				}
+				.nav-links {
+					display: none;
+					flex-basis: 100%;
+					flex-direction: column;
+					width: 100%;
+					gap: 0.25rem;
+					padding: 0.5rem 0;
+				}
+				.nav-links.active {
+					display: flex;
+				}
+				.nav-links a {
+					width: 100%;
+				}
+				.auth-buttons {
+					flex-direction: column;
+					width: 100%;
+					gap: 0.5rem;
+				}
+				.auth-buttons .btn {
+					text-align: center;
+				}
+				.hamburger.active span:nth-child(1) {
+					transform: rotate(45deg) translate(5px, 5px);
+				}
+				.hamburger.active span:nth-child(2) {
+					opacity: 0;
+				}
+				.hamburger.active span:nth-child(3) {
+					transform: rotate(-45deg) translate(5px, -5px);
+				}
+			}
+
+			.sort-bar {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+				margin-bottom: 1rem;
+				align-items: center;
+			}
+			.sort-label {
+				color: white;
+				font-size: 0.85rem;
+				font-weight: 600;
+				margin-right: 0.25rem;
+				opacity: 0.8;
+			}
+			.sort-btn {
+				padding: 0.4rem 0.8rem;
+				border: 1px solid rgba(255, 255, 255, 0.3);
+				background: rgba(255, 255, 255, 0.1);
+				color: white;
+				border-radius: 6px;
+				cursor: pointer;
+				font-size: 0.8rem;
+				transition: all 0.2s ease;
+			}
+			.sort-btn:hover {
+				background: rgba(255, 255, 255, 0.2);
+			}
+			.sort-btn.active {
+				background: white;
+				color: #667eea;
+				border-color: white;
+				font-weight: 600;
+			}
+		</style>
 	</head>
 	<body>
 		<nav class="navbar">
@@ -867,27 +931,27 @@
 			<div class="filter-bar">
 				<div class="filter-group">
 					<label>Лайков от</label>
-					<input type="number" id="filterLikesMin" min="0" placeholder="0">
+					<input type="number" id="filterLikesMin" min="0" placeholder="0" />
 				</div>
 				<div class="filter-group">
 					<label>Лайков до</label>
-					<input type="number" id="filterLikesMax" min="0" placeholder="∞">
+					<input type="number" id="filterLikesMax" min="0" placeholder="∞" />
 				</div>
 				<div class="filter-group">
 					<label>Длит. от</label>
-					<input type="text" id="filterDurMin" placeholder="0:00">
+					<input type="text" id="filterDurMin" placeholder="0:00" />
 				</div>
 				<div class="filter-group">
 					<label>Длит. до</label>
-					<input type="text" id="filterDurMax" placeholder="∞">
+					<input type="text" id="filterDurMax" placeholder="∞" />
 				</div>
 				<div class="filter-group">
 					<label>Прослушиваний от</label>
-					<input type="number" id="filterLisMin" min="0" placeholder="0">
+					<input type="number" id="filterLisMin" min="0" placeholder="0" />
 				</div>
 				<div class="filter-group">
 					<label>Прослушиваний до</label>
-					<input type="number" id="filterLisMax" min="0" placeholder="∞">
+					<input type="number" id="filterLisMax" min="0" placeholder="∞" />
 				</div>
 				<div class="filter-actions">
 					<button class="btn btn-primary" id="filterApplyBtn">Применить</button>
@@ -897,10 +961,26 @@
 
 			<div class="sort-bar">
 				<span class="sort-label">Сортировать:</span>
-				<button class="sort-btn" data-sort="name" onclick="sortMusic('name')">📝 Название</button>
-				<button class="sort-btn" data-sort="likes" onclick="sortMusic('likes')">❤️ Лайки</button>
-				<button class="sort-btn" data-sort="listening_count" onclick="sortMusic('listening_count')">🎧 Прослушивания</button>
-				<button class="sort-btn" data-sort="duration" onclick="sortMusic('duration')">⏱️ Длительность</button>
+				<button class="sort-btn" data-sort="name" onclick="sortMusic('name')">
+					📝 Название
+				</button>
+				<button class="sort-btn" data-sort="likes" onclick="sortMusic('likes')">
+					❤️ Лайки
+				</button>
+				<button
+					class="sort-btn"
+					data-sort="listening_count"
+					onclick="sortMusic('listening_count')"
+				>
+					🎧 Прослушивания
+				</button>
+				<button
+					class="sort-btn"
+					data-sort="duration"
+					onclick="sortMusic('duration')"
+				>
+					⏱️ Длительность
+				</button>
 			</div>
 
 			<div class="loading-container" id="loadingContainer">
@@ -945,7 +1025,7 @@
 
 		<script>
 			// Конфигурация
-			const apiBaseUrl = 'https://172.17.110.58:443'
+			const apiBaseUrl = 'https://mutestreamingservice.ru'
 			let allMusic = []
 			let filteredMusic = []
 			let currentPage = 1
@@ -1177,8 +1257,12 @@
 				const params = new URLSearchParams()
 				const likesMin = document.getElementById('filterLikesMin').value
 				const likesMax = document.getElementById('filterLikesMax').value
-				const durMin = parseDurationToSeconds(document.getElementById('filterDurMin').value)
-				const durMax = parseDurationToSeconds(document.getElementById('filterDurMax').value)
+				const durMin = parseDurationToSeconds(
+					document.getElementById('filterDurMin').value,
+				)
+				const durMax = parseDurationToSeconds(
+					document.getElementById('filterDurMax').value,
+				)
 				const lisMin = document.getElementById('filterLisMin').value
 				const lisMax = document.getElementById('filterLisMax').value
 				if (likesMin) params.set('likes_min', likesMin)
@@ -1352,55 +1436,55 @@
             `
 			}
 
-		function sortMusic(field) {
-			if (sortField === field) {
-				sortAsc = !sortAsc
-			} else {
-				sortField = field
-				sortAsc = field === 'name'
-			}
-			document.querySelectorAll('.sort-btn').forEach(b => {
-				const isActive = b.dataset.sort === field
-				b.classList.toggle('active', isActive)
-				let txt = b.textContent.replace(/ [▲▼]$/, '')
-				if (isActive) txt += sortAsc ? ' ▲' : ' ▼'
-				b.textContent = txt
-			})
-			currentPage = 1
-			renderMusic()
-			renderPagination()
-		}
-
-		function renderMusic() {
-			if (sortField) {
-				filteredMusic.sort((a, b) => {
-					let va, vb
-					switch (sortField) {
-						case 'name':
-							va = (a.name || '').toLowerCase()
-							vb = (b.name || '').toLowerCase()
-							return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va)
-						case 'likes':
-							va = a.likes || 0
-							vb = b.likes || 0
-							return sortAsc ? va - vb : vb - va
-						case 'listening_count':
-							va = a.listening_count || 0
-							vb = b.listening_count || 0
-							return sortAsc ? va - vb : vb - va
-						case 'duration':
-							va = a.duration_seconds || 0
-							vb = b.duration_seconds || 0
-							return sortAsc ? va - vb : vb - va
-						default:
-							return 0
-					}
+			function sortMusic(field) {
+				if (sortField === field) {
+					sortAsc = !sortAsc
+				} else {
+					sortField = field
+					sortAsc = field === 'name'
+				}
+				document.querySelectorAll('.sort-btn').forEach(b => {
+					const isActive = b.dataset.sort === field
+					b.classList.toggle('active', isActive)
+					let txt = b.textContent.replace(/ [▲▼]$/, '')
+					if (isActive) txt += sortAsc ? ' ▲' : ' ▼'
+					b.textContent = txt
 				})
+				currentPage = 1
+				renderMusic()
+				renderPagination()
 			}
 
-			const start = (currentPage - 1) * musicPerPage
-			const end = start + musicPerPage
-			const musicToShow = filteredMusic.slice(start, end)
+			function renderMusic() {
+				if (sortField) {
+					filteredMusic.sort((a, b) => {
+						let va, vb
+						switch (sortField) {
+							case 'name':
+								va = (a.name || '').toLowerCase()
+								vb = (b.name || '').toLowerCase()
+								return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va)
+							case 'likes':
+								va = a.likes || 0
+								vb = b.likes || 0
+								return sortAsc ? va - vb : vb - va
+							case 'listening_count':
+								va = a.listening_count || 0
+								vb = b.listening_count || 0
+								return sortAsc ? va - vb : vb - va
+							case 'duration':
+								va = a.duration_seconds || 0
+								vb = b.duration_seconds || 0
+								return sortAsc ? va - vb : vb - va
+							default:
+								return 0
+						}
+					})
+				}
+
+				const start = (currentPage - 1) * musicPerPage
+				const end = start + musicPerPage
+				const musicToShow = filteredMusic.slice(start, end)
 
 				if (filteredMusic.length === 0) {
 					musicContainer.innerHTML = `
@@ -1519,103 +1603,114 @@
 			searchInput.addEventListener('keypress', e => {
 				if (e.key === 'Enter') filterMusic()
 			})
-			document.getElementById('filterApplyBtn').addEventListener('click', fetchMusic)
-			document.getElementById('filterResetBtn').addEventListener('click', () => {
-				document.getElementById('filterLikesMin').value = ''
-				document.getElementById('filterLikesMax').value = ''
-				document.getElementById('filterDurMin').value = ''
-				document.getElementById('filterDurMax').value = ''
-				document.getElementById('filterLisMin').value = ''
-				document.getElementById('filterLisMax').value = ''
-				fetchMusic()
-			})
+			document
+				.getElementById('filterApplyBtn')
+				.addEventListener('click', fetchMusic)
+			document
+				.getElementById('filterResetBtn')
+				.addEventListener('click', () => {
+					document.getElementById('filterLikesMin').value = ''
+					document.getElementById('filterLikesMax').value = ''
+					document.getElementById('filterDurMin').value = ''
+					document.getElementById('filterDurMax').value = ''
+					document.getElementById('filterLisMin').value = ''
+					document.getElementById('filterLisMax').value = ''
+					fetchMusic()
+				})
 		</script>
-	
-	<script>
-		let cachedPlaylists = null
-		let activeDropdown = null
 
-		async function showPlaylistDropdown(musicId, btnEl) {
-			if (activeDropdown) {
-				activeDropdown.classList.remove('active')
-				activeDropdown = null
-				return
-			}
+		<script>
+			let cachedPlaylists = null
+			let activeDropdown = null
 
-			const dropdown = document.getElementById(`pd-${musicId}`)
-			if (!dropdown) return
-
-			dropdown.innerHTML = '<div class="playlist-dropdown-loading">Загрузка...</div>'
-			dropdown.classList.add('active')
-			activeDropdown = dropdown
-
-			try {
-				if (!cachedPlaylists) {
-					const resp = await fetch(`${apiBaseUrl}/playlist/my`, {
-						credentials: 'include',
-					})
-					if (!resp.ok) throw new Error('Ошибка загрузки')
-					cachedPlaylists = await resp.json()
-				}
-
-				if (!cachedPlaylists || cachedPlaylists.length === 0) {
-					dropdown.innerHTML = '<div class="playlist-dropdown-empty">Нет плейлистов</div>'
+			async function showPlaylistDropdown(musicId, btnEl) {
+				if (activeDropdown) {
+					activeDropdown.classList.remove('active')
+					activeDropdown = null
 					return
 				}
 
-				dropdown.innerHTML = cachedPlaylists.map(pl =>
-					`<div class="playlist-dropdown-item" onclick="event.stopPropagation(); addToPlaylist('${musicId}', '${pl.id}')">📋 ${escapeHtml(pl.name)}</div>`
-				).join('')
-			} catch (e) {
-				console.error(e)
-				dropdown.innerHTML = '<div class="playlist-dropdown-empty">Ошибка загрузки</div>'
-			}
-		}
+				const dropdown = document.getElementById(`pd-${musicId}`)
+				if (!dropdown) return
 
-		async function addToPlaylist(musicId, playlistId) {
-			try {
-				const resp = await fetch(`${apiBaseUrl}/playlist/${playlistId}/add`, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ music_id: musicId }),
-					credentials: 'include',
-				})
-				if (resp.ok) {
-					showNotification('✅ Трек добавлен в плейлист', 'success')
-				} else {
-					throw new Error('Ошибка')
+				dropdown.innerHTML =
+					'<div class="playlist-dropdown-loading">Загрузка...</div>'
+				dropdown.classList.add('active')
+				activeDropdown = dropdown
+
+				try {
+					if (!cachedPlaylists) {
+						const resp = await fetch(`${apiBaseUrl}/playlist/my`, {
+							credentials: 'include',
+						})
+						if (!resp.ok) throw new Error('Ошибка загрузки')
+						cachedPlaylists = await resp.json()
+					}
+
+					if (!cachedPlaylists || cachedPlaylists.length === 0) {
+						dropdown.innerHTML =
+							'<div class="playlist-dropdown-empty">Нет плейлистов</div>'
+						return
+					}
+
+					dropdown.innerHTML = cachedPlaylists
+						.map(
+							pl =>
+								`<div class="playlist-dropdown-item" onclick="event.stopPropagation(); addToPlaylist('${musicId}', '${pl.id}')">📋 ${escapeHtml(pl.name)}</div>`,
+						)
+						.join('')
+				} catch (e) {
+					console.error(e)
+					dropdown.innerHTML =
+						'<div class="playlist-dropdown-empty">Ошибка загрузки</div>'
 				}
-			} catch (e) {
-				showNotification('❌ Ошибка при добавлении', 'error')
 			}
-			if (activeDropdown) {
-				activeDropdown.classList.remove('active')
-				activeDropdown = null
-			}
-		}
 
-		document.addEventListener('click', function(e) {
-			if (activeDropdown && !e.target.closest('.music-actions')) {
-				activeDropdown.classList.remove('active')
-				activeDropdown = null
+			async function addToPlaylist(musicId, playlistId) {
+				try {
+					const resp = await fetch(`${apiBaseUrl}/playlist/${playlistId}/add`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ music_id: musicId }),
+						credentials: 'include',
+					})
+					if (resp.ok) {
+						showNotification('✅ Трек добавлен в плейлист', 'success')
+					} else {
+						throw new Error('Ошибка')
+					}
+				} catch (e) {
+					showNotification('❌ Ошибка при добавлении', 'error')
+				}
+				if (activeDropdown) {
+					activeDropdown.classList.remove('active')
+					activeDropdown = null
+				}
 			}
-		})
 
-		document.addEventListener('DOMContentLoaded', function() {
-			var hb = document.getElementById('hamburgerBtn');
-			if (hb) {
-				hb.addEventListener('click', function() {
-					document.querySelector('.nav-links').classList.toggle('active');
-					this.classList.toggle('active');
-				});
-			}
-			document.querySelectorAll('.nav-links a').forEach(function(link) {
-				link.addEventListener('click', function() {
-					document.querySelector('.nav-links').classList.remove('active');
-					var h = document.getElementById('hamburgerBtn');
-					if (h) h.classList.remove('active');
-				});
-			});
-		});
-	</script></body>
+			document.addEventListener('click', function (e) {
+				if (activeDropdown && !e.target.closest('.music-actions')) {
+					activeDropdown.classList.remove('active')
+					activeDropdown = null
+				}
+			})
+
+			document.addEventListener('DOMContentLoaded', function () {
+				var hb = document.getElementById('hamburgerBtn')
+				if (hb) {
+					hb.addEventListener('click', function () {
+						document.querySelector('.nav-links').classList.toggle('active')
+						this.classList.toggle('active')
+					})
+				}
+				document.querySelectorAll('.nav-links a').forEach(function (link) {
+					link.addEventListener('click', function () {
+						document.querySelector('.nav-links').classList.remove('active')
+						var h = document.getElementById('hamburgerBtn')
+						if (h) h.classList.remove('active')
+					})
+				})
+			})
+		</script>
+	</body>
 </html>

@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Mute - Музыкальный плеер</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -16,42 +17,43 @@
         .player-container {
             background: rgba(0,0,0,0.5);
             backdrop-filter: blur(10px);
-            padding: 2rem;
+            padding: 1.5rem;
             border-radius: 20px;
             text-align: center;
             width: 100%;
             max-width: 400px;
-            margin: 1rem;
+            margin: 0.5rem;
         }
-        .album-art { font-size: 4rem; margin-bottom: 1rem; }
-        .track-name { font-size: 1.3rem; margin-bottom: 0.5rem; font-weight: bold; }
-        .track-artist { font-size: 0.9rem; opacity: 0.8; margin-bottom: 1.5rem; }
+        .album-art { font-size: 3rem; margin-bottom: 0.75rem; }
+        .track-name { font-size: 1rem; margin-bottom: 0.3rem; font-weight: bold; }
+        .track-artist { font-size: 0.8rem; opacity: 0.8; margin-bottom: 1rem; }
         .controls {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 1rem;
-            margin: 1.5rem 0;
+            gap: 0.75rem;
+            margin: 1rem 0;
         }
         button {
             background: rgba(255,255,255,0.2);
             border: none;
             color: white;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             cursor: pointer;
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
         button:hover {
             background: rgba(255,255,255,0.4);
             transform: scale(1.05);
         }
-        /* Кастомный бегунок с шкалой заполненности */
         .progress-slider {
             -webkit-appearance: none;
             width: 100%;
@@ -60,19 +62,21 @@
             outline: none;
             cursor: pointer;
             margin: 1rem 0;
+            touch-action: none;
+        }
+        .progress-slider::-webkit-slider-runnable-track {
+            height: 6px;
+            border-radius: 3px;
         }
         .progress-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
+            width: 20px;
+            height: 20px;
             background: #667eea;
             border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
-            transition: transform 0.2s ease;
-        }
-        .progress-slider::-webkit-slider-thumb:hover {
-            transform: scale(1.3);
+            margin-top: -7px;
         }
         .time-info {
             display: flex;
@@ -86,21 +90,22 @@
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            margin-top: 1rem;
+            margin-top: 0.75rem;
         }
         .volume-slider {
             -webkit-appearance: none;
             width: 100px;
-            height: 4px;
+            height: 6px;
             background: rgba(255,255,255,0.2);
-            border-radius: 2px;
+            border-radius: 3px;
+            outline: none;
             cursor: pointer;
         }
         .volume-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 12px;
-            height: 12px;
-            background: white;
+            width: 18px;
+            height: 18px;
+            background: #667eea;
             border-radius: 50%;
             cursor: pointer;
         }
@@ -109,45 +114,39 @@
             padding: 0.25rem 0.75rem;
             border-radius: 20px;
             font-size: 0.7rem;
-            margin-top: 1rem;
+            margin-top: 0.75rem;
             background: rgba(0,0,0,0.3);
         }
         .close-btn {
             background: #e53e3e;
-            margin-top: 1rem;
+            margin-top: 0.75rem;
             width: auto;
             border-radius: 8px;
             padding: 0.5rem 1rem;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
-        /* Бегунок громкости */
-.volume-slider {
-    -webkit-appearance: none;
-    width: 100px;
-    height: 6px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 3px;
-    outline: none;
-    cursor: pointer;
-}
-
-.volume-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
-    background: #667eea;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-.volume-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-}
         .close-btn:hover { background: #c53030; transform: none; }
         .track-counter {
-            font-size: 0.8rem; opacity: 0.6; margin-bottom: 0.5rem;
+            font-size: 0.8rem; opacity: 0.6; margin-bottom: 0.3rem;
             min-height: 1.2rem;
+        }
+
+        @media (min-width: 500px) {
+            .player-container {
+                padding: 2rem;
+                max-width: 480px;
+                margin: 1rem;
+            }
+            .album-art { font-size: 4rem; margin-bottom: 1rem; }
+            .track-name { font-size: 1.3rem; }
+            .track-artist { font-size: 0.9rem; }
+            .controls { gap: 1rem; margin: 1.5rem 0; }
+            button { width: 48px; height: 48px; font-size: 1.5rem; }
+            .progress-slider { height: 6px; margin: 1rem 0; }
+            .progress-slider::-webkit-slider-thumb { width: 16px; height: 16px; margin-top: -5px; }
+            .time-info { font-size: 0.75rem; }
+            .volume-slider { width: 100px; }
+            .volume-slider::-webkit-slider-thumb { width: 14px; height: 14px; }
         }
     </style>
 </head>
@@ -199,10 +198,17 @@
     setTimeout(() => window.close(), 100);
 };
         let isSeeking = false;
+        const sliderTrackStyle = document.createElement('style');
+        document.head.appendChild(sliderTrackStyle);
         
-        // Функция обновления цвета заполнения бегунка
         function updateSliderFill(percent) {
-            progressSlider.style.background = `linear-gradient(90deg, #667eea ${percent}%, rgba(255,255,255,0.2) ${percent}%)`;
+            const gradient = `linear-gradient(90deg, #667eea ${percent}%, rgba(255,255,255,0.2) ${percent}%)`;
+            progressSlider.style.background = gradient;
+            sliderTrackStyle.textContent = `
+                .progress-slider::-webkit-slider-runnable-track { background: ${gradient} !important; border-radius: 3px !important; }
+                .progress-slider::-moz-range-track { background: rgba(255,255,255,0.2); border-radius: 3px; }
+                .progress-slider::-moz-range-progress { background: #667eea; border-radius: 3px; }
+            `;
         }
         function updateVolumeFill(volume) {
     const percent = volume * 100;
@@ -263,8 +269,8 @@
             }
         });
         
-        // Обработчики бегунка
-        progressSlider.addEventListener('mousedown', () => {
+        // Обработчики бегунка (pointer — мышь + тач)
+        progressSlider.addEventListener('pointerdown', () => {
             isSeeking = true;
         });
         
@@ -278,8 +284,8 @@
             }
         });
         
-        progressSlider.addEventListener('mouseup', (e) => {
-            const percent = parseFloat(e.target.value);
+        progressSlider.addEventListener('pointerup', () => {
+            const percent = parseFloat(progressSlider.value);
             PlayerCore.seek(percent / 100);
             isSeeking = false;
         });
