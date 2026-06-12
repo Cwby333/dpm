@@ -301,6 +301,8 @@ func (s *MusicService) ListObjects(ctx context.Context, prefix string, suf strin
 func (s *MusicService) GetObject(ctx context.Context, key string) (io.ReadCloser, error) {
 	const op = "./internal/services/music.go.GetObject()"
 
+	slog.Info("key")
+
 	o, err := s.s3.GetObject(ctx, key)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)

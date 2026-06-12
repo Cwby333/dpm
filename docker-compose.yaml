@@ -39,8 +39,8 @@ services:
     volumes:
         - ./nginx/html:/usr/share/nginx/html
         - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-        - ./nginx.crt:/nginx.crt
-        - ./nginx.key:/nginx.key
+        - /etc/letsencrypt/live/mutestreamingservice.ru/fullchain.pem:/nginx.crt
+        - /etc/letsencrypt/live/mutestreamingservice.ru/privkey.pem:/nginx.key
 
 volumes:
   postgres:
