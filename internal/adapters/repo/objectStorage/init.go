@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -155,4 +156,26 @@ func (s3Client S3Client) GetPresignURL(ctx context.Context, id string) (string, 
 	}
 
 	return resp.URL, nil
+}
+
+func (s3Client S3Client) ListObjects(ctx context.Context, prefix string, suf string) ([]string, error) {
+	const op = "./internal/adapters/repo/s3/init.ListObjects()"
+	
+	s, err := s3Client.client.ListObjects(ctx, &s3.ListObjectsInput{
+		Bucket: &s3Client.bucketName,
+		Prefix: &prefix,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	
+	keys := make([]string, 0)
+	for _, obj := range s.Contents {
+		key := aws.ToString(obj.Key)
+		if suf == "" || strings.HasSuffix(key, suf) {
+			keys = append(keys, key)
+		}
+	}
+	
+	return keys, nil
 }

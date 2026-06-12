@@ -24,6 +24,11 @@ const PlayerCore = (function () {
 
 	// Инициализация
 	function init() {
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.register('/sw.js').catch(err =>
+				warn('SW registration failed:', err)
+			)
+		}
 		log('Инициализирован')
 	}
 
@@ -46,28 +51,13 @@ const PlayerCore = (function () {
 			const presignedUrl = data.presign_url || data.presigned_url || data.url
 			log(`play: presigned URL ${presignedUrl ? 'получен' : 'пустой'}`)
 
-			let blobUrl = null
-			const cachedBlob = await getCachedAudioById(musicId)
-
-			if (cachedBlob && cachedBlob.size > 0) {
-				blobUrl = URL.createObjectURL(cachedBlob)
-				log('play: загружено из кеша')
-			} else {
-				log('play: загрузка из сети')
-				const fetchResponse = await fetch(presignedUrl)
-				const audioBlob = await fetchResponse.blob()
-				await cacheAudioById(musicId, audioBlob)
-				blobUrl = URL.createObjectURL(audioBlob)
-				log(`play: загружено (${audioBlob.size} байт)`)
-			}
-
 			if (audioElement) {
 				log('play: остановка старого аудио')
 				audioElement.pause()
 				audioElement = null
 			}
 
-			audioElement = new Audio(blobUrl)
+			audioElement = new Audio(presignedUrl)
 
 			if (seekTime > 0) {
 				audioElement.currentTime = seekTime
@@ -254,30 +244,6 @@ const PlayerCore = (function () {
 
 	function notifyListeners(event, data) {
 		listeners.forEach(cb => cb(event, data))
-	}
-
-	const CACHE_NAME = 'audio-cache-v2'
-
-	async function cacheAudioById(musicId, audioBlob) {
-		const cache = await caches.open(CACHE_NAME)
-		const cacheKey = `/audio/${musicId}`
-		const response = new Response(audioBlob, {
-			headers: {
-				'Content-Type': 'audio/mpeg',
-				'Content-Length': audioBlob.size.toString(),
-			},
-		})
-		await cache.put(cacheKey, response)
-	}
-
-	async function getCachedAudioById(musicId) {
-		const cache = await caches.open(CACHE_NAME)
-		const cacheKey = `/audio/${musicId}`
-		const cachedResponse = await cache.match(cacheKey)
-		if (cachedResponse && cachedResponse.ok) {
-			return await cachedResponse.blob()
-		}
-		return null
 	}
 
 	async function addToListeningHistory(musicId) {
