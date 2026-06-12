@@ -1927,7 +1927,7 @@ func (h Handler) MusicUpload(w http.ResponseWriter, r *http.Request) {
 		DurationSec: int(math.Round((float64(count) * 26.0) / 1000.0)),
 	}
 
-	err = h.mService.UploadMusic(r.Context(), m, music)
+	err = h.mService.UploadHLSMusic(r.Context(), m, music)
 	if err != nil {
 		slog.Error(fmt.Sprint(op, err.Error()))
 		http.Error(w, err.Error(), http.StatusInternalServerError)

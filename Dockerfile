@@ -10,6 +10,8 @@ RUN go mod download
 
 COPY . .
 
+RUN apk add --no-cache ffmpeg
+
 RUN CGO_ENABLED=0 go build -o /app/main ./internal/cmd/main.go
 
 FROM alpine:3.21.3

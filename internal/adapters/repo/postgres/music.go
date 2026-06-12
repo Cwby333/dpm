@@ -108,11 +108,6 @@ func (p *Postgres) GetMusic(ctx context.Context, id string, userID string) (mode
 func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, userID string) ([]models.Music, []models.Like, error) {
 	const op = "./internal/adapters/repo/postgres/music.go.GetMusicSQ"
 
-	slog.Info("GetMusicSQReq pg start")
-	defer func ()  {
-		slog.Info("GetMusicSQReq return")
-	}()
-
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 	sql := psql.Select("id, uploader_id, name, likes, duration_seconds, music_cover, song_url, listening_count").From("music")
@@ -121,9 +116,6 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s: %w", op, err)
 	}
-
-	slog.Info(fmt.Sprintf("%s: %s", "sql", q))
-	slog.Info(fmt.Sprintf("%s: %v", "args", args))
 
 	if m.LikeMin != nil {
 		sql = sql.Where("likes >= ?", m.LikeMin)
@@ -134,9 +126,6 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 		return nil, nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	slog.Info(fmt.Sprintf("%s: %s", "sql", q))
-	slog.Info(fmt.Sprintf("%s: %v", "args", args))
-
 	if m.LikeMax != nil {
 		sql = sql.Where("likes <= ?", m.LikeMax)
 	}
@@ -145,9 +134,6 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s: %w", op, err)
 	}
-
-	slog.Info(fmt.Sprintf("%s: %s", "sql", q))
-	slog.Info(fmt.Sprintf("%s: %v", "args", args))
 
 	if m.DurMin != nil {
 		sql = sql.Where("duration_seconds >= ?", m.DurMin)
@@ -158,13 +144,9 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 		return nil, nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	slog.Info(fmt.Sprintf("%s: %s", "sql", q))
-	slog.Info(fmt.Sprintf("%s: %v", "args", args))
-
 	if m.DurMax != nil {
 		sql = sql.Where("duration_seconds <= ?", m.DurMax)
 	}
-
 	
 	if m.LisCountMin != nil {
 		sql = sql.Where("listening_count >= ?", m.LisCountMin)
@@ -178,9 +160,6 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 	if err != nil {
 		return nil , nil, fmt.Errorf("%s: %w", op, err)
 	}
-
-	slog.Info(fmt.Sprintf("%s: %s", "sql", q))
-	slog.Info(fmt.Sprintf("%s: %v", "args", args))
 
 	rows, err := p.pool.Query(ctx, q, args...)
 	if err != nil {
@@ -207,9 +186,6 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 		slog.Error(fmt.Sprintf("%s: %s", op, err.Error()))
 		return musr, nil, nil
 	}
-
-	slog.Info(fmt.Sprintf("%s: %s", "sql", q))
-	slog.Info(fmt.Sprintf("%s: %v", "args", args))
 
 	rows, err = p.pool.Query(ctx, q, args...)
 	if err !=  nil {
