@@ -32,6 +32,8 @@ import (
 func main() {
 	cfg := config.MuslLoad()
 
+	slog.SetLogLoggerLevel(slog.LevelDebug)
+
 	errChan := make(chan error, 1)
 
 	var pgCfg postgres.PgConfig

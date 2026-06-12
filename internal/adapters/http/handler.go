@@ -1,6 +1,10 @@
 package http
 
 import (
+	_"bufio"
+	_"bytes"
+	_"os"
+	
 	"context"
 	"dpm/internal/models"
 	"dpm/internal/services"
@@ -2086,36 +2090,67 @@ func (h Handler) GetAlbumMy(ctx context.Context, request api.GetAlbumMyRequestOb
 func (h Handler) PostMusicPlay(ctx context.Context, request api.PostMusicPlayRequestObject) (api.PostMusicPlayResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.PlayMusic()"
 
-	// url, err := h.mService.GetPresignURLSong(ctx, *request.Body.MusicId+"-song")
+	url, err := h.mService.GetPresignURLSong(ctx, *request.Body.MusicId+"-song")
+	if err != nil {
+		slog.Error(err.Error())
+		return api.PostMusicPlay500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	}
+
+	// o, err := h.mService.GetObject(ctx, *request.Body.MusicId+"-hls/playlist.m3u8")
 	// if err != nil {
 	// 	slog.Error(err.Error())
-	// 	return api.PostMusicPlay500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	// 	return api.PostMusicPlay500JSONResponse(err.Error()), err
 	// }
 
-	o, err := h.mService.GetObject(ctx, *request.Body.MusicId+"-hls/playlist.m3u8")
-	if err != nil {
-		slog.Error(err.Error())
-		return api.PostMusicPlay500JSONResponse(err.Error()), err
-	}
+	// buf, err := io.ReadAll(o)
+	// if err != nil {
+	// 	slog.Error(err.Error())
+	// 	return api.PostMusicPlay500JSONResponse(err.Error()), err
+	// }
 
-	buf := make([]byte, 0, 2048)
-	for {
-		n, err := o.Read(buf)
-		if err != nil {
-			slog.Error(err.Error())
-			return api.PostMusicPlay500JSONResponse(err.Error()), nil	
-		}
-		slog.Debug("PostMusicPlay", slog.Int("count read bytes", n))
-	}
+	// bufReader := bufio.NewReader(bytes.NewReader(buf))
 
-	segKeys, err := h.mService.ListObjects(ctx, *request.Body.MusicId+"-hls/", ".ts")
-	if err != nil {
-		slog.Error(err.Error())
-		return api.PostMusicPlay500JSONResponse(err.Error()), err
-	}
-	_ = segKeys
+	// m3u8 := ""
 
-	url := ""
+	// for range 4 {
+	// 	line, err := bufReader.ReadString('\n')
+	// 	if err != nil {
+	// 		return api.PostMusicPlay500JSONResponse(err.Error()), err
+	// 	}
+
+	// 	m3u8 += line
+	// }
+
+	// slog.Debug("PlayMusic", slog.String("m3u8 first 4 lines", m3u8))
+
+	// segKeys, err := h.mService.ListObjects(ctx, *request.Body.MusicId+"-hls/", ".ts")
+	// if err != nil {
+	// 	slog.Error(err.Error())
+	// 	return api.PostMusicPlay500JSONResponse(err.Error()), err
+	// }
+
+	// for _, key := range segKeys {
+	// 	url, err := h.mService.GetPresignURLSong(ctx, key)
+	// 	if err != nil {
+	// 		slog.Error(err.Error())
+	// 		return api.PostMusicPlay500JSONResponse(err.Error()), err
+	// 	}
+
+	// 	m3u8 += fmt.Sprintf("#EXTINF:10,\n%s\n", url)
+	// }
+
+	// slog.Debug("PlayMusic", slog.String("all m3u8", m3u8))
+
+	// f, err := os.Create("m3u8")
+	// if err != nil {
+	// 	slog.Error(err.Error())
+	// }else {
+	// 	slog.Info("Success create file")
+	// 	slog.Info(f.Name())
+	// }
+
+	// f.Write([]byte(m3u8))
+
 	return api.PostMusicPlay200JSONResponse{
 		PresignUrl: &url,
 	}, nil
