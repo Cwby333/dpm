@@ -69,16 +69,6 @@ func main() {
 	aServices := services.NewAlbumServices(pg, s3)
 	pServices := services.NewPlaylistService(pg, s3)
 
-	minl := 44
-	maxl := 100
-	m, l, err := mService.GetMusicSQ(context.Background(), models.MusicFilterQuery{LikeMin: &minl, LikeMax: &maxl}, "242169af-f0af-47a4-b0f9-f3d7336dab9c")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	_ = l
-	slog.Info(fmt.Sprintf("GetMusicSQResponse: %v", m))
-	slog.Info(fmt.Sprintf("GetMusicSQResponseLikes: %v", l))
-
 	uService := services.NewUser(pg, s3, cfg.JWT.Key)
 
 	err = uService.RegisterUser(context.Background(), u)
