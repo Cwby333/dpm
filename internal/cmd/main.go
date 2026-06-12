@@ -9,7 +9,6 @@ import (
 	"dpm/internal/models"
 	"dpm/internal/services"
 	"fmt"
-	"log"
 	"log/slog"
 	// "math/rand"
 	// "time"

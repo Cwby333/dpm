@@ -34,6 +34,7 @@ type S3 interface {
 	GetObject(ctx context.Context, key string, w io.WriterAt) error
 	DeleteObject(ctx context.Context, key string) error
 	GetPresignURL(ctx context.Context, id string) (string, error)
+	ListObjects(ctx context.Context, prefix string, suf string) ([]string, error)
 }
 
 type MusicService struct {
@@ -175,15 +176,15 @@ func (s *MusicService) UploadHLSMusic(ctx context.Context, mData map[string]mode
 	}
 
 	cmd := exec.Command("ffmpeg", "-i", mp3Path,
-		"-c:a", "aac", "-b:a", "256k",
+		"-c:a", "aac", "-b:a", "128k",
 		"-hls_time", "5",
 		"-hls_list_size", "0",
 		"-hls_segment_filename", filepath.Join(tmpDir, "seg%d.ts"),
 		filepath.Join(tmpDir, "playlist.m3u8"),
 	).Run()
 
-	if cmd.Error() != "" {
-		return fmt.Errorf("%s: ffmpeg exec %w", op, err)
+	if cmd != nil {
+		return fmt.Errorf("%s: ffmpeg exec %s", op, cmd.Error())
 	}
 
 	files, err := os.ReadDir(tmpDir)
@@ -193,14 +194,14 @@ func (s *MusicService) UploadHLSMusic(ctx context.Context, mData map[string]mode
 
 	for _, f := range files {
 		slog.Debug("UploadHLSMusic", slog.String("fName", f.Name()))
-		
+
 		data, err := os.ReadFile(filepath.Join(tmpDir, f.Name()))
 		if err != nil {
 			return fmt.Errorf("%s: ReadFile %w", op, err)
 		}
 		
 		ct := "audio/mpeg"
-		if strings.HasSuffix(f.Name(), ".m3u8") {
+		if strings.HasSuffix(f.Name(), "m3u8") {
 			ct = "application/vnd.apple.mpegurl"
 		}
 		
@@ -218,7 +219,7 @@ func (s *MusicService) UploadHLSMusic(ctx context.Context, mData map[string]mode
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	m.SongURL = songID
+	m.SongURL = songID + "-hls/playlist.m3u8"
 	m.CoverURL = coverID
 	m.ID = musicID
 	slog.Info(fmt.Sprintf("coverURL, songURL: %v, %v", m.CoverURL, m.SongURL))
@@ -283,4 +284,15 @@ func (s *MusicService) AddListening(ctx context.Context, id string) (error) {
 	}
 
 	return nil
+}
+
+func (s *MusicService) ListObjects(ctx context.Context, prefix string, suf string) ([]string, error) {
+	const op = "./internal/services/music.goListObjects"
+
+	sl, err := s.s3.ListObjects(ctx, prefix, suf)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return sl, nil
 }
