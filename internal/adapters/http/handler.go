@@ -2086,12 +2086,36 @@ func (h Handler) GetAlbumMy(ctx context.Context, request api.GetAlbumMyRequestOb
 func (h Handler) PostMusicPlay(ctx context.Context, request api.PostMusicPlayRequestObject) (api.PostMusicPlayResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.PlayMusic()"
 
-	url, err := h.mService.GetPresignURLSong(ctx, *request.Body.MusicId+"-song")
+	// url, err := h.mService.GetPresignURLSong(ctx, *request.Body.MusicId+"-song")
+	// if err != nil {
+	// 	slog.Error(err.Error())
+	// 	return api.PostMusicPlay500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	// }
+
+	o, err := h.mService.GetObject(ctx, *request.Body.MusicId+"-hls/playlist.m3u8")
 	if err != nil {
 		slog.Error(err.Error())
-		return api.PostMusicPlay500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+		return api.PostMusicPlay500JSONResponse(err.Error()), err
 	}
 
+	buf := make([]byte, 0, 2048)
+	for {
+		n, err := o.Read(buf)
+		if err != nil {
+			slog.Error(err.Error())
+			return api.PostMusicPlay500JSONResponse(err.Error()), nil	
+		}
+		slog.Debug("PostMusicPlay", slog.Int("count read bytes", n))
+	}
+
+	segKeys, err := h.mService.ListObjects(ctx, *request.Body.MusicId+"-hls/", ".ts")
+	if err != nil {
+		slog.Error(err.Error())
+		return api.PostMusicPlay500JSONResponse(err.Error()), err
+	}
+	_ = segKeys
+
+	url := ""
 	return api.PostMusicPlay200JSONResponse{
 		PresignUrl: &url,
 	}, nil

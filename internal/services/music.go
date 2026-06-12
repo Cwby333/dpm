@@ -31,7 +31,7 @@ type RepoMusic interface {
 
 type S3 interface {
 	UploadObject(ctx context.Context, key string, data []byte, contentType string) error
-	GetObject(ctx context.Context, key string, w io.WriterAt) error
+	GetObject(ctx context.Context, key string) (io.ReadCloser, error)
 	DeleteObject(ctx context.Context, key string) error
 	GetPresignURL(ctx context.Context, id string) (string, error)
 	ListObjects(ctx context.Context, prefix string, suf string) ([]string, error)
@@ -296,4 +296,15 @@ func (s *MusicService) ListObjects(ctx context.Context, prefix string, suf strin
 	}
 
 	return sl, nil
+}
+
+func (s *MusicService) GetObject(ctx context.Context, key string) (io.ReadCloser, error) {
+	const op = "./internal/services/music.go.GetObject()"
+
+	o, err := s.s3.GetObject(ctx, key)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return o, nil
 }

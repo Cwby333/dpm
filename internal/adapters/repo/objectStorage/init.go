@@ -111,19 +111,30 @@ func (s3Client S3Client) UploadObject(ctx context.Context, key string, data []by
 	return nil
 }
 
-func (s3Client S3Client) GetObject(ctx context.Context, key string, w io.WriterAt) error {
-	const op = "./internal/adapters/repository/objectStorage/init.go.GetObject()"
+// func (s3Client S3Client) GetObject(ctx context.Context, key string, w io.WriterAt) error {
+// 	const op = "./internal/adapters/repository/objectStorage/init.go.GetObject()"
 
-	_, err := s3Client.downloader.Download(ctx, w, &s3.GetObjectInput{
-		Bucket: &s3Client.bucketName,
-		Key:    &key,
-	})
+// 	_, err := s3Client.downloader.Download(ctx, w, &s3.GetObjectInput{
+// 		Bucket: &s3Client.bucketName,
+// 		Key:    &key,
+// 	})
 
+// 	if err != nil {
+// 		return fmt.Errorf("%s: %w", op, err)
+// 	}
+
+// 	return nil
+// }
+
+func (s3c S3Client) GetObject(ctx context.Context, key string) (io.ReadCloser, error) {
+	const op = "./internal/adapters/repo/objs/init.go.GetObject"
+
+	o, err := s3c.client.GetObject(ctx, &s3.GetObjectInput{Bucket: &s3c.bucketName, Key: &key})
 	if err != nil {
-		return fmt.Errorf("%s: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return nil
+	return o.Body, nil
 }
 
 func (s3Client S3Client) DeleteObject(ctx context.Context, key string) error {
