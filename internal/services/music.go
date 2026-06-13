@@ -180,7 +180,7 @@ func (s *MusicService) UploadHLSMusic(ctx context.Context, mData map[string]mode
 		"-c:a", "aac", "-b:a", "128k",
 		"-hls_time", "10",
 		"-hls_list_size", "0",
-		"-hls_segment_filename", filepath.Join(tmpDir, "seg%d.ts"),
+		"-hls_segment_filename", filepath.Join(tmpDir, "seg%03d.ts"),
 		filepath.Join(tmpDir, "playlist.m3u8"),
 	).Run()
 

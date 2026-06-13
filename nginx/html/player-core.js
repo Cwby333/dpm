@@ -24,11 +24,6 @@ const PlayerCore = (function () {
 
 	// Инициализация
 	function init() {
-		if ('serviceWorker' in navigator) {
-			navigator.serviceWorker.register('/sw.js').catch(err =>
-				warn('SW registration failed:', err)
-			)
-		}
 		log('Инициализирован')
 	}
 
@@ -40,7 +35,7 @@ const PlayerCore = (function () {
 			currentMusicName = musicName
 			currentArtistName = artistName
 
-			log('play: запрос presigned URL')
+			log('play: запрос HLS плейлиста')
 			const response = await fetch(`${apiBaseUrl}/music/play`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -48,41 +43,60 @@ const PlayerCore = (function () {
 				credentials: 'include',
 			})
 			const data = await response.json()
-			const presignedUrl = data.presign_url || data.presigned_url || data.url
-			log(`play: presigned URL ${presignedUrl ? 'получен' : 'пустой'}`)
+			const hlsPlaylist = data.presign_url || data.hls_playlist
+			if (!hlsPlaylist) throw new Error('HLS playlist not found')
+
+			const m3u8Blob = new Blob([hlsPlaylist], { type: 'application/vnd.apple.mpegurl' })
+			const m3u8Url = URL.createObjectURL(m3u8Blob)
 
 			if (audioElement) {
-				log('play: остановка старого аудио')
 				audioElement.pause()
 				audioElement = null
 			}
 
-			audioElement = new Audio(presignedUrl)
-
-			if (seekTime > 0) {
-				audioElement.currentTime = seekTime
-			}
-
+			audioElement = new Audio()
 			audioElement.addEventListener('ended', () => {
-				log(
-					`ended: "${currentMusicName}" завершился (repeatMode=${repeatMode}, playlist=${!!playlist}, index=${currentIndex}/${playlist ? playlist.length - 1 : 'n/a'})`,
-				)
 				if (repeatMode === 1) {
-					log('ended: повтор одного трека')
 					audioElement.currentTime = 0
 					audioElement.play()
 				} else if (playlist) {
-					log('ended: переключение на следующий трек')
 					next()
 				} else {
-					log('ended: воспроизведение завершено')
 					notifyListeners('ended', { musicId: currentMusicId })
 				}
 			})
 
-			await audioElement.load()
-			await audioElement.play()
-			log('play: воспроизведение начато')
+			if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+				log('play: HLS supported, using hls.js')
+				try {
+					const hls = new Hls()
+					hls.on(Hls.Events.MANIFEST_PARSED, () => {
+						log('play: манифест загружен')
+						if (seekTime > 0) audioElement.currentTime = seekTime
+						audioElement.play()
+					})
+					hls.on(Hls.Events.ERROR, (event, data) => {
+						if (data && data.fatal) {
+							error('HLS fatal error:', data.type, data.details)
+							if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+								hls.recoverMediaError()
+							} else {
+								notifyListeners('error', { message: 'HLS error: ' + data.details })
+							}
+						}
+					})
+					hls.loadSource(m3u8Url)
+					hls.attachMedia(audioElement)
+				} catch (err) {
+					error('HLS init error:', err.message, err.stack)
+				}
+			} else {
+				log('play: HLS not supported, fallback to native')
+				audioElement.src = m3u8Url
+				audioElement.load()
+				if (seekTime > 0) audioElement.currentTime = seekTime
+				await audioElement.play()
+			}
 
 			notifyListeners('play', {
 				musicId: currentMusicId,

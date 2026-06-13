@@ -1,10 +1,12 @@
 package http
 
 import (
-	_"bufio"
-	_"bytes"
-	_"os"
-	
+	"bufio"
+	"bytes"
+	"os"
+	"slices"
+	"sort"
+
 	"context"
 	"dpm/internal/models"
 	"dpm/internal/services"
@@ -2090,69 +2092,98 @@ func (h Handler) GetAlbumMy(ctx context.Context, request api.GetAlbumMyRequestOb
 func (h Handler) PostMusicPlay(ctx context.Context, request api.PostMusicPlayRequestObject) (api.PostMusicPlayResponseObject, error) {
 	const op = "./internal/adapters/http/handler.go.PlayMusic()"
 
-	url, err := h.mService.GetPresignURLSong(ctx, *request.Body.MusicId+"-song")
+	// url, err := h.mService.GetPresignURLSong(ctx, *request.Body.MusicId+"-song")
+	// if err != nil {
+	// 	slog.Error(err.Error())
+	// 	return api.PostMusicPlay500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+	// }
+
+	o, err := h.mService.GetObject(ctx, *request.Body.MusicId+"-hls/playlist.m3u8")
 	if err != nil {
 		slog.Error(err.Error())
-		return api.PostMusicPlay500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+		return api.PostMusicPlay500JSONResponse(err.Error()), err
 	}
 
-	// o, err := h.mService.GetObject(ctx, *request.Body.MusicId+"-hls/playlist.m3u8")
-	// if err != nil {
-	// 	slog.Error(err.Error())
-	// 	return api.PostMusicPlay500JSONResponse(err.Error()), err
-	// }
+	buf, err := io.ReadAll(o)
+	if err != nil {
+		slog.Error(err.Error())
+		return api.PostMusicPlay500JSONResponse(err.Error()), err
+	}
 
-	// buf, err := io.ReadAll(o)
-	// if err != nil {
-	// 	slog.Error(err.Error())
-	// 	return api.PostMusicPlay500JSONResponse(err.Error()), err
-	// }
+	bufReader := bufio.NewReader(bytes.NewReader(buf))
 
-	// bufReader := bufio.NewReader(bytes.NewReader(buf))
+	m3u8 := ""
 
-	// m3u8 := ""
+	for range 4 {
+		line, err := bufReader.ReadString('\n')
+		if err != nil {
+			return api.PostMusicPlay500JSONResponse(err.Error()), err
+		}
 
-	// for range 4 {
-	// 	line, err := bufReader.ReadString('\n')
-	// 	if err != nil {
-	// 		return api.PostMusicPlay500JSONResponse(err.Error()), err
-	// 	}
+		m3u8 += line
+	}
 
-	// 	m3u8 += line
-	// }
+	segKeys, err := h.mService.ListObjects(ctx, *request.Body.MusicId+"-hls/", ".ts")
+	if err != nil {
+		slog.Error(err.Error())
+		return api.PostMusicPlay500JSONResponse(err.Error()), err
+	}
 
-	// slog.Debug("PlayMusic", slog.String("m3u8 first 4 lines", m3u8))
+	for i := range segKeys {
+		slog.Info(segKeys[i])
+	}
+	
+	slices.Sort(segKeys)
 
-	// segKeys, err := h.mService.ListObjects(ctx, *request.Body.MusicId+"-hls/", ".ts")
-	// if err != nil {
-	// 	slog.Error(err.Error())
-	// 	return api.PostMusicPlay500JSONResponse(err.Error()), err
-	// }
+	sort.Strings(segKeys)
 
-	// for _, key := range segKeys {
-	// 	url, err := h.mService.GetPresignURLSong(ctx, key)
-	// 	if err != nil {
-	// 		slog.Error(err.Error())
-	// 		return api.PostMusicPlay500JSONResponse(err.Error()), err
-	// 	}
+	sort.Slice(segKeys, func(i, j int) bool {
+		if segKeys[i] < segKeys[j] {
+			return true
+		}
+		return false
+	})
 
-	// 	m3u8 += fmt.Sprintf("#EXTINF:10,\n%s\n", url)
-	// }
+	sortF := func (x []string)  {
+		for i := 0; i < len(x) - 1; i++ {
+			if x[i] > x[i + 1] {
+				x[i], x[i + 1] = x[i + 1], x[i]
+			}
+		}
+	}
 
-	// slog.Debug("PlayMusic", slog.String("all m3u8", m3u8))
+	sortF(segKeys)
 
-	// f, err := os.Create("m3u8")
-	// if err != nil {
-	// 	slog.Error(err.Error())
-	// }else {
-	// 	slog.Info("Success create file")
-	// 	slog.Info(f.Name())
-	// }
+	slog.Debug("After sort:")
 
-	// f.Write([]byte(m3u8))
+	for i := range segKeys {
+		slog.Info(segKeys[i])
+	}
+	
+	for _, key := range segKeys {
+		url, err := h.mService.GetPresignURLSong(ctx, key)
+		if err != nil {
+			slog.Error(err.Error())
+			return api.PostMusicPlay500JSONResponse(err.Error()), err
+		}
+
+		m3u8 += fmt.Sprintf("#EXTINF:10,\n%s\n", url)
+	}
+
+	m3u8 += "#EXT-X-ENDLIST\n"
+
+	f, err := os.Create("m3u8")
+	if err != nil {
+		slog.Error(err.Error())
+	}else {
+		slog.Info("Success create file")
+		slog.Info(f.Name())
+	}
+
+	f.Write([]byte(m3u8))
 
 	return api.PostMusicPlay200JSONResponse{
-		PresignUrl: &url,
+		PresignUrl: &m3u8,
 	}, nil
 }
 
