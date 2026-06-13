@@ -254,6 +254,7 @@
             const state = PlayerCore.getState();
             if (!state) return;
             currentTimeSpan.textContent = formatTime(state.currentTime);
+            durationSpan.textContent = formatTime(state.duration);
             if (!isSeeking) {
                 const percent = (state.currentTime / (state.duration || 1)) * 100;
                 progressSlider.value = percent || 0;

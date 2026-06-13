@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"dpm/internal/models"
 	"errors"
@@ -147,6 +148,54 @@ func (s *MusicService) UploadMusic(ctx context.Context, musicData map[string]mod
 	return nil
 }
 
+func convertToHLS(mp3Path, tmpDir string) error {
+	probeCmd := exec.Command("ffprobe", 
+		"-v", "error", 
+		"-select_streams", "a:0", 
+		"-show_entries", "stream=bitrate", 
+		"-of", "default=noprint_wrappers=1:keyval_delimiter==", 
+		mp3Path,
+	)
+	
+	var probeOut bytes.Buffer
+	probeCmd.Stdout = &probeOut
+	
+	if err := probeCmd.Run(); err != nil {
+		return fmt.Errorf("ошибка ffprobe: %w", err)
+	}
+
+	output := strings.TrimSpace(probeOut.String())
+	bitrate := "256k"
+
+	if strings.HasPrefix(output, "bitrate=") {
+		rawBitrate := strings.TrimPrefix(output, "bitrate=")
+		if rawBitrate != "N/A" && rawBitrate != "" {
+			var b int
+			_, err := fmt.Sscanf(rawBitrate, "%d", &b)
+			if err == nil && b > 0 {
+				bitrate = fmt.Sprintf("%dk", b/1000)
+			}
+		}
+	}
+
+	cmd := exec.Command("ffmpeg", "-i", mp3Path,
+		"-vn",
+		"-c:a", "aac", 
+		"-b:a", bitrate,
+		"-hls_time", "10",
+		"-hls_list_size", "0",
+		"-hls_segment_filename", filepath.Join(tmpDir, "seg%03d.ts"),
+		filepath.Join(tmpDir, "playlist.m3u8"),
+	).Run()
+
+	if cmd != nil {
+		slog.Error(cmd.Error())
+		return cmd
+	}
+
+	return nil
+}
+
 func (s *MusicService) UploadHLSMusic(ctx context.Context, mData map[string]models.DataAndCT, m models.Music) (error) {
 	const op = "./internal/services/music.go.UploadMusicHLS"
 
@@ -175,14 +224,7 @@ func (s *MusicService) UploadHLSMusic(ctx context.Context, mData map[string]mode
 		return fmt.Errorf("%s: WriteTempFile %w", op, err)
 	}
 
-	cmd := exec.Command("ffmpeg", "-i", mp3Path,
-		"-vn",
-		"-c:a", "aac", "-b:a", "128k",
-		"-hls_time", "10",
-		"-hls_list_size", "0",
-		"-hls_segment_filename", filepath.Join(tmpDir, "seg%03d.ts"),
-		filepath.Join(tmpDir, "playlist.m3u8"),
-	).Run()
+	cmd := convertToHLS(mp3Path, tmpDir)
 
 	if cmd != nil {
 		return fmt.Errorf("%s: ffmpeg exec %s", op, cmd.Error())

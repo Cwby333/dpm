@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"os"
 	"slices"
-	"sort"
+	"strings"
 
 	"context"
 	"dpm/internal/models"
@@ -2123,51 +2123,40 @@ func (h Handler) PostMusicPlay(ctx context.Context, request api.PostMusicPlayReq
 		m3u8 += line
 	}
 
+	extinfs := make([]string, 0)
+
+	for {
+		line, err := bufReader.ReadString('\n')
+		if err != nil && errors.Is(err, io.EOF) {
+			break
+		}
+		
+		if err != nil {
+			slog.Error(err.Error())
+			return api.PostMusicPlay500JSONResponse(err.Error()), err
+		}
+
+		if strings.Contains(line, "EXTINF") {
+			extinfs = append(extinfs, line)
+		}
+	}
+
 	segKeys, err := h.mService.ListObjects(ctx, *request.Body.MusicId+"-hls/", ".ts")
 	if err != nil {
 		slog.Error(err.Error())
 		return api.PostMusicPlay500JSONResponse(err.Error()), err
 	}
 
-	for i := range segKeys {
-		slog.Info(segKeys[i])
-	}
-	
 	slices.Sort(segKeys)
-
-	sort.Strings(segKeys)
-
-	sort.Slice(segKeys, func(i, j int) bool {
-		if segKeys[i] < segKeys[j] {
-			return true
-		}
-		return false
-	})
-
-	sortF := func (x []string)  {
-		for i := 0; i < len(x) - 1; i++ {
-			if x[i] > x[i + 1] {
-				x[i], x[i + 1] = x[i + 1], x[i]
-			}
-		}
-	}
-
-	sortF(segKeys)
-
-	slog.Debug("After sort:")
-
-	for i := range segKeys {
-		slog.Info(segKeys[i])
-	}
 	
-	for _, key := range segKeys {
+	for i, key := range segKeys {
 		url, err := h.mService.GetPresignURLSong(ctx, key)
 		if err != nil {
 			slog.Error(err.Error())
 			return api.PostMusicPlay500JSONResponse(err.Error()), err
 		}
 
-		m3u8 += fmt.Sprintf("#EXTINF:10,\n%s\n", url)
+		m3u8 += fmt.Sprintf("%s%s\n", extinfs[i], url)
 	}
 
 	m3u8 += "#EXT-X-ENDLIST\n"
