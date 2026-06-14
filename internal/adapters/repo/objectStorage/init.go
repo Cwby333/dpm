@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	expired = time.Hour * 24
+	expired = time.Hour * 240
 
 	maxBackoff  = time.Second * 12
 	maxAttempts = 5
