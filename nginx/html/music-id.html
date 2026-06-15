@@ -635,10 +635,7 @@
 					favorStatus = !!(musicFavor && musicFavor.music_id)
 					currentMusicId = musicData.id
 					currentMusicName = musicData.name || 'Без названия'
-					currentArtistName =
-						musicData.uploader_username ||
-						musicData.uploader_id ||
-						'Неизвестный исполнитель'
+					currentArtistName = escapeHtml(musicData.uploader_username || '')
 
 					// Берём ссылку на обложку прямо из ответа сервера
 					coverUrl = musicData.music_cover || null
@@ -672,11 +669,7 @@
 				const duration = formatDuration(musicData.duration_seconds)
 				const musicId = musicData.id
 				const musicName = escapeHtml(musicData.name || 'Без названия')
-				const artistName = escapeHtml(
-					musicData.uploader_username ||
-						musicData.uploader_id ||
-						'Неизвестный исполнитель',
-				)
+				const artistName = escapeHtml(musicData.uploader_username || '')
 
 				// Стиль для обложки — используем прямую ссылку из ответа
 				const coverStyle = coverUrl

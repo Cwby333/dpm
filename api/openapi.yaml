@@ -1764,6 +1764,8 @@ components:
           type: string
         listening_count:
           type: integer
+        uploader_username:
+          type: string
       required:
         - id
         - name

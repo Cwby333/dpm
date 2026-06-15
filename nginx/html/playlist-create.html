@@ -754,7 +754,7 @@
 						showNotification(`✅ Плейлист "${playlistName}" создан!`, 'success')
 						updateStatus('success', 'Плейлист создан')
 						setTimeout(() => {
-							window.location.href = `playlist.html?id=${result.playlist_id}&name=${encodeURIComponent(playlistName)}`
+							window.location.href = 'playlists.html'
 						}, 500)
 					} else if (response.status === 401 || response.status === 403) {
 						showNotification('Сессия истекла. Войдите снова', 'error')

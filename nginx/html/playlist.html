@@ -904,9 +904,13 @@
 					}
 
 					document.getElementById('playlistMeta').innerHTML =
-						`${tracks.length} треков • ❤️ ${playlistLikesCount}`
+						`${tracks.length} треков${playlistPrivateParam !== 'true' ? ' • ❤️ ' + playlistLikesCount : ''}`
 					renderTracks()
 					updateActionButtons()
+					if (playlistPrivateParam === 'true') {
+						const btn = document.getElementById('likePlaylistBtn')
+						if (btn) btn.style.display = 'none'
+					}
 				} catch (error) {
 					console.error('Ошибка загрузки:', error)
 					tracksContainer.style.display = 'block'

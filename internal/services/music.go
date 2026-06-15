@@ -153,14 +153,16 @@ func convertToHLS(mp3Path, tmpDir string) error {
 		"-v", "error", 
 		"-select_streams", "a:0", 
 		"-show_entries", "stream=bitrate", 
-		"-of", "default=noprint_wrappers=1:keyval_delimiter==", 
+		"-of", "default=noprint_wrappers=1", 
 		mp3Path,
 	)
 	
-	var probeOut bytes.Buffer
+	var probeOut, probeErr bytes.Buffer
 	probeCmd.Stdout = &probeOut
+	probeCmd.Stderr = &probeErr
 	
 	if err := probeCmd.Run(); err != nil {
+		slog.Error("ffprobe stderr", slog.String("stderr", probeErr.String()))
 		return fmt.Errorf("ошибка ffprobe: %w", err)
 	}
 
@@ -178,6 +180,7 @@ func convertToHLS(mp3Path, tmpDir string) error {
 		}
 	}
 
+	var ffmpegErr bytes.Buffer
 	cmd := exec.Command("ffmpeg", "-i", mp3Path,
 		"-vn",
 		"-c:a", "aac", 
@@ -186,11 +189,12 @@ func convertToHLS(mp3Path, tmpDir string) error {
 		"-hls_list_size", "0",
 		"-hls_segment_filename", filepath.Join(tmpDir, "seg%03d.ts"),
 		filepath.Join(tmpDir, "playlist.m3u8"),
-	).Run()
+	)
+	cmd.Stderr = &ffmpegErr
 
-	if cmd != nil {
-		slog.Error(cmd.Error())
-		return cmd
+	if err := cmd.Run(); err != nil {
+		slog.Error("ffmpeg stderr", slog.String("stderr", ffmpegErr.String()))
+		return fmt.Errorf("ошибка ffmpeg: %w", err)
 	}
 
 	return nil
@@ -208,7 +212,7 @@ func (s *MusicService) UploadHLSMusic(ctx context.Context, mData map[string]mode
 	slog.Info(fmt.Sprint("UploadSong: songData:", fmt.Sprintf("%v, %v, %v", songData.Name, songData.ContentType, songData.Data[:100])))
 	slog.Info("songDataSize", slog.Int("size", len(songData.Data)))
 
-	songID := musicID + songPostfix
+	songID := musicID
 
 	slog.Debug("UploadHLS", slog.String("songID", songID))
 
@@ -343,7 +347,7 @@ func (s *MusicService) ListObjects(ctx context.Context, prefix string, suf strin
 func (s *MusicService) GetObject(ctx context.Context, key string) (io.ReadCloser, error) {
 	const op = "./internal/services/music.go.GetObject()"
 
-	slog.Info("key")
+	slog.Info("key", key)
 
 	o, err := s.s3.GetObject(ctx, key)
 	if err != nil {

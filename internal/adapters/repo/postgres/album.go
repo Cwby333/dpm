@@ -67,7 +67,7 @@ func (pg *Postgres) AddMusicToAlbum(ctx context.Context, albumID string, musicID
 func (pg *Postgres) DeleteAlbum(ctx context.Context, id string) (error) {
 	const op = "./internal/adapters/repo/postgres/album.go.DeleteAlbum()"
 	
-	q := "SELECT music_id FROM album_music WHERE album_id = $1"
+	q := "SELECT music_id FROM albums_music WHERE album_id = $1"
 	rows, err := pg.pool.Query(ctx, q, id)
 	if err != nil {
 		return fmt.Errorf("%s: SELECT music_id ... %w", op, err)
@@ -96,6 +96,12 @@ func (pg *Postgres) DeleteAlbum(ctx context.Context, id string) (error) {
 		if err != nil {
 			return fmt.Errorf("%s: DELETE FROM music %w", op, err)
 		}
+	}
+
+	q = "DELETE FROM albums_likes WHERE album_id = $1"
+	_, err = pg.pool.Exec(ctx, q, id)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
 	}
 
 	q = "DELETE FROM albums WHERE id = $1"
@@ -246,7 +252,7 @@ func (pg *Postgres) GetUploadedByUserAlbums(ctx context.Context, id string, af m
 
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	sql := psql.Select("id, name, cover, count_likes").Where("uploader_id = ?", id)
+	sql := psql.Select("id, name, cover, count_likes").From("albums").Where("uploader_id = ?", id)
 
 	if af.LikesMin != nil {
 		sql = sql.Where("count_likes >= ?", af.LikesMin)

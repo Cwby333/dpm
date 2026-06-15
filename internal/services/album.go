@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/tcolgate/mp3"
@@ -65,14 +68,14 @@ func (s *AlbumsService) GetAlbum(ctx context.Context, id string) (models.Album, 
 }
 
 func (s *AlbumsService) DeleteAlbum(ctx context.Context, id string, userID string) error {
-	const op = "./internal/services/album.go.CreateAlbum()"
+	const op = "./internal/services/album.go.DeleteAlbum()"
 
 	a, err := s.repo.GetAlbum(ctx, id)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
-	if a.UploaderID == userID {
+	if a.UploaderID != userID {
 		return fmt.Errorf("%s: %w", op, err)
 	}
 
@@ -152,14 +155,51 @@ func (s *AlbumsService) UploadAlbum(ctx context.Context, albumName string, uploa
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
-
+	
 	for i := range songs {
 		musicID := uuid.NewString()
-		songKey := musicID + "-song"
-
-		err := s.s3.UploadObject(ctx, songKey, songs[i].Data, songs[i].ContentType)
+		
+		tmpDir, err := os.MkdirTemp("", musicID)
 		if err != nil {
-			return "", fmt.Errorf("%s: %w", op, err)
+			return "", fmt.Errorf("%s: MkdirTemp %w", op, err)
+		}
+		
+		mp3Path := filepath.Join(tmpDir, "input.mp3")
+		err = os.WriteFile(mp3Path, songs[i].Data, 0644)
+		if err != nil {
+			return "", fmt.Errorf("%s: WriteTempFile %w", op, err)
+		}
+
+		cmd := convertToHLS(mp3Path, tmpDir)
+
+		if cmd != nil {
+			slog.Error(cmd.Error())
+			return "", fmt.Errorf("%s: CMD %w", op, cmd)
+		}
+
+		files, err := os.ReadDir(tmpDir)
+		if err != nil {
+			return "", fmt.Errorf("%s: ReadTmpDir %w", op, err)
+		}
+
+		for _, f := range files {
+			slog.Debug("UploadHLSMusic", slog.String("fName", f.Name()))
+
+			data, err := os.ReadFile(filepath.Join(tmpDir, f.Name()))
+			if err != nil {
+				return "", fmt.Errorf("%s: ReadFile %w", op, err)
+			}
+			
+			ct := "audio/mpeg"
+			if strings.HasSuffix(f.Name(), "m3u8") {
+				ct = "application/vnd.apple.mpegurl"
+			}
+			
+			slog.Debug(albumID + "/" + musicID + "-hls/" + f.Name())
+			err = s.s3.UploadObject(ctx, albumID + "/" + musicID + "-hls/" + f.Name(), data, ct)
+			if err != nil {
+				return "", fmt.Errorf("%s: UploadObject %w", op, err)
+			}
 		}
 
 		durSec := 0
@@ -172,7 +212,7 @@ func (s *AlbumsService) UploadAlbum(ctx context.Context, albumName string, uploa
 			Name:        songs[i].Name,
 			UploaderID:  uploaderID,
 			DurationSec: durSec,
-			SongURL:     songKey,
+			SongURL:     albumID + "/" + musicID + "-hls/playlist.m3u8",
 			CoverURL:    coverKey,
 		}
 
@@ -185,6 +225,8 @@ func (s *AlbumsService) UploadAlbum(ctx context.Context, albumName string, uploa
 		if err != nil {
 			return "", fmt.Errorf("%s: %w", op, err)
 		}
+
+		os.RemoveAll(tmpDir)
 	}
 
 	return albumID, nil

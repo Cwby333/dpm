@@ -209,8 +209,15 @@ func (pg *Postgres) GetPlaylistMusic(ctx context.Context, id string) ([]models.L
 func (pg *Postgres) DeletePlaylist(ctx context.Context, id string) error {
 	const op = "./internal/adapters/repo/postgres/playlist.go.DeletePlaylist()"
 
+
 	q := "DELETE FROM playlists_music WHERE playlist_id = $1"
 	_, err := pg.pool.Exec(ctx, q, id)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	q = "DELETE FROM playlist_likes WHERE playlist_id = $1"
+	_, err = pg.pool.Exec(ctx, q, id)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

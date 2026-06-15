@@ -203,7 +203,7 @@
 
 			.refresh-btn:hover {
 				background: #f0f0f0;
-				transform: rotate(180deg);
+				transform: scale(1.05);
 			}
 
 			.loading-container {
@@ -1036,6 +1036,7 @@
 			let likeStatus = new Map() // Хранит статус лайка для каждого трека
 			let sortField = ''
 			let sortAsc = true
+			let globalPlayerWindow = null
 
 			// DOM элементы
 			const loadingContainer = document.getElementById('loadingContainer')
@@ -1224,21 +1225,21 @@
 					body: JSON.stringify({ music_id: musicId }),
 					credentials: 'include',
 				}).catch(err => console.warn('inc-lis-count error:', err))
-				if (added) {
-					showNotification(
-						`🎵 "${musicName}" добавлен в историю прослушиваний`,
-						'info',
-					)
-				} else {
+				if (!added) {
 					console.log(
 						`Трек "${musicName}" не добавлен в историю (возможно, пользователь не авторизован)`,
 					)
 				}
 
-				showNotification(
-					`🎵 Воспроизведение: ${musicName} - ${artistName || 'Неизвестный'} (демо-режим)`,
-					'info',
-				)
+				if (globalPlayerWindow && !globalPlayerWindow.closed) {
+					globalPlayerWindow.focus()
+				} else {
+					globalPlayerWindow = window.open(
+						`player-window.html?id=${encodeURIComponent(musicId)}&name=${encodeURIComponent(musicName)}&artist=${encodeURIComponent(artistName || 'Неизвестный')}`,
+						'MusicPlayer',
+						'width=450,height=420,resizable=yes',
+					)
+				}
 			}
 
 			function parseDurationToSeconds(str) {
@@ -1388,11 +1389,7 @@
 				const duration = formatDuration(music.duration_seconds)
 				const musicId = music.id
 				const musicName = escapeHtml(music.name || 'Без названия')
-				const artistName = escapeHtml(
-					music.uploader_username ||
-						music.uploader_id ||
-						'Неизвестный исполнитель',
-				)
+				const artistName = escapeHtml(music.uploader_username || '')
 				const songUrl = music.song_url || ''
 				const coverUrl = music.music_cover || ''
 				const isInFavor = favorStatus.get(musicId) || false

@@ -219,7 +219,7 @@
 			}
 			.refresh-btn:hover {
 				background: #f0f0f0;
-				transform: rotate(180deg);
+				transform: scale(1.05);
 			}
 			.status-bar {
 				display: flex;
@@ -812,8 +812,8 @@
 										<div class="playlist-name">${escapeHtml(pl.name || 'Без названия')}</div>
 										<div class="playlist-uploader">${escapeHtml(pl.username || pl.uploader_id || 'Неизвестный')}</div>
 										<div class="playlist-meta">
-											${isPrivate ? '<span class="private-badge">🔒 Приватный</span>' : '<span class="public-badge" style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;background:#c6f6d5;color:#276749;font-weight:600;">🌍 Публичный</span>'}
-											<span style="font-size:0.85rem;color:#999;">❤️ ${pl.likes_count || 0}</span>
+                                ${isPrivate ? '<span class="private-badge">🔒 Приватный</span>' : '<span class="public-badge" style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;background:#c6f6d5;color:#276749;font-weight:600;">🌍 Публичный</span>'}
+                                ${isPrivate ? '' : '<span style="font-size:0.85rem;color:#999;">❤️ ' + (pl.likes_count || 0) + '</span>'}
 										</div>
 									</div>
 								</div>

@@ -2098,7 +2098,13 @@ func (h Handler) PostMusicPlay(ctx context.Context, request api.PostMusicPlayReq
 	// 	return api.PostMusicPlay500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
 	// }
 
-	o, err := h.mService.GetObject(ctx, *request.Body.MusicId+"-hls/playlist.m3u8")
+	m, _, err := h.mService.GetMusic(ctx, *request.Body.MusicId, "")
+	if err != nil {
+		slog.Error(fmt.Sprintf("%s: %s", op, err.Error()))
+		return api.PostMusicPlay500JSONResponse(err.Error()), nil
+	}	
+
+	o, err := h.mService.GetObject(ctx, m.SongURL)
 	if err != nil {
 		slog.Error(err.Error())
 		return api.PostMusicPlay500JSONResponse(err.Error()), err
@@ -2141,7 +2147,9 @@ func (h Handler) PostMusicPlay(ctx context.Context, request api.PostMusicPlayReq
 		}
 	}
 
-	segKeys, err := h.mService.ListObjects(ctx, *request.Body.MusicId+"-hls/", ".ts")
+	slog.Info(m.SongURL)
+	slog.Info(strings.TrimSuffix(m.SongURL, "playlist.m3u8"))
+	segKeys, err := h.mService.ListObjects(ctx, strings.TrimSuffix(m.SongURL, "playlist.m3u8"), ".ts")
 	if err != nil {
 		slog.Error(err.Error())
 		return api.PostMusicPlay500JSONResponse(err.Error()), err
