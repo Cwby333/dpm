@@ -692,6 +692,7 @@
 			</div>
 		</footer>
 
+		<script src="api.js"></script>
 		<script>
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
 			let currentTab = 'all'
@@ -728,7 +729,7 @@
 						endpoint = '/album'
 					}
 					const url = `${apiBaseUrl}${endpoint}${qs ? '?' + qs : ''}`
-					const response = await fetch(url, {
+					const response = await apiFetch(url, {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',

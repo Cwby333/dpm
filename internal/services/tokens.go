@@ -22,7 +22,7 @@ func (s UserService) createTokens(ctx context.Context, user models.User) (access
 			Issuer:    "muteproject issuer",
 			Subject:   user.ID,
 			NotBefore: jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 3)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ID:        accessTokenID,
 		},
@@ -45,7 +45,7 @@ func (s UserService) createTokens(ctx context.Context, user models.User) (access
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "muteproject issuer",
 			Subject:   user.ID,
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 34 * 7)),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ID:        refreshTokenID,

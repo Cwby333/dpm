@@ -821,6 +821,7 @@
 			</div>
 		</footer>
 
+		<script src="api.js"></script>
 		<script>
 			// Конфигурация
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
@@ -842,7 +843,7 @@
 				updateStatus('loading', 'Выход из системы...')
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/logout`, {
+					const response = await apiFetch(`${apiBaseUrl}/logout`, {
 						method: 'POST',
 						headers: {
 							Accept: 'application/json',
@@ -875,7 +876,7 @@
 				updateStatus('loading', 'Загрузка профиля...')
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/profile`, {
+					const response = await apiFetch(`${apiBaseUrl}/profile`, {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',
@@ -1038,7 +1039,7 @@
 				if (!userId) return
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/album/my`, {
+					const response = await apiFetch(`${apiBaseUrl}/album/my`, {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',
@@ -1090,7 +1091,7 @@
 				if (!userId) return
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/music/my`, {
+					const response = await apiFetch(`${apiBaseUrl}/music/my`, {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',

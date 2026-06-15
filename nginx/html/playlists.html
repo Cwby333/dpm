@@ -665,6 +665,7 @@
 			</div>
 		</footer>
 
+		<script src="api.js"></script>
 		<script>
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
 			let currentTab = 'my'
@@ -701,11 +702,27 @@
 						endpoint = tab === 'my' ? '/playlist/my' : '/playlist/public'
 					}
 					const url = `${apiBaseUrl}${endpoint}${qs ? '?' + qs : ''}`
-					const response = await fetch(url, {
+					const response = await apiFetchOptional(url, {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',
 					})
+
+					if (!response) {
+						allPlaylists = []
+						updateStatus('error', 'Требуется авторизация')
+						const label = tab === 'my' ? 'своих' : tab === 'likes' ? 'понравившихся' : 'публичных'
+						playlistsContainer.innerHTML = `
+							<div class="empty-state">
+								<div class="empty-state-icon">🔒</div>
+								<h3>${tab === 'public' ? 'Ошибка загрузки' : 'Требуется авторизация'}</h3>
+								<p>${tab === 'public' ? 'Попробуйте обновить страницу' : 'Войдите в систему, чтобы просматривать список ' + label + ' плейлистов'}</p>
+								${tab !== 'public' ? '<a href="/login.html" class="btn btn-primary" style="display:inline-block;margin-top:1rem">Войти</a>' : ''}
+							</div>
+						`
+						hideLoading()
+						return
+					}
 
 					if (!response.ok) {
 						throw new Error(`HTTP ошибка! Статус: ${response.status}`)

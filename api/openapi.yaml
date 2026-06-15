@@ -158,6 +158,8 @@ paths:
         200:
           description: "Success"
           $ref: "#/components/responses/GetAlbum"
+        401:
+          description: "Not authenticate"
         500:
           description: "Server error"
   /album:
@@ -185,6 +187,8 @@ paths:
       responses:
         200:
           description: "Success"
+        401:
+          description: "Unauthorized"
         500:
           description: "Server error"
     get:
@@ -244,6 +248,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Album"
+        401:
+          description: "Not authenticate"
         500:
           description: "Server error"
   /album/like:
@@ -265,6 +271,8 @@ paths:
       responses:
         200:
           description: "Success"
+        401:
+          description: "Not authenticate"
         500:
           description: "Server error"
     post:
@@ -285,6 +293,8 @@ paths:
       responses:
         200:
           description: "Success"
+        401:
+          description: "Not authenticate"
         500:
           description: "Server error"
   /playlist/like:
@@ -307,6 +317,8 @@ paths:
       responses:
         200:
           description: "Success"
+        401:
+          description: "Not authenticate"
         500:
           description: "Server error"
     post:
@@ -327,6 +339,8 @@ paths:
       responses:
         200:
           description: "Success"
+        401:
+          description: "Not authenticate"
         500:
           description: "Server error"
   /playlist/my/likes:
@@ -357,6 +371,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PlaylistInfo"
+        401:
+          description: "Unauthorized"
         500:
           description: "Server error"
   /playlist/my:
@@ -389,6 +405,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PlaylistInfo"
+        401:
+          description: "Not authenticate"
         500:
           description: "Server error"
           content:
@@ -553,6 +571,8 @@ paths:
                 properties:
                   status:
                     type: string
+        401:
+          description: "Unauthorized"
         500:
           description: "Server error"
           content:
@@ -577,6 +597,8 @@ paths:
       responses:
         200:
           description: "Success"
+        401:
+          description: "Unauthorized"
         500:
           description: "Server error"
     patch:
@@ -598,6 +620,8 @@ paths:
       responses:
         200:
           description: "Success"
+        401:
+          description: "Unauthorized"
         500:
           description: "Server error"
     get:
@@ -678,6 +702,8 @@ paths:
         200:
           description: "Success"
           $ref: "#/components/responses/GetLikedTracks"
+        401:
+          description: "Not authenticate"
         500:
           description: "Sever error"
           content:
@@ -698,6 +724,8 @@ paths:
         200:
           description: "Success"
           $ref: "#/components/responses/GetProfile"
+        401:
+          description: "Not authenticate"
         500:
           description: "Error"
           content:
@@ -721,6 +749,8 @@ paths:
         200:
           description: "Success"
           $ref: "#/components/responses/GetFavor"
+        401:
+          description: "Not authenticate"
         500:
           description: "Server error"
           content:
@@ -755,6 +785,8 @@ paths:
             application/json:
               schema:
                 type: string
+        401:
+          description: "Not authenticate"
         500:
           description: "Server error"
           content:
@@ -789,6 +821,8 @@ paths:
             application/json:
               schema:
                 type: string
+        401:
+          description: "Not authenticate"
         500:
           description: "Server error"
           content:
@@ -812,6 +846,8 @@ paths:
         200:
           description: "Success"
           $ref: "#/components/responses/GetListeningHistory"
+        401:
+          description: "Not authenticate"
         500:
           description: "Server error"
           content:
@@ -849,6 +885,8 @@ paths:
             application/json:
               schema:
                 type: string
+        401:
+          description: "Not authenticate"
         500:
           description: "Server error"
           content:
@@ -883,6 +921,8 @@ paths:
             application/json:
               schema:
                 type: string
+        401:
+          description: "Not authenticate"
         500:
           description: "Server error"
           content:
@@ -933,6 +973,8 @@ paths:
       responses:
         200:
           description: "Succcess"
+        401:
+          description: "Not authenticate"
         500:
           description: "Error"
   /music/like:
@@ -960,6 +1002,8 @@ paths:
             application/json:
               schema:
                 type: string
+        401:
+          description: "Not authenticate"
         500:
           description: "Error"
           content:
@@ -989,6 +1033,8 @@ paths:
             application/json:
               schema:
                 type: string
+        401:
+          description: "Not authenticate"
         500:
           description: "Error"
           content:
@@ -1077,6 +1123,8 @@ paths:
         200:
           description: "Success"
           $ref: "#/components/responses/GetMusic"
+        401:
+          description: "Not authenticate"
         500:
           description: "Server error"
   /music/{musicID}:

@@ -103,6 +103,7 @@ func (s3Client S3Client) UploadObject(ctx context.Context, key string, data []by
 		Key:         &key,
 		Body:        bytes.NewReader(data),
 		ContentType: &contentType,
+		CacheControl: aws.String("public, max-age=864000, immutable"),
 	})
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)

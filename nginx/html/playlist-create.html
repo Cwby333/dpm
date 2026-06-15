@@ -662,6 +662,7 @@
 			</div>
 		</footer>
 
+		<script src="api.js"></script>
 		<script>
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
 			let selectedCover = null
@@ -742,7 +743,7 @@
 				updateStatus('warning', 'Создание плейлиста...')
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/playlist`, {
+					const response = await apiFetch(`${apiBaseUrl}/playlist`, {
 						method: 'POST',
 						body: formData,
 						credentials: 'include',

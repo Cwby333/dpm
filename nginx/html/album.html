@@ -669,6 +669,7 @@
 			</div>
 		</footer>
 
+		<script src="api.js"></script>
 		<script>
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
 			let tracks = []
@@ -698,10 +699,10 @@
 					return
 				}
 				try {
-					const resp = await fetch(`${apiBaseUrl}/album/my/likes`, {
+					const resp = await apiFetchOptional(`${apiBaseUrl}/album/my/likes`, {
 						credentials: 'include',
 					})
-					if (resp.ok) {
+					if (resp && resp.ok) {
 						const data = await resp.json()
 						const ids = Array.isArray(data)
 							? data.map(a => a.id).filter(Boolean)
@@ -726,12 +727,13 @@
 				const isLiked = likedAlbumIds.has(albumId)
 				const method = isLiked ? 'DELETE' : 'POST'
 				try {
-					const resp = await fetch(`${apiBaseUrl}/album/like`, {
+					const resp = await apiFetchOptional(`${apiBaseUrl}/album/like`, {
 						method,
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({ album_id: albumId }),
 						credentials: 'include',
 					})
+					if (!resp) return
 					if (resp.ok) {
 						if (isLiked) {
 							likedAlbumIds.delete(albumId)
@@ -772,7 +774,7 @@
 				tracksContainer.style.display = 'none'
 
 				try {
-					const response = await fetch(
+					const response = await apiFetch(
 						`${apiBaseUrl}/album/${encodeURIComponent(albumId)}`,
 						{
 							method: 'GET',
@@ -894,7 +896,7 @@
 					if (!confirm('Удалить этот альбом? Это действие нельзя отменить.'))
 						return
 					try {
-						const resp = await fetch(
+						const resp = await apiFetch(
 							`${apiBaseUrl}/album/${encodeURIComponent(albumId)}`,
 							{
 								method: 'DELETE',
@@ -944,7 +946,7 @@
 					if (coverChanged) fd.append('cover', coverFile)
 
 					try {
-						const resp = await fetch(
+						const resp = await apiFetch(
 							`${apiBaseUrl}/album/${encodeURIComponent(albumId)}`,
 							{
 								method: 'PATCH',

@@ -786,6 +786,7 @@
 			</div>
 		</footer>
 
+		<script src="api.js"></script>
 		<script>
 			// Конфигурация
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
@@ -808,7 +809,7 @@
 				try {
 					console.log(`Добавление трека ${musicId} в историю прослушиваний`)
 
-					const response = await fetch(`${apiBaseUrl}/listening-history`, {
+					const response = await apiFetch(`${apiBaseUrl}/listening-history`, {
 						method: 'POST',
 						headers: {
 							Accept: 'application/json',
@@ -837,7 +838,7 @@
 			// Воспроизведение музыки
 			async function playMusic(musicId, musicName, artistName, songUrl) {
 				const added = await addToListeningHistory(musicId)
-				fetch(`${apiBaseUrl}/music/inc-lis-count`, {
+				apiFetch(`${apiBaseUrl}/music/inc-lis-count`, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ music_id: musicId }),
@@ -870,7 +871,7 @@
 				updateStatus('loading', 'Удаление лайка...')
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/music/like`, {
+					const response = await apiFetch(`${apiBaseUrl}/music/like`, {
 						method: 'DELETE',
 						headers: {
 							Accept: 'application/json',
@@ -912,7 +913,7 @@
 				updateStatus('loading', 'Загрузка понравившихся треков...')
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/likes`, {
+					const response = await apiFetch(`${apiBaseUrl}/likes`, {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',

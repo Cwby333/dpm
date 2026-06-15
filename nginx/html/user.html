@@ -582,6 +582,7 @@
 			</div>
 		</footer>
 
+		<script src="api.js"></script>
 		<script>
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
 			let tracks = []
@@ -609,7 +610,7 @@
 				tracksContainer.style.display = 'none'
 
 				try {
-					const response = await fetch(
+					const response = await apiFetch(
 						`${apiBaseUrl}/users/${encodeURIComponent(userId)}`,
 						{
 							method: 'GET',
@@ -765,7 +766,7 @@
 				if (!userId) return
 
 				try {
-					const response = await fetch(
+					const response = await apiFetch(
 						`${apiBaseUrl}/users/${encodeURIComponent(userId)}/albums`,
 						{
 							method: 'GET',
@@ -811,7 +812,7 @@
 				if (!userId) return
 
 				try {
-					const response = await fetch(
+					const response = await apiFetch(
 						`${apiBaseUrl}/users/${encodeURIComponent(userId)}/playlists`,
 						{
 							method: 'GET',

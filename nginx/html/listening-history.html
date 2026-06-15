@@ -790,6 +790,7 @@
 			</div>
 		</footer>
 
+		<script src="api.js"></script>
 		<script>
 			// Конфигурация
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
@@ -815,7 +816,7 @@
 
 				try {
 					// GET запрос на /listening-history (без userID в URL)
-					const response = await fetch(`${apiBaseUrl}/listening-history`, {
+					const response = await apiFetch(`${apiBaseUrl}/listening-history`, {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',
@@ -881,7 +882,7 @@
 
 				try {
 					// DELETE запрос на /listening-history с music_id и listening_date
-					const response = await fetch(`${apiBaseUrl}/listening-history`, {
+					const response = await apiFetch(`${apiBaseUrl}/listening-history`, {
 						method: 'DELETE',
 						headers: {
 							Accept: 'application/json',

@@ -766,6 +766,7 @@
 			</div>
 		</footer>
 
+		<script src="api.js"></script>
 		<script>
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
 			let tracks = []
@@ -809,10 +810,10 @@
 					return
 				}
 				try {
-					const resp = await fetch(`${apiBaseUrl}/playlist/my/likes`, {
+					const resp = await apiFetchOptional(`${apiBaseUrl}/playlist/my/likes`, {
 						credentials: 'include',
 					})
-					if (resp.ok) {
+					if (resp && resp.ok) {
 						const data = await resp.json()
 						const ids = Array.isArray(data)
 							? data.map(p => p.id).filter(Boolean)
@@ -836,12 +837,13 @@
 				const isLiked = likedPlaylistIds.has(playlistId)
 				const method = isLiked ? 'DELETE' : 'POST'
 				try {
-					const resp = await fetch(`${apiBaseUrl}/playlist/like`, {
+					const resp = await apiFetchOptional(`${apiBaseUrl}/playlist/like`, {
 						method,
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({ playlist_id: playlistId }),
 						credentials: 'include',
 					})
+					if (!resp) return
 					if (resp.ok) {
 						if (isLiked) likedPlaylistIds.delete(playlistId)
 						else likedPlaylistIds.add(playlistId)
@@ -875,7 +877,7 @@
 				tracksContainer.style.display = 'none'
 
 				try {
-					const response = await fetch(
+					const response = await apiFetch(
 						`${apiBaseUrl}/playlist/${encodeURIComponent(playlistId)}`,
 						{
 							method: 'GET',
@@ -1046,7 +1048,7 @@
 					if (!confirm('Удалить этот плейлист? Это действие нельзя отменить.'))
 						return
 					try {
-						const resp = await fetch(
+						const resp = await apiFetch(
 							`${apiBaseUrl}/playlist/${encodeURIComponent(playlistId)}`,
 							{
 								method: 'DELETE',
@@ -1073,7 +1075,7 @@
 					'<div class="modal-empty">Загрузка...</div>'
 
 				try {
-					const resp = await fetch(`${apiBaseUrl}/music`, {
+					const resp = await apiFetch(`${apiBaseUrl}/music`, {
 						headers: { Accept: 'application/json' },
 						credentials: 'include',
 					})
@@ -1134,7 +1136,7 @@
 					fd.append('private', isPrivate ? '1' : '0')
 
 					try {
-						const resp = await fetch(
+						const resp = await apiFetch(
 							`${apiBaseUrl}/playlist/${encodeURIComponent(playlistId)}`,
 							{
 								method: 'PATCH',
@@ -1196,7 +1198,7 @@
 
 			async function addTrackToPlaylist(musicId) {
 				try {
-					const resp = await fetch(`${apiBaseUrl}/playlist/${playlistId}/add`, {
+					const resp = await apiFetch(`${apiBaseUrl}/playlist/${playlistId}/add`, {
 						method: 'POST',
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({ music_id: musicId }),

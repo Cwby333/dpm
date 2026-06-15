@@ -1251,13 +1251,13 @@ func (h Handler) AddListeningToLH(ctx context.Context, request api.AddListeningT
 
 	if t == "" {
 		slog.Info("AddListeningHistory empty")
-		return api.AddListeningToLH500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
+		return api.AddListeningToLH401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error(err.Error())
-		return api.AddListeningToLH500JSONResponse(err.Error()), nil
+		return api.AddListeningToLH401Response{}, nil
 	}
 
 	lhi := models.ListeningHistory{
@@ -1283,13 +1283,13 @@ func (h Handler) GetLH(ctx context.Context, request api.GetLHRequestObject) (api
 
 	if t == "" {
 		slog.Info("GetLH token empty")
-		return api.GetLH500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
+		return api.GetLH401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error(err.Error())
-		return api.GetLH500JSONResponse(err.Error()), nil
+		return api.GetLH401Response{}, nil
 	}
 
 	slog.Info(fmt.Sprintf("Claims is nil: %v", claims == nil))
@@ -1342,13 +1342,13 @@ func (h Handler) DeleteListeningFromLH(ctx context.Context, request api.DeleteLi
 
 	if t == "" {
 		slog.Info("DeleteListeningFromLH token empty")
-		return api.DeleteListeningFromLH500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
+		return api.DeleteListeningFromLH401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error(err.Error())
-		return api.DeleteListeningFromLH500JSONResponse(err.Error()), nil
+		return api.DeleteListeningFromLH401Response{}, nil
 	}
 
 	slog.Info(t)
@@ -1374,13 +1374,13 @@ func (h Handler) AddFavor(ctx context.Context, request api.AddFavorRequestObject
 
 	if t == "" {
 		slog.Info("AddFavor token empty")
-		return api.AddFavor500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
+		return api.AddFavor401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error(err.Error())
-		return api.AddFavor500JSONResponse(err.Error()), nil
+		return api.AddFavor401Response{}, nil
 	}
 
 	f := models.ListeningHistory{
@@ -1404,13 +1404,13 @@ func (h Handler) GetFavor(ctx context.Context, request api.GetFavorRequestObject
 
 	if t == "" {
 		slog.Info("getfavor token empty")
-		return api.GetFavor500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
+		return api.GetFavor401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error(err.Error())
-		return api.GetFavor500JSONResponse(err.Error()), nil
+		return api.GetFavor401Response{}, nil
 	}
 
 	f := models.ListeningHistory{
@@ -1459,13 +1459,13 @@ func (h Handler) DeleteFavor(ctx context.Context, request api.DeleteFavorRequest
 
 	if t == "" {
 		slog.Info("DeleteFavor token empty")
-		return api.DeleteFavor500JSONResponse("Access-Token empty, please login and retry action"), errors.New("Token empty")
+		return api.DeleteFavor401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error(err.Error())
-		return api.DeleteFavor500JSONResponse(err.Error()), nil
+		return api.DeleteFavor401Response{}, nil
 	}
 
 	lhi := models.ListeningHistory{
@@ -1654,13 +1654,13 @@ func (h Handler) GetProfile(ctx context.Context, request api.GetProfileRequestOb
 
 	if t == "" {
 		slog.Info("GET /profile token empty")
-		return api.GetProfile500JSONResponse("Token empty"), fmt.Errorf("%s: %w", op, errors.New("Token empty"))
+		return api.GetProfile401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error(err.Error())
-		return api.GetProfile500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+		return api.GetProfile401Response{}, nil
 	}
 
 	u := models.User{
@@ -1694,13 +1694,13 @@ func (h Handler) PostMusicLike(ctx context.Context, request api.PostMusicLikeReq
 
 	if t == "" {
 		slog.Info("Token empty")
-		return api.PostMusicLike500JSONResponse("Token empty"), fmt.Errorf("%s: %w", op, errors.New("Token empty"))
+		return api.PostMusicLike401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error(err.Error())
-		return api.PostMusicLike500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+		return api.PostMusicLike401Response{}, nil
 	}
 
 	l := models.Like{
@@ -1724,13 +1724,13 @@ func (h Handler) DeleteMusicLike(ctx context.Context, request api.DeleteMusicLik
 
 	if t == "" {
 		slog.Info("Token empty")
-		return api.DeleteMusicLike500JSONResponse("Token empty"), fmt.Errorf("%s: %w", op, errors.New("Token empty"))
+		return api.DeleteMusicLike401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error(err.Error())
-		return api.DeleteMusicLike500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+		return api.DeleteMusicLike401Response{}, nil
 	}
 
 	l := models.Like{
@@ -1754,13 +1754,13 @@ func (h Handler) GetLikes(ctx context.Context, request api.GetLikesRequestObject
 
 	if t == "" {
 		slog.Info("Token empty")
-		return api.GetLikes500JSONResponse("Token empty"), fmt.Errorf("%s: %w", op, errors.New("Token empty"))
+		return api.GetLikes401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error(err.Error())
-		return api.GetLikes500JSONResponse(err.Error()), fmt.Errorf("%s: %w", op, err)
+		return api.GetLikes401Response{}, nil
 	}
 
 	u := models.User{
@@ -1810,20 +1810,20 @@ func (h Handler) MusicUpload(w http.ResponseWriter, r *http.Request) {
 	t, err := r.Cookie("Access-Token")
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Not authenticate", 401)
 		return
 	}
 
 	if t.Value == "" {
 		slog.Info("Token empty")
-		http.Error(w, "Empty token", http.StatusBadRequest)
+		http.Error(w, "Not authenticate", 401)
 		return
 	}
 
 	claims, err := h.uServices.CheckAccessToken(r.Context(), t.Value)
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), 401)
 		return
 	}
 
@@ -1950,13 +1950,13 @@ func (h Handler) UploadAlbum(w http.ResponseWriter, r *http.Request) {
 	t, err := r.Cookie("Access-Token")
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Unauthorized", 401)
 		return
 	}
 
 	if t.Value == "" {
 		slog.Info("Token empty")
-		http.Error(w, "Empty token", http.StatusBadRequest)
+		http.Error(w, "Unauthorized", 401)
 		return
 	}
 
@@ -2057,13 +2057,13 @@ func (h Handler) GetAlbumMy(ctx context.Context, request api.GetAlbumMyRequestOb
 
 	if t == "" {
 		slog.Warn("GetAlbumMy token missing")
-		return api.GetAlbumMy500Response{}, errors.New("token missing")
+		return api.GetAlbumMy401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Warn(fmt.Sprintf("%s: %s", "GetAlbumsMy check token", err.Error()))
-		return api.GetAlbumMy500Response{}, err
+		return api.GetAlbumMy401Response{}, nil
 	}
 
 	id := claims["sub"].(string)
@@ -2182,13 +2182,13 @@ func (h Handler) UploadPlaylist(w http.ResponseWriter, r *http.Request) {
 	t, err := r.Cookie("Access-Token")
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Unauthorized", 401)
 		return
 	}
 
 	if t.Value == "" {
 		slog.Info("Token empty")
-		http.Error(w, "Empty token", http.StatusBadRequest)
+		http.Error(w, "Unauthorized", 401)
 		return
 	}
 
@@ -2254,7 +2254,7 @@ func (h Handler) GetMyPlaylists(ctx context.Context, request api.GetMyPlaylistsR
 	claims, err := h.uServices.CheckAccessToken(ctx, request.Params.AccessToken)
 	if err != nil {
 		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
-		return api.GetMyPlaylists500JSONResponse(err.Error()), nil
+		return api.GetMyPlaylists401Response{}, nil
 	}
 
 	userID := claims["sub"].(string)
@@ -2367,13 +2367,13 @@ func (h Handler) UpdatePlaylist(w http.ResponseWriter, r *http.Request) {
 	c, err := r.Cookie("Access-Token")
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Unauthorized", 401)
 		return
 	}
 
 	if c.Value == "" {
 		slog.Info("UpdatePlaylist token empty")
-		http.Error(w, "token empty", http.StatusBadRequest)
+		http.Error(w, "Unauthorized", 401)
 		return
 	}
 
@@ -2549,7 +2549,7 @@ func (h Handler) AddMusicToPlaylist(ctx context.Context, request api.AddMusicToP
 	claims, err := h.uServices.CheckAccessToken(ctx, request.Params.AccessToken)
 	if err != nil {
 		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
-		return api.AddMusicToPlaylist500JSONResponse(err.Error()), nil
+		return api.AddMusicToPlaylist401Response{}, nil
 	}
 
 	_ = claims
@@ -2669,13 +2669,13 @@ func (h Handler) GetAlbumMyLikes(ctx context.Context, request api.GetAlbumMyLike
 
 	t := request.Params.AccessToken
 	if t == "" {
-		return api.GetAlbumMyLikes500Response{}, errors.New("token empty")
+		return api.GetAlbumMyLikes401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error(err.Error())
-		return api.GetAlbumMyLikes500Response{}, err
+		return api.GetAlbumMyLikes401Response{}, nil
 	}
 
 	userID := claims["sub"].(string)
@@ -2714,12 +2714,12 @@ func (h Handler) PostAlbumLike(ctx context.Context, request api.PostAlbumLikeReq
 
 	t := request.Params.AccessToken
 	if t == "" {
-		return api.PostAlbumLike500Response{}, errors.New("token empty")
+		return api.PostAlbumLike401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
-		return api.PostAlbumLike500Response{}, err
+		return api.PostAlbumLike401Response{}, nil
 	}
 
 	userID := claims["sub"].(string)
@@ -2738,12 +2738,12 @@ func (h Handler) DeleteAlbumLike(ctx context.Context, request api.DeleteAlbumLik
 
 	t := request.Params.AccessToken
 	if t == "" {
-		return api.DeleteAlbumLike500Response{}, errors.New("token empty")
+		return api.DeleteAlbumLike401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
-		return api.DeleteAlbumLike500Response{}, err
+		return api.DeleteAlbumLike401Response{}, nil
 	}
 
 	userID := claims["sub"].(string)
@@ -2761,13 +2761,13 @@ func (h Handler) UpdateAlbum(w http.ResponseWriter, r *http.Request) {
 	t, err := r.Cookie("Access-Token")
 	if err != nil {
 		slog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Unauthorized", 401)
 		return
 	}
 
 	if t.Value == "" {
 		slog.Info("Token empty")
-		http.Error(w, "Empty token", http.StatusBadRequest)
+		http.Error(w, "Unauthorized", 401)
 		return
 	}
 
@@ -2831,13 +2831,13 @@ func (h Handler) DeleteAlbumAlbumID(ctx context.Context, request api.DeleteAlbum
 
 	if t == "" {
 		slog.Warn("DeleteAlbumID token empty")
-		return api.DeleteAlbumAlbumID500Response{}, nil
+		return api.DeleteAlbumAlbumID401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error(err.Error())
-		return api.DeleteAlbumAlbumID500Response{}, err
+		return api.DeleteAlbumAlbumID401Response{}, nil
 	}
 
 	userID := claims["sub"].(string)
@@ -2858,13 +2858,13 @@ func (h Handler) GetMusicMy(ctx context.Context, request api.GetMusicMyRequestOb
 
 	if t == "" {
 		slog.Warn("GetMusicMy token empty")
-		return api.GetMusicMy500Response{}, errors.New("token empty")
+		return api.GetMusicMy401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error("GetMusicMy error " + err.Error())
-		return api.GetMusicMy500Response{}, err
+		return api.GetMusicMy401Response{}, nil
 	}
 
 	userID := claims["sub"].(string)
@@ -2912,13 +2912,13 @@ func (h Handler) GetPlaylistMyLikes(ctx context.Context, request api.GetPlaylist
 
 	if t == "" {
 		slog.Warn("GetPlaylistMyLikes token empty")
-		return api.GetPlaylistMyLikes500Response{}, errors.New("token empty")
+		return api.GetPlaylistMyLikes401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error("GetPlaylistMyLikes error " + err.Error())
-		return api.GetPlaylistMyLikes500Response{}, err
+		return api.GetPlaylistMyLikes401Response{}, nil
 	}
 
 	userID := claims["sub"].(string)
@@ -2959,13 +2959,13 @@ func (h Handler) PostPlaylistLike(ctx context.Context, request api.PostPlaylistL
 
 	if t == "" {
 		slog.Warn("PostPlaylistLike token empty")
-		return api.PostPlaylistLike500Response{}, errors.New("token empty")
+		return api.PostPlaylistLike401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error("PostPlaylistLike error " + err.Error())
-		return api.PostPlaylistLike500Response{}, err
+		return api.PostPlaylistLike401Response{}, nil
 	}
 
 	userID := claims["sub"].(string)
@@ -2986,13 +2986,13 @@ func (h Handler) DeletePlaylistLike(ctx context.Context, request api.DeletePlayl
 
 	if t == "" {
 		slog.Warn("PostPlaylistLike token empty")
-		return api.DeletePlaylistLike500Response{}, errors.New("token empty")
+		return api.DeletePlaylistLike401Response{}, nil
 	}
 
 	claims, err := h.uServices.CheckAccessToken(ctx, t)
 	if err != nil {
 		slog.Error("PostPlaylistLike error " + err.Error())
-		return api.DeletePlaylistLike500Response{}, err
+		return api.DeletePlaylistLike401Response{}, nil
 	}
 
 	userID := claims["sub"].(string)

@@ -1023,6 +1023,7 @@
 			</div>
 		</footer>
 
+		<script src="api.js"></script>
 		<script>
 			// Конфигурация
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
@@ -1052,7 +1053,7 @@
 				try {
 					console.log(`Добавление трека ${musicId} в историю прослушиваний`)
 
-					const response = await fetch(`${apiBaseUrl}/listening-history`, {
+					const response = await apiFetchOptional(`${apiBaseUrl}/listening-history`, {
 						method: 'POST',
 						headers: {
 							Accept: 'application/json',
@@ -1085,8 +1086,8 @@
 				const actionText = isLiked ? 'удален лайк' : 'поставлен лайк'
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/music/like`, {
-						method: method,
+				const response = await apiFetchOptional(`${apiBaseUrl}/music/like`, {
+				method: method,
 						headers: {
 							Accept: 'application/json',
 							'Content-Type': 'application/json',
@@ -1133,7 +1134,7 @@
 			async function loadFavorStatus() {
 				try {
 					console.log('Загрузка избранного')
-					const response = await fetch(`${apiBaseUrl}/favor`, {
+					const response = await apiFetchOptional(`${apiBaseUrl}/favor`, {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',
@@ -1182,7 +1183,7 @@
 				const actionText = isInFavor ? 'удален из' : 'добавлен в'
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/favor`, {
+					const response = await apiFetchOptional(`${apiBaseUrl}/favor`, {
 						method: method,
 						headers: {
 							Accept: 'application/json',
@@ -1217,7 +1218,7 @@
 			// Воспроизведение музыки (отправляет POST в историю)
 			async function playMusic(musicId, musicName, artistName, songUrl) {
 				const added = await addToListeningHistory(musicId)
-				fetch(`${apiBaseUrl}/music/inc-lis-count`, {
+				apiFetchOptional(`${apiBaseUrl}/music/inc-lis-count`, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ music_id: musicId }),
@@ -1284,7 +1285,7 @@
 
 				try {
 					const url = getMusicUrl()
-					const response = await fetch(url, {
+					const response = await apiFetch(url, {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',
@@ -1640,9 +1641,13 @@
 
 				try {
 					if (!cachedPlaylists) {
-						const resp = await fetch(`${apiBaseUrl}/playlist/my`, {
+						const resp = await apiFetchOptional(`${apiBaseUrl}/playlist/my`, {
 							credentials: 'include',
 						})
+						if (!resp) {
+							dropdown.innerHTML = '<div class="playlist-dropdown-empty">Войдите, чтобы добавить в плейлист</div>'
+							return
+						}
 						if (!resp.ok) throw new Error('Ошибка загрузки')
 						cachedPlaylists = await resp.json()
 					}
@@ -1668,12 +1673,16 @@
 
 			async function addToPlaylist(musicId, playlistId) {
 				try {
-					const resp = await fetch(`${apiBaseUrl}/playlist/${playlistId}/add`, {
+					const resp = await apiFetchOptional(`${apiBaseUrl}/playlist/${playlistId}/add`, {
 						method: 'POST',
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({ music_id: musicId }),
 						credentials: 'include',
 					})
+					if (!resp) {
+						showNotification('Войдите в систему, чтобы добавлять треки в плейлист', 'error')
+						return
+					}
 					if (resp.ok) {
 						showNotification('✅ Трек добавлен в плейлист', 'success')
 					} else {

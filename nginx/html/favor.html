@@ -785,6 +785,7 @@
 			</div>
 		</footer>
 
+		<script src="api.js"></script>
 		<script>
 			// Конфигурация
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
@@ -808,7 +809,7 @@
 				try {
 					console.log(`Добавление трека ${musicId} в историю прослушиваний`)
 
-					const response = await fetch(`${apiBaseUrl}/listening-history`, {
+					const response = await apiFetch(`${apiBaseUrl}/listening-history`, {
 						method: 'POST',
 						headers: {
 							Accept: 'application/json',
@@ -845,7 +846,7 @@
 				updateStatus('loading', 'Загрузка избранного...')
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/favor`, {
+					const response = await apiFetch(`${apiBaseUrl}/favor`, {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',
@@ -914,7 +915,7 @@
 					const musicId = item.id
 					if (musicId && !musicDetails.has(musicId)) {
 						try {
-							const response = await fetch(`${apiBaseUrl}/music/${musicId}`, {
+							const response = await apiFetch(`${apiBaseUrl}/music/${musicId}`, {
 								method: 'GET',
 								headers: { Accept: 'application/json' },
 								credentials: 'include',
@@ -948,7 +949,7 @@
 				updateStatus('loading', 'Удаление...')
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/favor`, {
+					const response = await apiFetch(`${apiBaseUrl}/favor`, {
 						method: 'DELETE',
 						headers: {
 							Accept: 'application/json',

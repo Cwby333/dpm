@@ -2204,6 +2204,14 @@ func (response DeleteAlbumLike200Response) VisitDeleteAlbumLikeResponse(w http.R
 	return nil
 }
 
+type DeleteAlbumLike401Response struct {
+}
+
+func (response DeleteAlbumLike401Response) VisitDeleteAlbumLikeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type DeleteAlbumLike500Response struct {
 }
 
@@ -2226,6 +2234,14 @@ type PostAlbumLike200Response struct {
 
 func (response PostAlbumLike200Response) VisitPostAlbumLikeResponse(w http.ResponseWriter) error {
 	w.WriteHeader(200)
+	return nil
+}
+
+type PostAlbumLike401Response struct {
+}
+
+func (response PostAlbumLike401Response) VisitPostAlbumLikeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
 	return nil
 }
 
@@ -2254,6 +2270,14 @@ func (response GetAlbumMy200JSONResponse) VisitGetAlbumMyResponse(w http.Respons
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetAlbumMy401Response struct {
+}
+
+func (response GetAlbumMy401Response) VisitGetAlbumMyResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type GetAlbumMy500Response struct {
 }
 
@@ -2279,6 +2303,14 @@ func (response GetAlbumMyLikes200JSONResponse) VisitGetAlbumMyLikesResponse(w ht
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetAlbumMyLikes401Response struct {
+}
+
+func (response GetAlbumMyLikes401Response) VisitGetAlbumMyLikesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type GetAlbumMyLikes500Response struct {
 }
 
@@ -2301,6 +2333,14 @@ type DeleteAlbumAlbumID200Response struct {
 
 func (response DeleteAlbumAlbumID200Response) VisitDeleteAlbumAlbumIDResponse(w http.ResponseWriter) error {
 	w.WriteHeader(200)
+	return nil
+}
+
+type DeleteAlbumAlbumID401Response struct {
+}
+
+func (response DeleteAlbumAlbumID401Response) VisitDeleteAlbumAlbumIDResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
 	return nil
 }
 
@@ -2360,6 +2400,14 @@ func (response DeleteFavor200JSONResponse) VisitDeleteFavorResponse(w http.Respo
 	return json.NewEncoder(w).Encode(response)
 }
 
+type DeleteFavor401Response struct {
+}
+
+func (response DeleteFavor401Response) VisitDeleteFavorResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type DeleteFavor500JSONResponse string
 
 func (response DeleteFavor500JSONResponse) VisitDeleteFavorResponse(w http.ResponseWriter) error {
@@ -2384,6 +2432,14 @@ func (response GetFavor200JSONResponse) VisitGetFavorResponse(w http.ResponseWri
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type GetFavor401Response struct {
+}
+
+func (response GetFavor401Response) VisitGetFavorResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
 }
 
 type GetFavor500JSONResponse string
@@ -2413,6 +2469,14 @@ func (response AddFavor200JSONResponse) VisitAddFavorResponse(w http.ResponseWri
 	return json.NewEncoder(w).Encode(response)
 }
 
+type AddFavor401Response struct {
+}
+
+func (response AddFavor401Response) VisitAddFavorResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type AddFavor500JSONResponse string
 
 func (response AddFavor500JSONResponse) VisitAddFavorResponse(w http.ResponseWriter) error {
@@ -2437,6 +2501,14 @@ func (response GetLikes200JSONResponse) VisitGetLikesResponse(w http.ResponseWri
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type GetLikes401Response struct {
+}
+
+func (response GetLikes401Response) VisitGetLikesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
 }
 
 type GetLikes500JSONResponse string
@@ -2464,6 +2536,14 @@ func (response DeleteListeningFromLH200JSONResponse) VisitDeleteListeningFromLHR
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteListeningFromLH401Response struct {
+}
+
+func (response DeleteListeningFromLH401Response) VisitDeleteListeningFromLHResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
 }
 
 type DeleteListeningFromLH500JSONResponse string
@@ -2494,6 +2574,14 @@ func (response GetLH200JSONResponse) VisitGetLHResponse(w http.ResponseWriter) e
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetLH401Response struct {
+}
+
+func (response GetLH401Response) VisitGetLHResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type GetLH500JSONResponse string
 
 func (response GetLH500JSONResponse) VisitGetLHResponse(w http.ResponseWriter) error {
@@ -2519,6 +2607,14 @@ func (response AddListeningToLH200JSONResponse) VisitAddListeningToLHResponse(w 
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type AddListeningToLH401Response struct {
+}
+
+func (response AddListeningToLH401Response) VisitAddListeningToLHResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
 }
 
 type AddListeningToLH500JSONResponse string
@@ -2598,6 +2694,14 @@ func (response DeleteMusicLike200JSONResponse) VisitDeleteMusicLikeResponse(w ht
 	return json.NewEncoder(w).Encode(response)
 }
 
+type DeleteMusicLike401Response struct {
+}
+
+func (response DeleteMusicLike401Response) VisitDeleteMusicLikeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type DeleteMusicLike500JSONResponse string
 
 func (response DeleteMusicLike500JSONResponse) VisitDeleteMusicLikeResponse(w http.ResponseWriter) error {
@@ -2625,6 +2729,14 @@ func (response PostMusicLike200JSONResponse) VisitPostMusicLikeResponse(w http.R
 	return json.NewEncoder(w).Encode(response)
 }
 
+type PostMusicLike401Response struct {
+}
+
+func (response PostMusicLike401Response) VisitPostMusicLikeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type PostMusicLike500JSONResponse string
 
 func (response PostMusicLike500JSONResponse) VisitPostMusicLikeResponse(w http.ResponseWriter) error {
@@ -2649,6 +2761,14 @@ func (response GetMusicMy200JSONResponse) VisitGetMusicMyResponse(w http.Respons
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMusicMy401Response struct {
+}
+
+func (response GetMusicMy401Response) VisitGetMusicMyResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
 }
 
 type GetMusicMy500Response struct {
@@ -2758,6 +2878,14 @@ func (response DeletePlaylistLike200Response) VisitDeletePlaylistLikeResponse(w 
 	return nil
 }
 
+type DeletePlaylistLike401Response struct {
+}
+
+func (response DeletePlaylistLike401Response) VisitDeletePlaylistLikeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type DeletePlaylistLike500Response struct {
 }
 
@@ -2780,6 +2908,14 @@ type PostPlaylistLike200Response struct {
 
 func (response PostPlaylistLike200Response) VisitPostPlaylistLikeResponse(w http.ResponseWriter) error {
 	w.WriteHeader(200)
+	return nil
+}
+
+type PostPlaylistLike401Response struct {
+}
+
+func (response PostPlaylistLike401Response) VisitPostPlaylistLikeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
 	return nil
 }
 
@@ -2808,6 +2944,14 @@ func (response GetMyPlaylists200JSONResponse) VisitGetMyPlaylistsResponse(w http
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetMyPlaylists401Response struct {
+}
+
+func (response GetMyPlaylists401Response) VisitGetMyPlaylistsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type GetMyPlaylists500JSONResponse string
 
 func (response GetMyPlaylists500JSONResponse) VisitGetMyPlaylistsResponse(w http.ResponseWriter) error {
@@ -2832,6 +2976,14 @@ func (response GetPlaylistMyLikes200JSONResponse) VisitGetPlaylistMyLikesRespons
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type GetPlaylistMyLikes401Response struct {
+}
+
+func (response GetPlaylistMyLikes401Response) VisitGetPlaylistMyLikesResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
 }
 
 type GetPlaylistMyLikes500Response struct {
@@ -2963,6 +3115,14 @@ func (response AddMusicToPlaylist200JSONResponse) VisitAddMusicToPlaylistRespons
 	return json.NewEncoder(w).Encode(response)
 }
 
+type AddMusicToPlaylist401Response struct {
+}
+
+func (response AddMusicToPlaylist401Response) VisitAddMusicToPlaylistResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type AddMusicToPlaylist500JSONResponse string
 
 func (response AddMusicToPlaylist500JSONResponse) VisitAddMusicToPlaylistResponse(w http.ResponseWriter) error {
@@ -2987,6 +3147,14 @@ func (response GetProfile200JSONResponse) VisitGetProfileResponse(w http.Respons
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type GetProfile401Response struct {
+}
+
+func (response GetProfile401Response) VisitGetProfileResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
 }
 
 type GetProfile500JSONResponse string
@@ -4328,46 +4496,47 @@ func (sh *strictHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Request
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"AP//iOFG3+FWAAA=",
+	"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",
+	"AA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

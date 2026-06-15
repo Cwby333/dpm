@@ -36,7 +36,7 @@ const PlayerCore = (function () {
 			currentArtistName = artistName
 
 			log('play: запрос HLS плейлиста')
-			const response = await fetch(`${apiBaseUrl}/music/play`, {
+			const response = await apiFetch(`${apiBaseUrl}/music/play`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ music_id: musicId }),
@@ -64,6 +64,12 @@ const PlayerCore = (function () {
 				} else {
 					notifyListeners('ended', { musicId: currentMusicId })
 				}
+			})
+			audioElement.addEventListener('playing', () => {
+				notifyListeners('statechange', {})
+			})
+			audioElement.addEventListener('pause', () => {
+				notifyListeners('statechange', {})
 			})
 
 			if (typeof Hls !== 'undefined' && Hls.isSupported()) {
@@ -263,7 +269,7 @@ const PlayerCore = (function () {
 	async function addToListeningHistory(musicId) {
 		try {
 			log(`addToListeningHistory: ${musicId}`)
-			const response = await fetch(`${apiBaseUrl}/listening-history`, {
+			const response = await apiFetch(`${apiBaseUrl}/listening-history`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ musicID: musicId }),
@@ -284,7 +290,7 @@ const PlayerCore = (function () {
 	async function incrementListenCount(musicId) {
 		try {
 			log(`incrementListenCount: ${musicId}`)
-			const response = await fetch(`${apiBaseUrl}/music/inc-lis-count`, {
+			const response = await apiFetch(`${apiBaseUrl}/music/inc-lis-count`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ music_id: musicId }),

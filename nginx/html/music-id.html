@@ -508,6 +508,7 @@
 			</div>
 		</footer>
 
+		<script src="api.js"></script>
 		<script>
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
 			let musicData = null
@@ -526,7 +527,7 @@
 
 			async function addToListeningHistory(musicId) {
 				try {
-					const response = await fetch(`${apiBaseUrl}/listening-history`, {
+					const response = await apiFetchOptional(`${apiBaseUrl}/listening-history`, {
 						method: 'POST',
 						headers: {
 							Accept: 'application/json',
@@ -535,7 +536,7 @@
 						body: JSON.stringify({ musicID: musicId }),
 						credentials: 'include',
 					})
-					return response.ok
+					return response ? response.ok : false
 				} catch {
 					return false
 				}
@@ -550,7 +551,7 @@
 				const method = favorStatus ? 'DELETE' : 'POST'
 				const actionText = favorStatus ? 'удален из' : 'добавлен в'
 				try {
-					const response = await fetch(`${apiBaseUrl}/favor`, {
+					const response = await apiFetchOptional(`${apiBaseUrl}/favor`, {
 						method: method,
 						headers: {
 							Accept: 'application/json',
@@ -559,7 +560,7 @@
 						body: JSON.stringify({ musicID: musicId }),
 						credentials: 'include',
 					})
-					if (response.ok) {
+					if (response && response.ok) {
 						favorStatus = !favorStatus
 						updateFavorButton()
 						showNotification(`⭐ Трек "${musicName}" ${actionText} избранного`)
@@ -606,7 +607,7 @@
 				contentContainer.innerHTML = `<div class="loading-container"><div class="loading-spinner"></div><p>Загрузка информации о треке...</p></div>`
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/music/${musicId}`, {
+					const response = await apiFetch(`${apiBaseUrl}/music/${musicId}`, {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',

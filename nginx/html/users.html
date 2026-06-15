@@ -665,6 +665,7 @@
 			</div>
 		</footer>
 
+		<script src="api.js"></script>
 		<script>
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
 			let users = []
@@ -723,7 +724,7 @@
 				updateStatus('loading', 'Загрузка пользователей...')
 
 				try {
-					const response = await fetch(getUsersUrl(), {
+					const response = await apiFetch(getUsersUrl(), {
 						method: 'GET',
 						headers: { Accept: 'application/json' },
 						credentials: 'include',

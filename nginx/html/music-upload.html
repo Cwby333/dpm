@@ -765,6 +765,7 @@
 			</div>
 		</footer>
 
+		<script src="api.js"></script>
 		<script>
 			// Конфигурация
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
@@ -983,7 +984,7 @@
 				updateStatus('warning', 'Загрузка...')
 
 				try {
-					const response = await fetch(`${apiBaseUrl}/music/upload`, {
+					const response = await apiFetch(`${apiBaseUrl}/music/upload`, {
 						method: 'POST',
 						body: formData,
 						credentials: 'include',
