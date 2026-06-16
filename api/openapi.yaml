@@ -1744,7 +1744,7 @@ components:
         listening_date:
           type: string
           format: date-time
-
+          
     Music:
       type: object
       properties:
@@ -1753,6 +1753,8 @@ components:
         name:
           type: string
         uploader_id:
+          type: string
+        uploader_username:
           type: string
         likes:
           type: integer
@@ -1764,12 +1766,11 @@ components:
           type: string
         listening_count:
           type: integer
-        uploader_username:
-          type: string
       required:
         - id
         - name
         - uploader_id
+        - uploader_username
         - likes
         - duration_seconds
         - cover

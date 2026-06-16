@@ -1157,6 +1157,7 @@ func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequest
 			Id:              p[i].ID,
 			Name:            p[i].Name,
 			UploaderId:      p[i].UploaderID,
+			UploaderUsername: p[i].UploaderUsername,
 			Likes:           p[i].Likes,
 			DurationSeconds: p[i].DurationSec,
 			MusicCover:      &urlCover,
@@ -1230,6 +1231,7 @@ func (h Handler) GetMusic(ctx context.Context, request api.GetMusicRequestObject
 				Music: api.Music{
 					Id:              product.ID,
 					UploaderId:      product.UploaderID,
+					UploaderUsername: product.UploaderUsername,
 					Name:            product.Name,
 					Likes:           product.Likes,
 					DurationSeconds: product.DurationSec,

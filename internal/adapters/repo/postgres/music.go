@@ -17,6 +17,7 @@ type Music struct {
 	ID              string  `db:"id"`
 	Name            string  `db:"name"`
 	UploaderID      string  `db:"uploader_id"`
+	UploaderUsername string `db:"uploader_username"`
 	Likes           int     `db:"likes"`
 	DurationSeconds int     `db:"duration_seconds"`
 	Cover           *string `db:"music_cover"`
@@ -40,6 +41,7 @@ func MusicPgToMusic(pdb Music) models.Music {
 		Likes:       pdb.Likes,
 		DurationSec: pdb.DurationSeconds,
 		UploaderID:  pdb.UploaderID,
+		UploaderUsername: pdb.UploaderUsername,
 		CoverURL:    *pdb.Cover,
 		SongURL:     *pdb.SongURL,
 		ListeningCount: pdb.MusicListeningCount,
@@ -65,7 +67,7 @@ func (p *Postgres) CreateMusic(ctx context.Context, product models.Music) error 
 func (p *Postgres) GetMusic(ctx context.Context, id string, userID string) (models.Music, models.Like, error) {
 	const op = "./internal/adapters/repo/postgres/music.go.GetMusic()"
 
-	q := "SELECT id, uploader_id, name, likes, duration_seconds, music_cover, song_url, listening_count FROM music WHERE id = $1"
+	q := "SELECT m.id, m.uploader_id, m.name, m.likes, m.duration_seconds, m.music_cover, m.song_url, m.listening_count, u.username AS uploader_username FROM music m JOIN users u ON m.uploader_id = u.id WHERE m.id = $1"
 	rows, err := p.pool.Query(ctx, q, id)
 	if err != nil {
 		return models.Music{}, models.Like{}, fmt.Errorf("%s SELECT ... FROM products(): %w", op, err)
@@ -110,7 +112,7 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	sql := psql.Select("id, uploader_id, name, likes, duration_seconds, music_cover, song_url, listening_count").From("music")
+	sql := psql.Select("m.id, m.uploader_id, m.name, m.likes, m.duration_seconds, m.music_cover, m.song_url, m.listening_count, u.username AS uploader_username").From("music m ").Join("users u ON m.uploader_id = u.id")
 	
 	q, args, err := sql.ToSql()
 	if err != nil {
@@ -170,6 +172,7 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s: %w", op, err)
 	}
+	slog.Info(fmt.Sprintf("%s: %s", "UploaderID", mus[0].UploaderUsername))
 
 	musr := make([]models.Music, 0, len(mus))
 

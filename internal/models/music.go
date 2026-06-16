@@ -4,6 +4,7 @@ type Music struct {
 	ID          string
 	Name        string
 	UploaderID  string
+	UploaderUsername string
 	CoverURL    string
 	SongURL     string
 	Likes       int
