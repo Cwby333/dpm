@@ -677,6 +677,7 @@
 					musicId: t.music_id || t.id,
 					musicName: t.music_name || t.name || 'Без названия',
 					artistName: t.uploader_username || '',
+					coverUrl: t.music_cover || '',
 				}))
 
 				sessionStorage.setItem('albumPlaylist', JSON.stringify(playlist))

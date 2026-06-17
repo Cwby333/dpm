@@ -45,7 +45,7 @@ func (s UserService) createTokens(ctx context.Context, user models.User) (access
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "muteproject issuer",
 			Subject:   user.ID,
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 34 * 7)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ID:        refreshTokenID,
@@ -106,4 +106,62 @@ func (s UserService) CheckAccessToken(ctx context.Context, token string) (jwt.Ma
 	_ = sub
 
 	return claims, nil
+}
+
+func (s UserService) CheckRefreshToken(ctx context.Context, token string) (jwt.MapClaims, error) {
+	const op = "./internal/services/tokens.go.CheckRefreshToken"
+
+	sk := s.Key
+
+	t, err := jwt.ParseWithClaims(token, jwt.MapClaims{}, func(t *jwt.Token) (any, error) {
+		return []byte(sk), nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	if t == nil {
+		slog.Info("T is nil")
+	}
+
+	if !t.Valid {
+		slog.Error("token invalid")
+		return nil, fmt.Errorf("%s: %w", op, errors.New("token invalid"))
+	}
+
+	claims, ok := t.Claims.(jwt.MapClaims)
+	if !ok {
+		slog.Info("not jwtMapClaims")
+		return jwt.MapClaims{}, nil
+	}
+
+	// for i := range claims {
+	// 	slog.Info(i, claims[i])
+	// }
+
+	sub, err := claims.GetSubject()
+	if err != nil {
+		slog.Info("haven't subject")
+		return claims, nil
+	}
+	_ = sub
+
+	ttype := claims["type"].(string)
+	slog.Info(ttype)
+	if ttype != "refresh" {
+		return nil, fmt.Errorf("%s: %w", op, errors.New("Type refresh token not `refresh`"))
+	}
+
+	return claims, nil
+}
+
+func (s UserService) RefreshTokens(ctx context.Context, user models.User) (access models.JWTAccess, refresh models.JWTRefresh, err error) {
+	const op = "./internal/services/tokens.go.RefreshTokens"
+
+	a, r, err := s.createTokens(ctx, user)
+	if err != nil {
+		return models.JWTAccess{}, models.JWTRefresh{}, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return a, r, nil
 }

@@ -4,6 +4,7 @@ const PlayerCore = (function () {
 	let currentMusicId = null
 	let currentMusicName = ''
 	let currentArtistName = ''
+	let currentCoverUrl = ''
 	let repeatMode = 0 // 0=off, 1=repeat one, 2=repeat all
 	let updateInterval = null
 	let playlist = null
@@ -28,12 +29,13 @@ const PlayerCore = (function () {
 	}
 
 	// Загрузка и воспроизведение трека
-	async function play(musicId, musicName, artistName, seekTime = 0) {
+	async function play(musicId, musicName, artistName, seekTime = 0, coverUrl = '') {
 		try {
 			log(`play: "${musicName}" (id=${musicId}, seek=${seekTime})`)
 			currentMusicId = musicId
 			currentMusicName = musicName
 			currentArtistName = artistName
+			currentCoverUrl = coverUrl
 
 			log('play: запрос HLS плейлиста')
 			const response = await apiFetch(`${apiBaseUrl}/music/play`, {
@@ -108,6 +110,7 @@ const PlayerCore = (function () {
 				musicId: currentMusicId,
 				musicName: currentMusicName,
 				artistName: currentArtistName,
+				coverUrl: currentCoverUrl,
 				currentTime: audioElement.currentTime,
 				duration: audioElement.duration,
 				isPlaying: true,
@@ -118,6 +121,7 @@ const PlayerCore = (function () {
 				musicId: currentMusicId,
 				musicName: currentMusicName,
 				artistName: currentArtistName,
+				coverUrl: currentCoverUrl,
 				currentIndex: currentIndex,
 				totalTracks: playlist ? playlist.length : 0,
 			})
@@ -191,7 +195,7 @@ const PlayerCore = (function () {
 		currentIndex = startIndex || 0
 		log(`setPlaylist: ${tracks.length} треков, startIndex=${currentIndex}`)
 		const track = playlist[currentIndex]
-		return play(track.musicId, track.musicName, track.artistName)
+		return play(track.musicId, track.musicName, track.artistName, 0, track.coverUrl || '')
 	}
 
 	function next() {
@@ -215,7 +219,7 @@ const PlayerCore = (function () {
 		log(
 			`next: → трек ${currentIndex + 1}/${playlist.length} — "${track.musicName}"`,
 		)
-		return play(track.musicId, track.musicName, track.artistName)
+		return play(track.musicId, track.musicName, track.artistName, 0, track.coverUrl || '')
 	}
 
 	function prev() {
@@ -238,7 +242,7 @@ const PlayerCore = (function () {
 		log(
 			`prev: ← трек ${currentIndex + 1}/${playlist.length} — "${track.musicName}"`,
 		)
-		return play(track.musicId, track.musicName, track.artistName)
+		return play(track.musicId, track.musicName, track.artistName, 0, track.coverUrl || '')
 	}
 
 	function getState() {
@@ -246,6 +250,7 @@ const PlayerCore = (function () {
 			musicId: currentMusicId,
 			musicName: currentMusicName,
 			artistName: currentArtistName,
+			coverUrl: currentCoverUrl,
 			isPlaying: audioElement ? !audioElement.paused : false,
 			currentTime: audioElement ? audioElement.currentTime : 0,
 			duration: audioElement ? audioElement.duration : 0,

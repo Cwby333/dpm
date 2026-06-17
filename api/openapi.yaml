@@ -1219,6 +1219,26 @@ paths:
                 properties:
                   message:
                     type: string
+  /refresh:
+    description: "Refresh tokens"
+    post:
+      description: "Refresh tokens"
+      operationId: "refreshTokens"
+      parameters:
+        - name: Refresh-Token
+          in: cookie
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: "Success"
+        400:
+          description: "Bad request, missing token"
+        401:
+          description: "Unauthorized, token empty or malformed"
+        500:
+          description: "Internal server error"
   /ping:
     summary: 'Check health service'
     get:

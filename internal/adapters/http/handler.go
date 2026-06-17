@@ -996,7 +996,7 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "Access-Token",
 		Value:    access.Sign,
-		Expires:  time.Now().Add(time.Hour * 1),
+		Expires:  time.Now().Add(time.Hour * 24 * 3),
 		Secure:   true,
 		Path:     "/",
 		HttpOnly: true,
@@ -1006,7 +1006,7 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "Refresh-Token",
 		Value:    refresh.Sign,
-		Expires:  time.Now().Add(time.Hour * 24),
+		Expires:  time.Now().Add(time.Hour * 24 * 7),
 		Secure:   true,
 		HttpOnly: true,
 		Domain:   "",
@@ -1016,7 +1016,71 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "Refresh-Token-Logout",
 		Value:    refresh.Sign,
-		Expires:  time.Now().Add(time.Hour * 24),
+		Expires:  time.Now().Add(time.Hour * 24 * 7),
+		Secure:   true,
+		HttpOnly: true,
+		Domain:   "",
+		Path:     "/logout",
+		SameSite: http.SameSiteNoneMode,
+	})
+
+	w.WriteHeader(200)
+}
+
+func (h Handler) PostRefresh(w http.ResponseWriter, r *http.Request) {
+	const op = "./internal/adapters/http/handler.go.PostRefresh()"
+
+	refreshT, err := r.Cookie("Refresh-Token")
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "Missing refresh token", http.StatusBadRequest)
+		return
+	}
+
+	if refreshT.Value == "" {
+		slog.Debug("PostRefresh refresh empty")
+		http.Error(w, "Refresh token empty", http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := h.uServices.CheckRefreshToken(r.Context(), refreshT.Value)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	access, refresh, err := h.uServices.RefreshTokens(r.Context(), models.User{ID: claims["sub"].(string)})
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "Access-Token",
+		Value:    access.Sign,
+		Expires:  time.Now().Add(time.Hour * 24 * 3),
+		Secure:   true,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+		Domain:   "",
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "Refresh-Token",
+		Value:    refresh.Sign,
+		Expires:  time.Now().Add(time.Hour * 24 * 7),
+		Secure:   true,
+		HttpOnly: true,
+		Domain:   "",
+		Path:     "/refresh",
+		SameSite: http.SameSiteNoneMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "Refresh-Token-Logout",
+		Value:    refresh.Sign,
+		Expires:  time.Now().Add(time.Hour * 24 * 7),
 		Secure:   true,
 		HttpOnly: true,
 		Domain:   "",

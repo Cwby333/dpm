@@ -216,30 +216,6 @@
                 .progress-slider::-moz-range-progress { background: #667eea; border-radius: 3px; }
             `;
         }
-        let lastCoverMusicId = null;
-
-        async function updateCover(musicId) {
-            if (!musicId) {
-                albumArtContainer.textContent = '🎵';
-                lastCoverMusicId = null;
-                return;
-            }
-            if (musicId === lastCoverMusicId) return;
-            albumArtContainer.textContent = '🎵';
-            lastCoverMusicId = musicId;
-            try {
-                const resp = await apiFetch(`${apiBaseUrl}/music/${musicId}`, { credentials: 'include' });
-                if (!resp.ok) return;
-                const data = await resp.json();
-                const coverUrl = data.music?.music_cover;
-                if (coverUrl) {
-                    albumArtContainer.innerHTML = `<img src="${coverUrl}" alt="Обложка">`;
-                }
-            } catch (e) {
-                lastCoverMusicId = null;
-            }
-        }
-
         function updateVolumeFill(volume) {
     const percent = volume * 100;
     volumeSlider.style.background = `linear-gradient(90deg, #667eea ${percent}%, rgba(255,255,255,0.2) ${percent}%)`;
@@ -257,6 +233,11 @@
             if (!state) return;
             trackNameSpan.textContent = state.musicName || '—';
             trackArtistSpan.textContent = state.artistName || '—';
+            if (state.coverUrl) {
+                albumArtContainer.innerHTML = `<img src="${state.coverUrl}" alt="Обложка">`;
+            } else {
+                albumArtContainer.textContent = '🎵';
+            }
             playPauseBtn.textContent = state.isPlaying ? '⏸️' : '▶️';
             statusBadge.textContent = state.isPlaying ? '● Сейчас играет' : '● Пауза';
             currentTimeSpan.textContent = formatTime(state.currentTime);
@@ -268,10 +249,6 @@
                 trackCounterSpan.textContent = '';
             }
             
-            if (state.musicId) {
-                updateCover(state.musicId);
-            }
-
             if (state.repeatMode !== undefined) {
                 updateRepeatBtn(state.repeatMode);
             }
@@ -375,6 +352,7 @@
         const musicId = urlParams.get('id');
         const musicName = urlParams.get('name') || '';
         const artistName = urlParams.get('artist') || '';
+        const coverParam = urlParams.get('cover') || '';
         const playlistMode = urlParams.get('playlist');
         
         if (playlistMode === 'album') {
@@ -399,7 +377,7 @@
             }
         } else if (musicId) {
             console.log(`[PlayerWindow] Инициализация одиночного трека: ${musicId}`);
-            PlayerCore.play(musicId, decodeURIComponent(musicName), decodeURIComponent(artistName));
+            PlayerCore.play(musicId, decodeURIComponent(musicName), decodeURIComponent(artistName), 0, decodeURIComponent(coverParam));
         } else {
             console.log('[PlayerWindow] Нет параметров для воспроизведения');
         }

@@ -590,8 +590,9 @@
 				}
 				const encodedName = encodeURIComponent(currentMusicName)
 				const encodedArtist = encodeURIComponent(currentArtistName)
+				const encodedCover = encodeURIComponent(coverUrl || '')
 				globalPlayerWindow = window.open(
-					`player-window.html?id=${currentMusicId}&name=${encodedName}&artist=${encodedArtist}`,
+					`player-window.html?id=${currentMusicId}&name=${encodedName}&artist=${encodedArtist}&cover=${encodedCover}`,
 					'MusicPlayer',
 					'width=450,height=420,resizable=yes',
 				)

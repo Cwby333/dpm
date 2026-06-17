@@ -1217,7 +1217,7 @@
 			}
 
 			// Воспроизведение музыки (отправляет POST в историю)
-			async function playMusic(musicId, musicName, artistName, songUrl) {
+			async function playMusic(musicId, musicName, artistName, songUrl, coverUrl) {
 				const added = await addToListeningHistory(musicId)
 				apiFetchOptional(`${apiBaseUrl}/music/inc-lis-count`, {
 					method: 'POST',
@@ -1235,7 +1235,7 @@
 					globalPlayerWindow.focus()
 				} else {
 					globalPlayerWindow = window.open(
-						`player-window.html?id=${encodeURIComponent(musicId)}&name=${encodeURIComponent(musicName)}&artist=${encodeURIComponent(artistName || 'Неизвестный')}`,
+						`player-window.html?id=${encodeURIComponent(musicId)}&name=${encodeURIComponent(musicName)}&artist=${encodeURIComponent(artistName || 'Неизвестный')}&cover=${encodeURIComponent(coverUrl || '')}`,
 						'MusicPlayer',
 						'width=450,height=420,resizable=yes',
 					)
@@ -1403,7 +1403,7 @@
 
 				return `
                 <div class="music-card">
-                    <div class="music-cover ${hasCoverClass}" style="${coverStyle}" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}', '${songUrl}')">
+                    <div class="music-cover ${hasCoverClass}" style="${coverStyle}" onclick="playMusic('${musicId}', '${musicName.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}', '${songUrl}', '${(coverUrl || '').replace(/'/g, "\\'")}')">
                         <span>🎵</span>
                         <div class="play-overlay">
                             <div class="play-button">▶️</div>
