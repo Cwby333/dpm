@@ -684,7 +684,7 @@
                     </div>
                     <div class="music-info">
                         <h1 class="music-title">${musicName}</h1>
-                        <div class="music-artist">👤 ${artistName}</div>
+                        <div class="music-artist" onclick="window.location.href='user.html?id=${encodeURIComponent(musicData.uploader_id)}'" style="cursor:pointer;">👤 ${artistName}</div>
                         <div class="music-stats">
                             <div class="stat"><span class="stat-icon">❤️</span><span class="stat-value">${musicData.likes || 0}</span><span>лайков</span></div>
                             <div class="stat"><span class="stat-icon">🎧</span><span class="stat-value">${musicData.listening_count || 0}</span><span>прослушиваний</span></div>

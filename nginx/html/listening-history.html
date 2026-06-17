@@ -782,7 +782,7 @@
 			<div class="audio-player-content">
 				<div class="audio-info">
 					<div class="audio-title" id="currentTrackTitle">Название трека</div>
-					<div class="audio-artist" id="currentTrackArtist">Исполнитель</div>
+					<div class="audio-artist" id="currentTrackArtist" onclick="window.location.href='user.html?id=' + encodeURIComponent(currentTrackUploaderId)" style="cursor:pointer;">Исполнитель</div>
 				</div>
 				<div class="audio-controls">
 					<audio id="audioPlayer" controls>
@@ -829,6 +829,7 @@
 			const apiBaseUrl = 'https://mutestreamingservice.ru'
 			let listeningHistory = []
 			let currentPlaying = null
+			let currentTrackUploaderId = ''
 			let sortField = 'date'
 			let sortAsc = true
 
@@ -995,9 +996,9 @@
 				currentPlaying = music
 				currentTrackTitle.textContent =
 					music.music_name || music.name || 'Название трека'
+				currentTrackUploaderId = music.uploader_id || ''
 				currentTrackArtist.textContent =
 					music.uploader_username ||
-					music.uploader_id ||
 					'Неизвестный исполнитель'
 
 				audioPlayer.src = songUrl
@@ -1121,8 +1122,8 @@
 								const musicName = item.music_name || 'Без названия'
 								const artist =
 									item.uploader_username ||
-									item.uploader_id ||
 									'Неизвестный исполнитель'
+								const uploaderId = item.uploader_id || ''
 								const likes = item.music_likes || 0
 								const listeningCount = item.listening_count || 0
 								const duration = item.music_duration || 0
@@ -1141,7 +1142,7 @@
                             </div>
                             <div class="history-item-details">
                                 <h4 onclick="window.location.href='music-id.html?id=${musicId}'">${escapeHtml(musicName)}</h4>
-                                <div class="history-item-artist">${escapeHtml(artist)}</div>
+                                <div class="history-item-artist" onclick="window.location.href='user.html?id=${encodeURIComponent(uploaderId)}'" style="cursor:pointer;">${escapeHtml(artist)}</div>
                             </div>
                         </div>
                         <div class="history-item-date">${formatDate(listeningDate)}</div>

@@ -90,6 +90,30 @@ func (pg *Postgres) DeleteAlbum(ctx context.Context, id string) (error) {
 		return fmt.Errorf("%s: DELETE FROM albums_music ... %w", op, err)
 	}
 
+	q = "DELETE FROM listening_history WHERE music_id = $1"
+	for i := range musicsIDS {
+		_, err = pg.pool.Exec(ctx, q, musicsIDS[i])
+		if err != nil {
+			return fmt.Errorf("%s: DELETE FROM music %w", op, err)
+		}
+	}
+
+	q = "DELETE FROM likes WHERE music_id = $1"
+	for i := range musicsIDS {
+		_, err = pg.pool.Exec(ctx, q, musicsIDS[i])
+		if err != nil {
+			return fmt.Errorf("%s: DELETE FROM music %w", op, err)
+		}
+	}
+
+	q = "DELETE FROM favor WHERE music_id = $1"
+	for i := range musicsIDS {
+		_, err = pg.pool.Exec(ctx, q, musicsIDS[i])
+		if err != nil {
+			return fmt.Errorf("%s: DELETE FROM music %w", op, err)
+		}
+	}
+
 	q = "DELETE FROM music WHERE id = $1"
 	for i := range musicsIDS {
 		_, err = pg.pool.Exec(ctx, q, musicsIDS[i])

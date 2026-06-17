@@ -259,31 +259,24 @@
 			const passwordError = document.getElementById('passwordError')
 
 			// Функция для отображения ответа
-			function displayResponse(data, isError = false) {
+			function getStatusMessage(status) {
+				if (status === 400) return 'Неверные данные'
+				if (status === 401) return 'Неверное имя пользователя или пароль'
+				if (status === 403) return 'Доступ запрещён'
+				if (status === 404) return 'Пользователь не найден'
+				if (status === 409) return 'Конфликт данных'
+				if (status === 422) return 'Ошибка валидации'
+				if (status === 429) return 'Слишком много запросов'
+				if (status >= 500) return 'Ошибка сервера'
+				return 'Произошла ошибка'
+			}
+
+			function displayResponse(message, isError = false) {
 				responseContainer.style.display = 'block'
 				responseContainer.classList.remove('error', 'success')
 				responseContainer.classList.add(isError ? 'error' : 'success')
+				responseContent.textContent = message
 
-				let displayData
-
-				if (typeof data === 'string') {
-					try {
-						// Пробуем распарсить строку как JSON для лучшего форматирования
-						displayData = JSON.parse(data)
-					} catch {
-						displayData = data
-					}
-				} else {
-					displayData = data
-				}
-
-				if (typeof displayData === 'object') {
-					responseContent.textContent = JSON.stringify(displayData, null, 2)
-				} else {
-					responseContent.textContent = displayData
-				}
-
-				// Автоматически скрываем сообщение через 10 секунд
 				setTimeout(() => {
 					if (responseContainer.style.display === 'block') {
 						responseContainer.style.opacity = '0.5'
@@ -363,38 +356,15 @@
 						credentials: 'include',
 					})
 
-					let responseData
-					const contentType = response.headers.get('content-type')
-
-					if (contentType && contentType.includes('application/json')) {
-						responseData = await response.json()
-					} else {
-						responseData = await response.text()
-					}
-
-					// Формируем объект с полной информацией об ответе
-					const fullResponse = {
-						status: response.status,
-						statusText: response.statusText,
-						timestamp: new Date().toISOString(),
-						data: responseData,
-					}
-
-					displayResponse(fullResponse, !response.ok)
-
 					if (response.ok) {
 						console.log('Вход выполнен успешно')
+						displayResponse('Вход выполнен успешно', false)
 						window.location.href = 'music.html'
+					} else {
+						displayResponse(getStatusMessage(response.status), true)
 					}
 				} catch (error) {
-					displayResponse(
-						{
-							error: true,
-							message: 'Ошибка соединения с сервером: ' + error.message,
-							timestamp: new Date().toISOString(),
-						},
-						true,
-					)
+					displayResponse('Ошибка соединения с сервером', true)
 				} finally {
 					setLoading(false)
 				}

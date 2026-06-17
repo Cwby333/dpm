@@ -1414,7 +1414,7 @@
                     </div>
                     <div class="music-info">
                         <h3 class="music-name" onclick="window.location.href='music-id.html?id=${musicId}'">${musicName}</h3>
-                        <div class="music-artist">${artistName}</div>
+                        <div class="music-artist" onclick="event.stopPropagation(); window.location.href='user.html?id=${encodeURIComponent(music.uploader_id)}'" style="cursor:pointer;">${artistName}</div>
                         <div class="music-meta">
                             <span class="likes ${isLiked ? 'liked' : ''}" onclick="toggleLike('${musicId}', '${musicName.replace(/'/g, "\\'")}')">
                                 ❤️ ${likesCount}

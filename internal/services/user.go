@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	errs "dpm/internal/errors"
 
 	// "log/slog"
 
@@ -72,7 +73,7 @@ func (us *UserService) Login(ctx context.Context, u models.User) (models.JWTAcce
 	slog.Info(u.HashPsw, hashPsw)
 	err = bcrypt.CompareHashAndPassword([]byte(hashPsw), []byte(u.HashPsw))
 	if err != nil {
-		return models.JWTAccess{}, models.JWTRefresh{}, fmt.Errorf("%s CompareHash: %w", op, err)
+		return models.JWTAccess{}, models.JWTRefresh{}, fmt.Errorf("%s CompareHash: %w", op, errs.ErrBadUsernameOrPassword)
 	}
 	slog.Info("Login subject " + u.ID)
 

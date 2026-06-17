@@ -1096,9 +1096,9 @@
 								const musicName = escapeHtml(track.music_name || 'Без названия')
 								const artist = escapeHtml(
 									track.uploader_username ||
-										track.uploader_id ||
 										'Неизвестный исполнитель',
 								)
+								const uploaderId = track.uploader_id || ''
 								const likes = track.music_likes || 0
 								const duration = track.music_duration || 0
 								const coverUrl = track.music_cover || ''
@@ -1117,7 +1117,7 @@
                         </div>
                         <div class="like-info">
                             <h3 class="like-name" onclick="window.location.href='music-id.html?id=${musicId}'">${musicName}</h3>
-                            <div class="like-artist">${artist}</div>
+                            <div class="like-artist" onclick="window.location.href='user.html?id=${encodeURIComponent(uploaderId)}'" style="cursor:pointer;">${artist}</div>
                             <div class="like-meta">
                                 <span class="like-likes">❤️ ${likes}</span>
                                 <span class="like-duration">🎧 ${track.listening_count || 0}</span>

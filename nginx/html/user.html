@@ -676,7 +676,7 @@
 				const playlist = tracks.map(t => ({
 					musicId: t.music_id || t.id,
 					musicName: t.music_name || t.name || 'Без названия',
-					artistName: t.uploader_username || t.uploader_id || 'Неизвестный',
+					artistName: t.uploader_username || '',
 				}))
 
 				sessionStorage.setItem('albumPlaylist', JSON.stringify(playlist))
@@ -747,7 +747,7 @@
 									<div class="track-cover-small" style="${coverStyle}"></div>
 									<div class="track-info">
 										<div class="track-name">${escapeHtml(track.music_name || 'Без названия')}</div>
-										<div class="track-artist">${escapeHtml(track.uploader_username || 'Неизвестный')}</div>
+										<div class="track-artist" onclick="event.stopPropagation(); window.location.href='user.html?id=${encodeURIComponent(track.uploader_id || '')}'" style="cursor:pointer;">${escapeHtml(track.uploader_username || 'Неизвестный')}</div>
 									</div>
 								<div class="track-meta">
 									<span class="track-likes">❤️ ${track.music_likes || 0}</span>
@@ -792,11 +792,12 @@
 										: ''
 									const name = escapeHtml(a.name || 'Без названия')
 									const artist = escapeHtml(a.uploader_username || '')
+									const albumUploaderId = a.uploader_id || ''
 									return `
 									<div class="album-card" onclick="window.location.href='album.html?id=${encodeURIComponent(a.id)}'">
 										<div class="album-cover" style="${coverStyle}"></div>
 										<div class="album-card-name">${name}</div>
-										<div class="album-card-artist">${artist}</div>
+										<div class="album-card-artist" onclick="event.stopPropagation(); window.location.href='user.html?id=${encodeURIComponent(albumUploaderId)}'" style="cursor:pointer;">${artist}</div>
 									</div>
 								`
 								})

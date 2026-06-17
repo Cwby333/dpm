@@ -9,6 +9,7 @@ import (
 
 	"context"
 	"dpm/internal/models"
+	errs "dpm/internal/errors"
 	"dpm/internal/services"
 	"dpm/pkg/api/v1"
 	"encoding/json"
@@ -983,8 +984,12 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 		HashPsw: user.Password,
 	})
 	if err != nil {
+		if errors.Is(err, errs.ErrBadUsernameOrPassword) {
+			slog.Debug("Bad username or password")
+			http.Error(w, "Bad username or password", http.StatusBadRequest)
+		}
 		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return		
 	}
 

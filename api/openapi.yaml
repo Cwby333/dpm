@@ -1208,6 +1208,8 @@ paths:
                 properties:
                   message:
                     type: string
+        400:
+          description: "Bad username or password"
         500:
           description: 'Server error'
           content:
@@ -1744,7 +1746,7 @@ components:
         listening_date:
           type: string
           format: date-time
-          
+
     Music:
       type: object
       properties:

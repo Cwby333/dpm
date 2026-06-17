@@ -24,7 +24,8 @@
             max-width: 400px;
             margin: 0.5rem;
         }
-        .album-art { font-size: 3rem; margin-bottom: 0.75rem; }
+        .album-art { font-size: 3rem; margin-bottom: 0.75rem; min-height: 3rem; }
+        .album-art img { width: 100%; border-radius: 12px; display: block; }
         .track-name { font-size: 1rem; margin-bottom: 0.3rem; font-weight: bold; }
         .track-artist { font-size: 0.8rem; opacity: 0.8; margin-bottom: 1rem; }
         .controls {
@@ -137,7 +138,7 @@
                 max-width: 480px;
                 margin: 1rem;
             }
-            .album-art { font-size: 4rem; margin-bottom: 1rem; }
+            .album-art { font-size: 4rem; margin-bottom: 1rem; min-height: 4rem; }
             .track-name { font-size: 1.3rem; }
             .track-artist { font-size: 0.9rem; }
             .controls { gap: 1rem; margin: 1.5rem 0; }
@@ -152,7 +153,7 @@
 </head>
 <body>
     <div class="player-container">
-        <div class="album-art">🎵</div>
+        <div class="album-art" id="albumArtContainer">🎵</div>
         <div class="track-name" id="globalTrackName">—</div>
         <div class="track-artist" id="globalTrackArtist">—</div>
         <div class="track-counter" id="trackCounter"></div>
@@ -182,6 +183,8 @@
     <script src="api.js"></script>
     <script src="player-core.js"></script>
     <script>
+        const apiBaseUrl = 'https://mutestreamingservice.ru';
+
         // DOM элементы
         const trackNameSpan = document.getElementById('globalTrackName');
         const trackArtistSpan = document.getElementById('globalTrackArtist');
@@ -189,6 +192,7 @@
         const playPauseBtn = document.getElementById('playPauseBtn');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
+        const albumArtContainer = document.getElementById('albumArtContainer');
         const repeatBtn = document.getElementById('repeatBtn');
         const progressSlider = document.getElementById('progressSlider');
         const currentTimeSpan = document.getElementById('currentTime');
@@ -212,6 +216,30 @@
                 .progress-slider::-moz-range-progress { background: #667eea; border-radius: 3px; }
             `;
         }
+        let lastCoverMusicId = null;
+
+        async function updateCover(musicId) {
+            if (!musicId) {
+                albumArtContainer.textContent = '🎵';
+                lastCoverMusicId = null;
+                return;
+            }
+            if (musicId === lastCoverMusicId) return;
+            albumArtContainer.textContent = '🎵';
+            lastCoverMusicId = musicId;
+            try {
+                const resp = await apiFetch(`${apiBaseUrl}/music/${musicId}`, { credentials: 'include' });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                const coverUrl = data.music?.music_cover;
+                if (coverUrl) {
+                    albumArtContainer.innerHTML = `<img src="${coverUrl}" alt="Обложка">`;
+                }
+            } catch (e) {
+                lastCoverMusicId = null;
+            }
+        }
+
         function updateVolumeFill(volume) {
     const percent = volume * 100;
     volumeSlider.style.background = `linear-gradient(90deg, #667eea ${percent}%, rgba(255,255,255,0.2) ${percent}%)`;
@@ -240,6 +268,10 @@
                 trackCounterSpan.textContent = '';
             }
             
+            if (state.musicId) {
+                updateCover(state.musicId);
+            }
+
             if (state.repeatMode !== undefined) {
                 updateRepeatBtn(state.repeatMode);
             }

@@ -61,6 +61,7 @@
             display: flex;
             gap: 2rem;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .nav-links a {
@@ -541,9 +542,11 @@
                 width: 100%;
                 max-width: 300px;
             }
+
+            .main-content {
+                margin-top: 260px;
+            }
         }
-@media (max-width: 768px) { .main-content { margin-top: 260px; } }
-    
 .hamburger {
     display: none;
     flex-direction: column;
@@ -610,7 +613,7 @@
 	                <a href="listening-history.html">История</a>
 	                <a href="likes.html">Лайки</a>
 	                <a href="profile.html">Профиль</a>
-	                <div class="auth-buttons">
+	                <div class="auth-buttons" id="authButtons">
 	                    <a href="login.html" class="btn btn-outline">Войти</a>
 	                    <a href="register.html" class="btn btn-primary">Регистрация</a>
 	                </div>

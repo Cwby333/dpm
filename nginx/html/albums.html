@@ -822,7 +822,7 @@
 								<div class="album-cover" style="${album.cover ? `background-image: url('${attrEscape(album.cover)}'); background-size: cover; background-position: center;` : ''}">${album.cover ? '' : '💿'}</div>
 								<div class="album-info">
 									<div class="album-name">${escapeHtml(album.name || 'Без названия')}</div>
-									<div class="album-uploader">${escapeHtml(album.uploader_username || album.uploader_id || 'Неизвестный')}</div>
+									<div class="album-uploader" onclick="event.stopPropagation(); window.location.href='user.html?id=${encodeURIComponent(album.uploader_id || '')}'" style="cursor:pointer;">${escapeHtml(album.uploader_username || 'Неизвестный')}</div>
 									<div class="album-meta" style="font-size:0.85rem;color:#999;display:flex;gap:0.5rem;margin-top:0.25rem;">
 										<span>❤️ ${album.likes_count || 0}</span>
 									</div>
