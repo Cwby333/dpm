@@ -101,6 +101,15 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
+	h.Mux.Handle("POST /refresh", corsMiddleware(http.HandlerFunc(h.PostRefresh)))
+	h.Mux.Handle("OPTIONS /refresh", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slog.Info(r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.WriteHeader(http.StatusOK)
+	}))
 	h.Mux.Handle("POST /register", corsMiddleware(http.HandlerFunc(strict.Register)))
 	h.Mux.Handle("OPTIONS /register", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
@@ -996,7 +1005,7 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "Access-Token",
 		Value:    access.Sign,
-		Expires:  time.Now().Add(time.Hour * 24 * 3),
+		Expires:  time.Now().Add(time.Second * 24 * 3),
 		Secure:   true,
 		Path:     "/",
 		HttpOnly: true,
@@ -1030,6 +1039,8 @@ func (h Handler) Login(w http.ResponseWriter, r *http.Request) {
 func (h Handler) PostRefresh(w http.ResponseWriter, r *http.Request) {
 	const op = "./internal/adapters/http/handler.go.PostRefresh()"
 
+	slog.Debug("PostRefresh request")
+	
 	refreshT, err := r.Cookie("Refresh-Token")
 	if err != nil {
 		slog.Error(err.Error())
@@ -1153,7 +1164,6 @@ func (h Handler) Register(ctx context.Context, request api.RegisterRequestObject
 
 	u := models.User{
 		Username:       *request.Body.Username,
-		Email:          *request.Body.Email,
 		HashPsw:        *request.Body.Password,
 		PrivateProfile: request.Body.PrivateProfile != nil && *request.Body.PrivateProfile,
 	}
@@ -1748,7 +1758,6 @@ func (h Handler) GetProfile(ctx context.Context, request api.GetProfileRequestOb
 	return api.GetProfile200JSONResponse{
 		GetProfileJSONResponse: api.GetProfileJSONResponse{
 			Id: &us.ID,
-			Email:          &us.Email,
 			Username:       &us.Username,
 			RegisterAt:     &sTime,
 			Likes:          &us.Likes,

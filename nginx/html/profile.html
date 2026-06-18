@@ -246,12 +246,6 @@
 				margin-top: 0.25rem;
 			}
 
-			.info-value.email {
-				font-size: 0.95rem;
-				font-weight: normal;
-				word-break: break-all;
-			}
-
 			.stats-row {
 				display: flex;
 				justify-content: space-around;
@@ -973,8 +967,7 @@
 				}
 
 				const username = escapeHtml(profileData.username || 'Не указан')
-				const email = escapeHtml(profileData.email || 'Не указан')
-				const registerAt = formatDate(profileData.register_at)
+					const registerAt = formatDate(profileData.register_at)
 
 				// Получаем данные из OpenAPI спецификации
 				const totalLikes = profileData.likes || 0
@@ -994,13 +987,6 @@
                         <p>Пользователь Mute</p>
                     </div>
                     <div class="profile-info">
-                        <div class="info-item">
-                            <div class="info-icon">📧</div>
-                            <div class="info-content">
-                                <div class="info-label">Email</div>
-                                <div class="info-value email">${email}</div>
-                            </div>
-                        </div>
                         <div class="info-item">
                             <div class="info-icon">📅</div>
                             <div class="info-content">

@@ -16,7 +16,6 @@ import (
 type UserDB struct {
 	ID             string    `db:"id"`
 	Username       string    `db:"username"`
-	Email          string    `db:"email"`
 	HashPsw        string    `db:"hash_psw"`
 	RegisterAt     time.Time `db:"register_at"`
 	Likes          int       `db:"likes"`
@@ -29,7 +28,6 @@ func UDBToUser(u UserDB) models.User {
 	return models.User{
 		ID:             u.ID,
 		Username:       u.Username,
-		Email:          u.Email,
 		HashPsw:        u.HashPsw,
 		RegisterAt:     u.RegisterAt,
 		Likes:          u.Likes,
@@ -42,8 +40,8 @@ func UDBToUser(u UserDB) models.User {
 func (pg *Postgres) CreateUser(ctx context.Context, user models.User) error {
 	const op = "./internal/adapters/repo/postgres/user.go.CreateUser()"
 
-	q := "INSERT INTO users(username, hash_psw, email, private_profile) VALUES ($1, $2, $3, $4) RETURNING id"
-	rows, err := pg.pool.Query(ctx, q, user.Username, user.HashPsw, user.Email, user.PrivateProfile)
+	q := "INSERT INTO users(username, hash_psw, private_profile) VALUES ($1, $2, $3) RETURNING id"
+	rows, err := pg.pool.Query(ctx, q, user.Username, user.HashPsw, user.PrivateProfile)
 	if err != nil {
 		return fmt.Errorf("%s %s: %w", op, q, err)
 	}
@@ -111,7 +109,7 @@ func (pg *Postgres) ReadPsw(ctx context.Context, user models.User) (string, erro
 func (pg *Postgres) ReadUser(ctx context.Context, user models.User) (models.User, error) {
 	const op = "./internal/adapters/repo/postgres/user.go.ReadUser()"
 
-	q := "SELECT id, username, email, register_at, hash_psw, likes, listening_count, favor_count, private_profile FROM users WHERE id = $1"
+	q := "SELECT id, username, register_at, hash_psw, likes, listening_count, favor_count, private_profile FROM users WHERE id = $1"
 	rows, err := pg.pool.Query(ctx, q, user.ID)
 	if err != nil {
 		return models.User{}, fmt.Errorf("%s: %w", op, err)

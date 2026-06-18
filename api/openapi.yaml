@@ -1435,8 +1435,6 @@ components:
                 type: string
               likes:
                 type: integer
-              email:
-                type: string
               listening_count:
                 type: integer
               favor_count:
@@ -1575,13 +1573,10 @@ components:
             required:
               - username
                 password
-                email
             properties:
               username:
                 type: string
               password:
-                type: string
-              email:
                 type: string
               private_profile:
                 type: boolean

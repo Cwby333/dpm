@@ -6,7 +6,6 @@ import (
 	objectstorage "dpm/internal/adapters/repo/objectStorage"
 	"dpm/internal/adapters/repo/postgres"
 	"dpm/internal/config"
-	"dpm/internal/models"
 	"dpm/internal/services"
 	"fmt"
 	"log/slog"
@@ -47,12 +46,6 @@ func main() {
 	}
 	_ = pg
 
-	u := models.User{
-		Username: "user",
-		HashPsw:  "12345678",
-		Email:    "email@gmail.com",
-	}
-
 	lhService := services.NewListeningHistoryService(pg)
 
 	fService := services.NewFavorService(pg)
@@ -71,8 +64,6 @@ func main() {
 	pServices := services.NewPlaylistService(pg, s3)
 
 	uService := services.NewUser(pg, s3, cfg.JWT.Key)
-
-	err = uService.RegisterUser(context.Background(), u)
 
 	handler := http.NewHandler(uService, mService, lhService, fService, likeService, aServices, pServices)
 
