@@ -6,6 +6,7 @@ type User struct {
 	ID             string
 	Username       string
 	HashPsw        string
+	Image string
 	RegisterAt     time.Time
 	Likes          int
 	ListeningCount int

@@ -1580,6 +1580,9 @@ components:
                 type: string
               private_profile:
                 type: boolean
+              image:
+                type: string
+                format: binary
     Login:
       description: 'Req body for /login'
       content:

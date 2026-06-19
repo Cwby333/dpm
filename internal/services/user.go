@@ -2,15 +2,21 @@ package services
 
 import (
 	"context"
+	errs "dpm/internal/errors"
 	"dpm/internal/models"
 	"errors"
 	"fmt"
 	"log/slog"
-	errs "dpm/internal/errors"
 
 	// "log/slog"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+)
+
+const (
+	avatarSuffix = "-avatar"
+	defaultUserImageURL = "defaultUserImage.png"
 )
 
 type Pg interface {
@@ -36,8 +42,10 @@ func NewUser(pg Pg, s3 S3, k string) *UserService {
 	}
 }
 
-func (us *UserService) RegisterUser(ctx context.Context, u models.User) error {
+func (us *UserService) RegisterUser(ctx context.Context, u models.User, avatarData []byte, ctt string) error {
 	const op = "./internal/services/user.go.RegisterUser()"
+
+	userID := uuid.NewString()
 
 	slog.Info(u.HashPsw)
 	hash, err := bcrypt.GenerateFromPassword([]byte(u.HashPsw), bcrypt.DefaultCost)
@@ -47,6 +55,15 @@ func (us *UserService) RegisterUser(ctx context.Context, u models.User) error {
 	slog.Info(string(hash), len(hash), len("$2a$10$Q24RiuCMdJmGNorSiPtQ5.Lh1z8.nF73r3P52lt2vwRwL38olJ54y"))
 
 	u.HashPsw = string(hash)
+
+	if len(avatarData) == 0 {
+		u.Image = defaultUserImageURL
+	}
+
+	err = us.S3.UploadObject(ctx, userID + avatarSuffix, avatarData, ctt)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
 
 	err = us.Pg.CreateUser(ctx, u)
 	if err != nil {

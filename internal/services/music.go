@@ -19,6 +19,7 @@ import (
 const (
 	songPostfix      = "-song"
 	songImagePostfix = "-songImage"
+	defaultMusicImageURL = "defaultMusicImage.png"
 )
 
 type RepoMusic interface {
@@ -257,11 +258,17 @@ func (s *MusicService) UploadHLSMusic(ctx context.Context, mData map[string]mode
 			return fmt.Errorf("%s: UploadObject %w", op, err)
 		}
 	}
+	
+	coverID := musicID + songImagePostfix
 
 	coverData := mData["coverData"]
 	slog.Info(fmt.Sprintf("cover data size: %v", len(coverData.Data)))
-	coverID := musicID + songImagePostfix
-	err = s.s3.UploadObject(ctx, coverID, coverData.Data, songData.ContentType)
+	
+	if len(coverData.Data) == 0 {
+		coverID = defaultMusicImageURL
+	}
+	
+	err = s.s3.UploadObject(ctx, coverID, coverData.Data, coverData.ContentType)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

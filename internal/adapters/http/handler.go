@@ -110,7 +110,7 @@ func (h Handler) RegisterRoutes(strict api.ServerInterface) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.WriteHeader(http.StatusOK)
 	}))
-	h.Mux.Handle("POST /register", corsMiddleware(http.HandlerFunc(strict.Register)))
+	h.Mux.Handle("POST /register", corsMiddleware(http.HandlerFunc(h.Register)))
 	h.Mux.Handle("OPTIONS /register", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		slog.Info(r.Header.Get("Origin"))
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
@@ -1159,28 +1159,102 @@ func (h Handler) GetPing(ctx context.Context, request api.GetPingRequestObject) 
 	return api.GetPing200JSONResponse("Pong"), nil
 }
 
-func (h Handler) Register(ctx context.Context, request api.RegisterRequestObject) (api.RegisterResponseObject, error) {
-	const op = "./internal/adapters/http/handlers.go.Login()"
+// func (h Handler) Register(ctx context.Context, request api.RegisterRequestObject) (api.RegisterResponseObject, error) {
+// 	const op = "./internal/adapters/http/handlers.go.Login()"
 
-	u := models.User{
-		Username:       *request.Body.Username,
-		HashPsw:        *request.Body.Password,
-		PrivateProfile: request.Body.PrivateProfile != nil && *request.Body.PrivateProfile,
-	}
+// 	u := models.User{
+// 		Username:       *request.Body.Username,
+// 		HashPsw:        *request.Body.Password,
+// 		PrivateProfile: request.Body.PrivateProfile != nil && *request.Body.PrivateProfile,
+// 	}
 
-	err := h.uServices.RegisterUser(ctx, u)
+// 	err := h.uServices.RegisterUser(ctx, u)
+// 	if err != nil {
+// 		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
+// 		msg := err.Error()
+// 		return api.Register500JSONResponse{
+// 			Message: &msg,
+// 		}, err
+// 	}
+
+// 	msg := "Success register"
+// 	return api.Register200JSONResponse{
+// 		Message: &msg,
+// 	}, nil
+// }
+
+func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
+	const op = "./internal/adapters/http/handler.go.Register()"
+
+	err := http.MaxBytesReader(w, r.Body, 50 << 20)
 	if err != nil {
-		slog.Error(fmt.Errorf("%s: %w", op, err).Error())
-		msg := err.Error()
-		return api.Register500JSONResponse{
-			Message: &msg,
-		}, err
+		slog.Error(fmt.Sprintf("%s: %w", op, err))
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
 	}
 
-	msg := "Success register"
-	return api.Register200JSONResponse{
-		Message: &msg,
-	}, nil
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		slog.Error(fmt.Sprint(op, err.Error()))
+		http.Error(w, "Failed to parse form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	username := r.FormValue("username")
+	if username == "" {
+		slog.Warn("Register: missing username")
+		http.Error(w, "Missing username", http.StatusBadRequest)
+		return
+	}
+
+	psw := r.FormValue("password")
+	if psw == "" {
+		slog.Warn("Register: missing password")
+		http.Error(w, "Missing password", http.StatusBadRequest)
+		return
+	}
+
+	p := false
+	private := r.FormValue("private_profile")
+	if private == "" {
+		slog.Warn("Register: missing private profile")
+	}
+	if private == "true" {
+		p = true
+	}
+
+	file, header, err2 := r.FormFile("image")
+	if err != nil {
+		slog.Error(fmt.Sprint(op, err2.Error()))
+		http.Error(w, "Failed to get file: "+err2.Error(), http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	slog.Info("File:", slog.String("filename", header.Filename), slog.Int64("size", header.Size), slog.String("CT", header.Header.Get("Content-Type")))
+
+	avatarData, err2 := io.ReadAll(file)
+	if err2 != nil {
+		slog.Error(fmt.Sprint(op, err2.Error()))
+		http.Error(w, "Failed to read song file", http.StatusInternalServerError)
+		return
+	}
+
+	if len(avatarData) == 0 {
+		slog.Warn("Register avatar empty")
+	}
+
+	err2 = h.uServices.RegisterUser(r.Context(), models.User{
+		Username: username,
+		HashPsw: psw,
+		PrivateProfile: p,
+	}, avatarData, header.Header.Get("Content-Type"))
+	if err2 != nil {
+		slog.Error(err2.Error())
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(200)	
 }
 
 func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequestObject) (api.GetAllMusicResponseObject, error) {

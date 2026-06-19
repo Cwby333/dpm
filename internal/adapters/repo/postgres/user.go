@@ -17,6 +17,7 @@ type UserDB struct {
 	ID             string    `db:"id"`
 	Username       string    `db:"username"`
 	HashPsw        string    `db:"hash_psw"`
+	Image string `db:"image_url"`
 	RegisterAt     time.Time `db:"register_at"`
 	Likes          int       `db:"likes"`
 	ListeningCount int       `db:"listening_count"`
@@ -29,6 +30,7 @@ func UDBToUser(u UserDB) models.User {
 		ID:             u.ID,
 		Username:       u.Username,
 		HashPsw:        u.HashPsw,
+		Image: u.Image,
 		RegisterAt:     u.RegisterAt,
 		Likes:          u.Likes,
 		ListeningCount: u.ListeningCount,
@@ -40,8 +42,8 @@ func UDBToUser(u UserDB) models.User {
 func (pg *Postgres) CreateUser(ctx context.Context, user models.User) error {
 	const op = "./internal/adapters/repo/postgres/user.go.CreateUser()"
 
-	q := "INSERT INTO users(username, hash_psw, private_profile) VALUES ($1, $2, $3) RETURNING id"
-	rows, err := pg.pool.Query(ctx, q, user.Username, user.HashPsw, user.PrivateProfile)
+	q := "INSERT INTO users(id, username, hash_psw, private_profile, image) VALUES ($1, $2, $3, $4) RETURNING id"
+	rows, err := pg.pool.Query(ctx, q, user.ID, user.Username, user.HashPsw, user.PrivateProfile)
 	if err != nil {
 		return fmt.Errorf("%s %s: %w", op, q, err)
 	}
@@ -109,7 +111,7 @@ func (pg *Postgres) ReadPsw(ctx context.Context, user models.User) (string, erro
 func (pg *Postgres) ReadUser(ctx context.Context, user models.User) (models.User, error) {
 	const op = "./internal/adapters/repo/postgres/user.go.ReadUser()"
 
-	q := "SELECT id, username, register_at, hash_psw, likes, listening_count, favor_count, private_profile FROM users WHERE id = $1"
+	q := "SELECT id, username, register_at, hash_psw, likes, listening_count, favor_count, private_profile, image_url FROM users WHERE id = $1"
 	rows, err := pg.pool.Query(ctx, q, user.ID)
 	if err != nil {
 		return models.User{}, fmt.Errorf("%s: %w", op, err)
@@ -128,7 +130,7 @@ func (pg *Postgres) GetPublicUsers(ctx context.Context, uf models.UserFilter) ([
 
 	psql := sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
-	sql := psql.Select("id, username, register_at, likes, listening_count, favor_count").From("users").Where("private_profile = ?", false)
+	sql := psql.Select("id, username, register_at, likes, listening_count, favor_count, image_url").From("users").Where("private_profile = ?", false)
 
 	if uf.MinRegisterAt != nil {
 		sql = sql.Where("register_at >= ?", uf.MinRegisterAt)
@@ -176,6 +178,7 @@ func (pg *Postgres) GetPublicUsers(ctx context.Context, uf models.UserFilter) ([
 	type PublicUserDB struct {
 		ID             string    `db:"id"`
 		Username       string    `db:"username"`
+		Image string `db:"image_url"`
 		RegisterAt     time.Time `db:"register_at"`
 		Likes          int       `db:"likes"`
 		ListeningCount int       `db:"listening_count"`
@@ -192,6 +195,7 @@ func (pg *Postgres) GetPublicUsers(ctx context.Context, uf models.UserFilter) ([
 		res = append(res, models.User{
 			ID:             u.ID,
 			Username:       u.Username,
+			Image: u.Image,
 			RegisterAt:     u.RegisterAt,
 			Likes:          u.Likes,
 			ListeningCount: u.ListeningCount,

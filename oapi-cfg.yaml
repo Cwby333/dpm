@@ -5,5 +5,5 @@ generate:
   strict-server: true
   embedded-spec: true
 output-options:
-  exclude-operation-ids: ["musicUpload", "login", "logout", "uploadAlbum", "updatePlaylist", "updateAlbum", "refreshTokens"]
+  exclude-operation-ids: ["musicUpload", "login", "logout", "uploadAlbum", "updatePlaylist", "updateAlbum", "refreshTokens", "register"]
 output: ./pkg/api/v1/generate.go
