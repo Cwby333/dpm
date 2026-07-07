@@ -260,8 +260,9 @@
 			}
 
 			.music-cover {
-				height: 180px;
-				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				width: 100%;
+				aspect-ratio: 1 / 1;
+				background: rgba(0,0,0,0.3);
 				display: flex;
 				align-items: center;
 				justify-content: center;
@@ -875,7 +876,15 @@
 				border-color: white;
 				font-weight: 600;
 			}
-		</style>
+			.artist-link {
+			cursor: pointer;
+			transition: color 0.2s ease;
+		}
+		.artist-link:hover {
+			color: #667eea;
+			text-decoration: underline;
+		}
+	</style>
 	</head>
 	<body>
 		<nav class="navbar">
@@ -1396,7 +1405,7 @@
 				const isLiked = likeStatus.get(musicId) || false
 				const likesCount = music.likes || 0
 
-				const coverStyle = coverUrl
+				const 				coverStyle = coverUrl
 					? `background-image: url('${coverUrl}'); background-size: cover; background-position: center;`
 					: ''
 				const hasCoverClass = coverUrl ? 'has-cover' : ''
@@ -1414,7 +1423,7 @@
                     </div>
                     <div class="music-info">
                         <h3 class="music-name" onclick="window.location.href='music-id.html?id=${musicId}'">${musicName}</h3>
-                        <div class="music-artist" onclick="event.stopPropagation(); window.location.href='user.html?id=${encodeURIComponent(music.uploader_id)}'" style="cursor:pointer;">${artistName}</div>
+                        <div class="music-artist artist-link" onclick="event.stopPropagation(); window.location.href='user.html?id=${encodeURIComponent(music.uploader_id)}'">${artistName}</div>
                         <div class="music-meta">
                             <span class="likes ${isLiked ? 'liked' : ''}" onclick="toggleLike('${musicId}', '${musicName.replace(/'/g, "\\'")}')">
                                 ❤️ ${likesCount}

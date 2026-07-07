@@ -130,6 +130,13 @@
 				font-size: 3rem;
 				font-weight: 700;
 				flex-shrink: 0;
+				overflow: hidden;
+			}
+
+			.user-avatar-large img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
 			}
 			.user-info h1 {
 				font-size: 2rem;
@@ -484,6 +491,14 @@
 					transform: rotate(-45deg) translate(5px, -5px);
 				}
 			}
+		.artist-link {
+			cursor: pointer;
+			transition: color 0.2s ease;
+		}
+		.artist-link:hover {
+			color: #667eea;
+			text-decoration: underline;
+		}
 		</style>
 	</head>
 	<body>
@@ -658,7 +673,11 @@
 				document.title = `Mute - ${uname}`
 
 				const avatarEl = document.getElementById('userAvatarLarge')
-				avatarEl.textContent = uname[0].toUpperCase()
+				if (userData.image) {
+					avatarEl.innerHTML = `<img src="${userData.image}" alt="${uname}" />`
+				} else {
+					avatarEl.textContent = uname[0].toUpperCase()
+				}
 
 				const stats = document.getElementById('userStats')
 				stats.innerHTML = `
@@ -748,7 +767,7 @@
 									<div class="track-cover-small" style="${coverStyle}"></div>
 									<div class="track-info">
 										<div class="track-name">${escapeHtml(track.music_name || 'Без названия')}</div>
-										<div class="track-artist" onclick="event.stopPropagation(); window.location.href='user.html?id=${encodeURIComponent(track.uploader_id || '')}'" style="cursor:pointer;">${escapeHtml(track.uploader_username || 'Неизвестный')}</div>
+										<div class="track-artist artist-link" onclick="event.stopPropagation(); window.location.href='user.html?id=${encodeURIComponent(track.uploader_id || '')}'">${escapeHtml(track.uploader_username || 'Неизвестный')}</div>
 									</div>
 								<div class="track-meta">
 									<span class="track-likes">❤️ ${track.music_likes || 0}</span>
@@ -798,7 +817,7 @@
 									<div class="album-card" onclick="window.location.href='album.html?id=${encodeURIComponent(a.id)}'">
 										<div class="album-cover" style="${coverStyle}"></div>
 										<div class="album-card-name">${name}</div>
-										<div class="album-card-artist" onclick="event.stopPropagation(); window.location.href='user.html?id=${encodeURIComponent(albumUploaderId)}'" style="cursor:pointer;">${artist}</div>
+										<div class="album-card-artist artist-link" onclick="event.stopPropagation(); window.location.href='user.html?id=${encodeURIComponent(albumUploaderId)}'">${artist}</div>
 									</div>
 								`
 								})

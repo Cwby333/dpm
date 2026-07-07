@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"dpm/internal/models"
-	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -42,26 +41,14 @@ func UDBToUser(u UserDB) models.User {
 func (pg *Postgres) CreateUser(ctx context.Context, user models.User) error {
 	const op = "./internal/adapters/repo/postgres/user.go.CreateUser()"
 
-	q := "INSERT INTO users(id, username, hash_psw, private_profile, image) VALUES ($1, $2, $3, $4) RETURNING id"
-	rows, err := pg.pool.Query(ctx, q, user.ID, user.Username, user.HashPsw, user.PrivateProfile)
+	q := "INSERT INTO users(id, username, hash_psw, private_profile, image_url) VALUES ($1, $2, $3, $4, $5)"
+	rows, err := pg.pool.Query(ctx, q, user.ID, user.Username, user.HashPsw, user.PrivateProfile, user.Image)
+	slog.Info(user.ID)
 	if err != nil {
+		slog.Error(err.Error())
 		return fmt.Errorf("%s %s: %w", op, q, err)
 	}
 	defer rows.Close()
-
-	count := ""
-	for rows.Next() {
-		err = rows.Scan(&count)
-		slog.Info(fmt.Sprint(count))
-		if err != nil {
-			slog.Error(err.Error())
-		}
-	}
-	slog.Info(count)
-
-	if count == "" {
-		return fmt.Errorf("%s: %w", op, errors.New("This username or email already exists"))
-	}
 
 	return nil
 }

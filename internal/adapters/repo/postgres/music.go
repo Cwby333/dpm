@@ -120,7 +120,7 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 	}
 
 	if m.LikeMin != nil {
-		sql = sql.Where("likes >= ?", m.LikeMin)
+		sql = sql.Where("m.likes >= ?", m.LikeMin)
 	}
 
 	q, args, err = sql.ToSql()
@@ -129,7 +129,7 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 	}
 
 	if m.LikeMax != nil {
-		sql = sql.Where("likes <= ?", m.LikeMax)
+		sql = sql.Where("m.likes <= ?", m.LikeMax)
 	}
 
 	q, args, err = sql.ToSql()
@@ -138,7 +138,7 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 	}
 
 	if m.DurMin != nil {
-		sql = sql.Where("duration_seconds >= ?", m.DurMin)
+		sql = sql.Where("m.duration_seconds >= ?", m.DurMin)
 	}
 
 	q, args, err = sql.ToSql()
@@ -147,15 +147,15 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 	}
 
 	if m.DurMax != nil {
-		sql = sql.Where("duration_seconds <= ?", m.DurMax)
+		sql = sql.Where("m.duration_seconds <= ?", m.DurMax)
 	}
 	
 	if m.LisCountMin != nil {
-		sql = sql.Where("listening_count >= ?", m.LisCountMin)
+		sql = sql.Where("m.listening_count >= ?", m.LisCountMin)
 	}
 	
 	if m.LisCountMax != nil {
-		sql = sql.Where("listening_count <= ?", m.LisCountMax)
+		sql = sql.Where("m.listening_count <= ?", m.LisCountMax)
 	}
 	
 	q, args, err = sql.ToSql()
@@ -172,7 +172,6 @@ func (p *Postgres) GetMusicSQ(ctx context.Context, m models.MusicFilterQuery, us
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s: %w", op, err)
 	}
-	slog.Info(fmt.Sprintf("%s: %s", "UploaderID", mus[0].UploaderUsername))
 
 	musr := make([]models.Music, 0, len(mus))
 

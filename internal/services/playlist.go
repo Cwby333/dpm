@@ -49,6 +49,8 @@ func (s *PlaylistService) Create(ctx context.Context, name string, uploaderID st
 		if err != nil {
 			return "", fmt.Errorf("%s: %w", op, err)
 		}
+	}else {
+		coverKey = defaultMusicImageURL
 	}
 
 	p := models.Playlist{
@@ -261,6 +263,15 @@ func (s *PlaylistService) GetLikedPlaylists(ctx context.Context, userID string, 
 	pl, err := s.repo.GetLikedPlaylists(ctx, userID, plf)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	for i := range pl {
+		url, err := s.GetPlaylistCoverPresignURL(ctx, pl[i].Cover)
+		if err != nil {
+			slog.Error(err.Error())
+		}
+
+		pl[i].Cover = url
 	}
 
 	return pl, nil

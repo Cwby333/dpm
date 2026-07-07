@@ -1186,14 +1186,9 @@ func (h Handler) GetPing(ctx context.Context, request api.GetPingRequestObject) 
 func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 	const op = "./internal/adapters/http/handler.go.Register()"
 
-	err := http.MaxBytesReader(w, r.Body, 50 << 20)
-	if err != nil {
-		slog.Error(fmt.Sprintf("%s: %w", op, err))
-		http.Error(w, "Server error", http.StatusInternalServerError)
-		return
-	}
+	r.Body = http.MaxBytesReader(w, r.Body, 50<<20)
 
-	if err := r.ParseMultipartForm(32 << 20); err != nil {
+	if err := r.ParseMultipartForm(32<<20); err != nil {
 		slog.Error(fmt.Sprint(op, err.Error()))
 		http.Error(w, "Failed to parse form: "+err.Error(), http.StatusBadRequest)
 		return
@@ -1222,34 +1217,42 @@ func (h Handler) Register(w http.ResponseWriter, r *http.Request) {
 		p = true
 	}
 
-	file, header, err2 := r.FormFile("image")
+	file, header, err := r.FormFile("image")
 	if err != nil {
-		slog.Error(fmt.Sprint(op, err2.Error()))
-		http.Error(w, "Failed to get file: "+err2.Error(), http.StatusBadRequest)
-		return
+		slog.Error(fmt.Sprint(op, err.Error()))
 	}
-	defer file.Close()
+	if file != nil {
+		defer file.Close()
+	}
 
-	slog.Info("File:", slog.String("filename", header.Filename), slog.Int64("size", header.Size), slog.String("CT", header.Header.Get("Content-Type")))
-
-	avatarData, err2 := io.ReadAll(file)
-	if err2 != nil {
-		slog.Error(fmt.Sprint(op, err2.Error()))
-		http.Error(w, "Failed to read song file", http.StatusInternalServerError)
-		return
+	avatarData := []byte{}
+	if file != nil {
+		slog.Info("File:", slog.String("filename", header.Filename), slog.Int64("size", header.Size), slog.String("CT", header.Header.Get("Content-Type")))
+	
+		avatarData, err = io.ReadAll(file)
+		if err != nil {
+			slog.Error(fmt.Sprint(op, err.Error()))
+			http.Error(w, "Failed to read song file", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	if len(avatarData) == 0 {
 		slog.Warn("Register avatar empty")
 	}
 
-	err2 = h.uServices.RegisterUser(r.Context(), models.User{
+	ct := "image/jpg"
+	if header != nil {
+		ct = header.Header.Get("Content-Type")
+	}
+
+	err = h.uServices.RegisterUser(r.Context(), models.User{
 		Username: username,
 		HashPsw: psw,
 		PrivateProfile: p,
-	}, avatarData, header.Header.Get("Content-Type"))
-	if err2 != nil {
-		slog.Error(err2.Error())
+	}, avatarData, ct)
+	if err != nil {
+		slog.Error(err.Error())
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
@@ -1292,6 +1295,7 @@ func (h Handler) GetAllMusic(ctx context.Context, request api.GetAllMusicRequest
 
 	p, l, err := h.mService.GetMusicSQ(ctx, mf, u.ID)
 	if err != nil {
+		slog.Error(err.Error())
 		return api.GetAllMusic500JSONResponse(err.Error()), err
 	}
 
@@ -1666,6 +1670,7 @@ func (h Handler) GetUsers(ctx context.Context, request api.GetUsersRequestObject
 		resp = append(resp, api.UserPublic{
 			Id:             &id,
 			Username:       &uname,
+			Image: &users[i].Image,
 			RegisterAt:     &sTime,
 			Likes:          &likes,
 			ListeningCount: &lCount,
@@ -1692,6 +1697,7 @@ func (h Handler) GetUserProfile(ctx context.Context, request api.GetUserProfileR
 		Id:             &user.ID,
 		Username:       &user.Username,
 		RegisterAt:     &sTime,
+		Image: &user.Image,
 		Likes:          &user.Likes,
 		ListeningCount: &user.ListeningCount,
 		FavorCount:     &user.FavorCount,
@@ -1834,6 +1840,7 @@ func (h Handler) GetProfile(ctx context.Context, request api.GetProfileRequestOb
 			Id: &us.ID,
 			Username:       &us.Username,
 			RegisterAt:     &sTime,
+			Image: &us.Image,
 			Likes:          &us.Likes,
 			ListeningCount: &us.ListeningCount,
 			FavorCount:     &us.FavorCount,

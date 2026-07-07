@@ -148,8 +148,9 @@
 				box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
 			}
 			.music-cover-large {
-				height: 300px;
-				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				width: 100%;
+				aspect-ratio: 1 / 1;
+				background: rgba(0,0,0,0.3);
 				display: flex;
 				align-items: center;
 				justify-content: center;
@@ -162,9 +163,7 @@
 				background-repeat: no-repeat;
 			}
 
-			/* Чтобы изображение заполняло весь контейнер */
 			.music-cover-large.has-cover {
-				background: none;
 				background-size: cover;
 				background-position: center;
 				background-repeat: no-repeat;
@@ -437,6 +436,14 @@
 					transform: rotate(-45deg) translate(5px, -5px);
 				}
 			}
+		.artist-link {
+			cursor: pointer;
+			transition: color 0.2s ease;
+		}
+		.artist-link:hover {
+			color: #667eea;
+			text-decoration: underline;
+		}
 		</style>
 	</head>
 	<body>
@@ -685,7 +692,7 @@
                     </div>
                     <div class="music-info">
                         <h1 class="music-title">${musicName}</h1>
-                        <div class="music-artist" onclick="window.location.href='user.html?id=${encodeURIComponent(musicData.uploader_id)}'" style="cursor:pointer;">👤 ${artistName}</div>
+                        <div class="music-artist artist-link" onclick="window.location.href='user.html?id=${encodeURIComponent(musicData.uploader_id)}'">👤 ${artistName}</div>
                         <div class="music-stats">
                             <div class="stat"><span class="stat-icon">❤️</span><span class="stat-value">${musicData.likes || 0}</span><span>лайков</span></div>
                             <div class="stat"><span class="stat-icon">🎧</span><span class="stat-value">${musicData.listening_count || 0}</span><span>прослушиваний</span></div>

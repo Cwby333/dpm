@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	errs "dpm/internal/errors"
 	"dpm/internal/models"
 	"errors"
 	"fmt"
@@ -55,12 +54,15 @@ func (us *UserService) RegisterUser(ctx context.Context, u models.User, avatarDa
 	slog.Info(string(hash), len(hash), len("$2a$10$Q24RiuCMdJmGNorSiPtQ5.Lh1z8.nF73r3P52lt2vwRwL38olJ54y"))
 
 	u.HashPsw = string(hash)
+	u.ID = userID
 
 	if len(avatarData) == 0 {
 		u.Image = defaultUserImageURL
+	} else {
+		u.Image = userID + avatarSuffix
 	}
 
-	err = us.S3.UploadObject(ctx, userID + avatarSuffix, avatarData, ctt)
+	err = us.S3.UploadObject(ctx, u.Image, avatarData, ctt)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -90,7 +92,7 @@ func (us *UserService) Login(ctx context.Context, u models.User) (models.JWTAcce
 	slog.Info(u.HashPsw, hashPsw)
 	err = bcrypt.CompareHashAndPassword([]byte(hashPsw), []byte(u.HashPsw))
 	if err != nil {
-		return models.JWTAccess{}, models.JWTRefresh{}, fmt.Errorf("%s CompareHash: %w", op, errs.ErrBadUsernameOrPassword)
+		return models.JWTAccess{}, models.JWTRefresh{}, fmt.Errorf("%s CompareHash: %w", op, err)
 	}
 	slog.Info("Login subject " + u.ID)
 
@@ -109,6 +111,13 @@ func (s *UserService) ReadUser(ctx context.Context, user models.User) (models.Us
 		return models.User{}, fmt.Errorf("%s: %w", op, err)
 	}
 
+	url, err := s.S3.GetPresignURL(ctx, u.Image)
+	if err != nil {
+		return models.User{}, fmt.Errorf("%s: %w", op, fmt.Errorf("Get presign url for user image: %w", err))
+	}
+
+	u.Image = url
+
 	return u, nil
 }
 
@@ -118,6 +127,25 @@ func (s *UserService) GetPublicUsers(ctx context.Context, uf models.UserFilter) 
 	users, err := s.Pg.GetPublicUsers(ctx, uf)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	for i := range users {
+		if users[i].Image != "" {
+			url, err := s.S3.GetPresignURL(ctx, users[i].Image)
+			if err == nil {
+				users[i].Image = url
+			}else {
+				slog.Error(fmt.Sprintf("%s: %s", "Get presign url for user image: ", err.Error()))
+			}
+		}else {
+			users[i].Image = defaultUserImageURL
+			url, err := s.S3.GetPresignURL(ctx, defaultUserImageURL)
+			if err == nil {
+				users[i].Image = url
+			}else {
+				slog.Error(fmt.Sprintf("%s: %s", "Get presign url for default user image: ", err.Error()))
+			}
+		}
 	}
 
 	return users, nil
@@ -134,6 +162,13 @@ func (s *UserService) GetPublicUserProfile(ctx context.Context, userID string) (
 	if u.PrivateProfile {
 		return nil, nil, fmt.Errorf("%s: %w", op, errors.New("profile is private"))
 	}
+
+	url, err := s.S3.GetPresignURL(ctx, u.Image)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s: %w", "Get presign url for user image: ", err)
+	}
+
+	u.Image = url
 
 	tracks, err := s.Pg.GetUserTracks(ctx, userID)
 	if err != nil {

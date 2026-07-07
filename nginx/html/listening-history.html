@@ -715,6 +715,14 @@
 				border-color: white;
 				font-weight: 600;
 			}
+		.artist-link {
+			cursor: pointer;
+			transition: color 0.2s ease;
+		}
+		.artist-link:hover {
+			color: #667eea;
+			text-decoration: underline;
+		}
 		</style>
 	</head>
 	<body>
@@ -782,7 +790,7 @@
 			<div class="audio-player-content">
 				<div class="audio-info">
 					<div class="audio-title" id="currentTrackTitle">Название трека</div>
-					<div class="audio-artist" id="currentTrackArtist" onclick="window.location.href='user.html?id=' + encodeURIComponent(currentTrackUploaderId)" style="cursor:pointer;">Исполнитель</div>
+					<div class="audio-artist artist-link" id="currentTrackArtist" onclick="window.location.href='user.html?id=' + encodeURIComponent(currentTrackUploaderId)">Исполнитель</div>
 				</div>
 				<div class="audio-controls">
 					<audio id="audioPlayer" controls>
@@ -1142,7 +1150,7 @@
                             </div>
                             <div class="history-item-details">
                                 <h4 onclick="window.location.href='music-id.html?id=${musicId}'">${escapeHtml(musicName)}</h4>
-                                <div class="history-item-artist" onclick="window.location.href='user.html?id=${encodeURIComponent(uploaderId)}'" style="cursor:pointer;">${escapeHtml(artist)}</div>
+                                <div class="history-item-artist artist-link" onclick="window.location.href='user.html?id=${encodeURIComponent(uploaderId)}'">${escapeHtml(artist)}</div>
                             </div>
                         </div>
                         <div class="history-item-date">${formatDate(listeningDate)}</div>

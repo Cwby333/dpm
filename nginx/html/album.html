@@ -479,6 +479,14 @@
 					transform: rotate(-45deg) translate(5px, -5px);
 				}
 			}
+		.artist-link {
+			cursor: pointer;
+			transition: color 0.2s ease;
+		}
+		.artist-link:hover {
+			color: #667eea;
+			text-decoration: underline;
+		}
 		</style>
 	</head>
 	<body>
@@ -1017,7 +1025,7 @@
 									<div class="track-cover-small" style="${coverStyle}"></div>
 									<div class="track-info">
 										<div class="track-name">${escapeHtml(track.music_name || 'Без названия')}</div>
-										<div class="track-artist" onclick="event.stopPropagation(); window.location.href='user.html?id=${encodeURIComponent(track.uploader_id || '')}'" style="cursor:pointer;">${escapeHtml(track.uploader_username || 'Неизвестный')}</div>
+										<div class="track-artist artist-link" onclick="event.stopPropagation(); window.location.href='user.html?id=${encodeURIComponent(track.uploader_id || '')}'">${escapeHtml(track.uploader_username || 'Неизвестный')}</div>
 									</div>
 								<div class="track-meta">
 									<span class="track-likes">❤️ ${track.music_likes || 0}</span>

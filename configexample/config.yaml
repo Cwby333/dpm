@@ -1,0 +1,16 @@
+jwt:
+  secret-key: "yourSecretKey"
+server:
+  port: 3003
+postgres:
+  user: "yourUser"
+  host: container'sNameInDockerCompose
+  port: 6003
+  dbname: DBName
+  password: yourPassword
+s3:
+  access_key: yourAccessKey
+  secret_key: yourSecretKey
+  region: s3Region
+  endpoint: s2BaseEndpoint
+  bucket: yourBucketName

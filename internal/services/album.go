@@ -132,18 +132,17 @@ func (s *AlbumsService) UploadAlbum(ctx context.Context, albumName string, uploa
 	albumID := uuid.NewString()
 	coverKey := albumID + "-albumImage"
 
+	cover := ""
 	if len(coverData) > 0 {
+		cover = coverKey
 		err := s.s3.UploadObject(ctx, coverKey, coverData, coverContentType)
 		if err != nil {
 			return "", fmt.Errorf("%s: %w", op, err)
 		}
+	}else {
+		cover = defaultMusicImageURL
 	}
-
-	cover := ""
-	if len(coverData) > 0 {
-		cover = coverKey
-	}
-
+	
 	album := models.Album{
 		ID:          albumID,
 		Name:        albumName,

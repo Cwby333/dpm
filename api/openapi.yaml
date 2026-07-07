@@ -1431,6 +1431,8 @@ components:
                 type: string
               username:
                 type: string
+              image:
+                type: string
               register_at:
                 type: string
               likes:
@@ -1626,6 +1628,8 @@ components:
         username:
           type: string
         register_at:
+          type: string
+        image:
           type: string
         likes:
           type: integer

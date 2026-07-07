@@ -244,13 +244,17 @@
 			}
 
 			.album-cover {
-				height: 200px;
-				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				width: 100%;
+				aspect-ratio: 1 / 1;
+				background: rgba(0,0,0,0.3);
 				display: flex;
 				align-items: center;
 				justify-content: center;
 				color: white;
 				font-size: 4rem;
+				background-size: cover;
+				background-position: center;
+				background-repeat: no-repeat;
 			}
 
 			.album-info {
@@ -577,6 +581,14 @@
 					transform: rotate(-45deg) translate(5px, -5px);
 				}
 			}
+		.artist-link {
+			cursor: pointer;
+			transition: color 0.2s ease;
+		}
+		.artist-link:hover {
+			color: #667eea;
+			text-decoration: underline;
+		}
 		</style>
 	</head>
 	<body>
@@ -822,7 +834,7 @@
 								<div class="album-cover" style="${album.cover ? `background-image: url('${attrEscape(album.cover)}'); background-size: cover; background-position: center;` : ''}">${album.cover ? '' : '💿'}</div>
 								<div class="album-info">
 									<div class="album-name">${escapeHtml(album.name || 'Без названия')}</div>
-									<div class="album-uploader" onclick="event.stopPropagation(); window.location.href='user.html?id=${encodeURIComponent(album.uploader_id || '')}'" style="cursor:pointer;">${escapeHtml(album.uploader_username || 'Неизвестный')}</div>
+									<div class="album-uploader artist-link" onclick="event.stopPropagation(); window.location.href='user.html?id=${encodeURIComponent(album.uploader_id || '')}'">${escapeHtml(album.uploader_username || 'Неизвестный')}</div>
 									<div class="album-meta" style="font-size:0.85rem;color:#999;display:flex;gap:0.5rem;margin-top:0.25rem;">
 										<span>❤️ ${album.likes_count || 0}</span>
 									</div>

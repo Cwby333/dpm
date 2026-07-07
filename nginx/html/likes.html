@@ -223,8 +223,9 @@
 			}
 
 			.like-cover {
-				height: 180px;
-				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				width: 100%;
+				aspect-ratio: 1 / 1;
+				background: rgba(0,0,0,0.3);
 				display: flex;
 				align-items: center;
 				justify-content: center;
@@ -232,6 +233,9 @@
 				font-size: 4rem;
 				position: relative;
 				cursor: pointer;
+				background-size: cover;
+				background-position: center;
+				background-repeat: no-repeat;
 			}
 
 			.like-cover .play-overlay {
@@ -669,6 +673,14 @@
 			.search-input::placeholder {
 				color: #aaa;
 			}
+		.artist-link {
+			cursor: pointer;
+			transition: color 0.2s ease;
+		}
+		.artist-link:hover {
+			color: #667eea;
+			text-decoration: underline;
+		}
 		</style>
 	</head>
 	<body>
@@ -1117,7 +1129,7 @@
                         </div>
                         <div class="like-info">
                             <h3 class="like-name" onclick="window.location.href='music-id.html?id=${musicId}'">${musicName}</h3>
-                            <div class="like-artist" onclick="window.location.href='user.html?id=${encodeURIComponent(uploaderId)}'" style="cursor:pointer;">${artist}</div>
+                            <div class="like-artist artist-link" onclick="window.location.href='user.html?id=${encodeURIComponent(uploaderId)}'">${artist}</div>
                             <div class="like-meta">
                                 <span class="like-likes">❤️ ${likes}</span>
                                 <span class="like-duration">🎧 ${track.listening_count || 0}</span>

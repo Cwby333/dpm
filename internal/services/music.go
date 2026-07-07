@@ -19,7 +19,7 @@ import (
 const (
 	songPostfix      = "-song"
 	songImagePostfix = "-songImage"
-	defaultMusicImageURL = "defaultMusicImage.png"
+	defaultMusicImageURL = "image.png"
 )
 
 type RepoMusic interface {
